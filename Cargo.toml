@@ -1,0 +1,26 @@
+[package]
+name = "spz"
+version = "0.0.1"
+edition = "2024"
+authors = ["See AUTHORS.md"]
+description = """SPZ file format."""
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+anyhow = { version = "1.0", default-features = true, features = [] }
+thiserror = { version = "2.0", default-features = true, features = [] }
+memmap = { version = "0.7", default-features = true, features = [] }
+libc = { version = "0.2", default-features = true, features = [] }
+flate2 = { version = "1.1", default-features = true, features = [] }
+
+[profile.release]
+opt-level = 3
+debug = 2
+overflow-checks = false
+lto = "fat"
+panic = "unwind"
+incremental = false
+
+[profile.dev]
+incremental = true
+lto = "thin"
