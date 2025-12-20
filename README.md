@@ -6,14 +6,14 @@
 &nbsp;
 <p align="center">
 	<a href="https://crates.io/crates/spz">
-		<img alt="Crates.io Version" src="https://img.shields.io/crates/v/spz?style=flat-square&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fspz">
+		<img alt="Crates.io Version" src="https://img.shields.io/crates/v/spz?style=for-the-badge&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fspz">
 	</a>
 	<a href="https://docs.rs/spz">
-		<img alt="docs.rs" src="https://img.shields.io/docsrs/spz?style=flat-square&label=docs.rs&link=docs.rs%2Fspz">
+		<img alt="docs.rs" src="https://img.shields.io/docsrs/spz?style=for-the-badge&label=docs.rs&link=docs.rs%2Fspz">
 	</a>
-	<img alt="GitHub branch status" src="https://img.shields.io/github/checks-status/Jackneill/spz/main?style=flat-square&label=CI">
-	<img alt="GitHub tag status" src="https://img.shields.io/github/checks-status/Jackneill/spz/0.0.1?style=flat-square&label=TAG">
-	<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=flat-square&label=LICENSE">
+	<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI">
+	<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/Jackneill/spz?style=for-the-badge">
+	<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=for-the-badge&label=LICENSE">
 </p>
 
 ## What is SPZ?

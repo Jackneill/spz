@@ -58,9 +58,6 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
-      - name: Install cargo deny
-        run: |
-          cargo install cargo-deny
 
       - name: Download assets
         run: |
@@ -79,9 +76,6 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
-      - name: Install cargo deny
-        run: |
-          cargo install cargo-deny
 
       - name: Download assets
         run: |
