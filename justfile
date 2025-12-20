@@ -1,36 +1,33 @@
 just := "just"
 cargo := "cargo"
 
+export RUST_BACKTRACE := "full"
+
 default:
 	{{just}} --list
 
 test:
-	RUST_BACKTRACE=full {{cargo}} test \
-		-vv \
+	{{cargo}} nextest run \
+		-v \
 		--all-features \
 		--bins \
 		--examples \
 		--tests \
-		--benches \
 		--all-targets \
+		-j num-cpus \
 		--workspace
 	#-- --nocapture
 
 lint:
-	RUST_BACKTRACE=full {{cargo}} fmt --check
-	RUST_BACKTRACE=full {{cargo}} clippy
-	RUST_BACKTRACE=full {{cargo}} deny check
+	{{cargo}} fmt --check
+	{{cargo}} clippy
+	{{cargo}} deny check
 
 bench:
-	RUST_BACKTRACE=full {{cargo}} bench \
-		-vv \
-		--profile release \
+	{{cargo}} bench \
 		--all-features \
-		--bins \
-		--examples \
-		--tests \
 		--benches \
-		--all-targets \
+		--profile release \
 		--workspace
 
 build-release: lint test
@@ -38,6 +35,12 @@ build-release: lint test
 
 build:
 	{{cargo}} build
+
+run *args:
+	{{cargo}} run --bin spz {{args}}
+
+runr *args:
+	{{cargo}} run --release --bin spz {{args}}
 
 clean:
 	rm -rf ./target

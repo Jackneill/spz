@@ -1,14 +1,150 @@
-# SPZ
+<h1 align="center">SPZ<span></span></h1>
 
-Rust implementation of the SPZ file format.
+<div align="center">Rust implementation of the .SPZ file format and CLI tools.</div>
+&nbsp;
+<div align="center"><b>WIP</b></div>
+&nbsp;
+<p align="center">
+	<a href="https://crates.io/crates/spz">
+		<img alt="Crates.io Version" src="https://img.shields.io/crates/v/spz?style=flat-square&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fspz">
+	</a>
+	<a href="https://docs.rs/spz">
+		<img alt="docs.rs" src="https://img.shields.io/docsrs/spz?style=flat-square&label=docs.rs&link=docs.rs%2Fspz">
+	</a>
+	<img alt="GitHub branch status" src="https://img.shields.io/github/checks-status/Jackneill/spz/main?style=flat-square&label=CI">
+	<img alt="GitHub tag status" src="https://img.shields.io/github/checks-status/Jackneill/spz/0.0.1?style=flat-square&label=TAG">
+	<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=flat-square&label=LICENSE">
+</p>
+
+## What is SPZ?
+
+SPZ is a compressed file format for 3D Gaussian Splats, designed by Niantic.
+It provides efficient storage of Gaussian Splat data with configurable
+spherical harmonics degrees and coordinate system support.
+
+See [docs/SPZ.md](docs/SPZ.md) for more information.
+
+## Usage
+
+```toml
+spz = { version = "0.0.1", default-features = false, features = [] }
+```
+
+## Examples
+
+```sh
+cargo run --example load_spz
+```
+
+## Quick Start
+
+```rust
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
+use std::path::{Path, PathBuf};
+
+use anyhow::Result;
+use spz::{GaussianSplat, UnpackOptions};
+
+fn main() -> Result<()> {
+	let mut sample_spz = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+	sample_spz.push("assets/racoonfamily.spz");
+
+	let _gs = spz::GaussianSplat::builder()
+		.filepath(sample_spz)
+		.packed(true)?
+		.unpack_options(
+			UnpackOptions::builder()
+				.to_coord_system(spz::CoordinateSystem::default())
+				.build(),
+		)
+		.load()?;
+
+	Ok(())
+}
+
+#[allow(unused)]
+async fn load_spz_async<P>(spz_file: P) -> Result<GaussianSplat>
+where
+	P: AsRef<Path>,
+{
+	let gs = spz::GaussianSplat::builder()
+		.filepath(spz_file)
+		.packed(true)?
+		.unpack_options(
+			UnpackOptions::builder()
+				.to_coord_system(spz::CoordinateSystem::default())
+				.build(),
+		)
+		.load_async()
+		.await?;
+
+	Ok(gs)
+}
+```
+
+## API
+
+### Overview
+
+```rust
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct GaussianSplat {
+	pub num_points: i32,
+	pub spherical_harmonics_degree: i32,
+	pub antialiased: bool,
+	pub positions: Vec<f32>,
+	pub scales: Vec<f32>,
+	pub rotations: Vec<f32>,
+	pub alphas: Vec<f32>,
+	pub colors: Vec<f32>,
+	pub spherical_harmonics: Vec<f32>,
+}
+```
+
+## Benches
+
+### Pre-Requisites
+
+* Install `gnuplot` for html reports.
+* [Install `nextest` runner](https://nexte.st/docs/installation/pre-built-binaries/)
+
+### Run
+
+```sh
+just bench
+```
+
+* The html report of the benchmark can be found under `target/criterion/report/index.html`.
+
+```sh
+# assets/samples/racoonfamily.spz    24.2 MB
+
+load_packed_from_file                    time:    [383.44 ms 386.93 ms 390.53 ms]
+load_packed_from_file_async              time:    [396.79 ms 400.13 ms 403.41 ms]
+print_info                               time:    [392.12 ms 398.22 ms 404.62 ms]
+```
+
+## Development
+
+### Pre-Requisites
+
+* Install the `mold` linker: <https://github.com/rui314/mold>
+* [Install `nextest`](https://nexte.st/docs/installation/pre-built-binaries/)
+
+## Documentation
+
+Further documentation is available under `./docs`.
 
 ## License
 
 Licensed under either of
 
 * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+ 	* `SPDX-License-Identifier: Apache-2.0`
 * MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
 at your option.
+ 	* `SPDX-License-Identifier: MIT`
 
 ## Contribution
 

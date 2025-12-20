@@ -1,0 +1,1 @@
+https://github.com/dwalleck/catalyst/blob/main/.claude/skills/rust-developer/SKILL.md
