@@ -117,14 +117,6 @@ just bench
 
 * The html report of the benchmark can be found under `target/criterion/report/index.html`.
 
-```sh
-# assets/samples/racoonfamily.spz    24.2 MB
-
-load_packed_from_file                    time:    [383.44 ms 386.93 ms 390.53 ms]
-load_packed_from_file_async              time:    [396.79 ms 400.13 ms 403.41 ms]
-print_info                               time:    [392.12 ms 398.22 ms 404.62 ms]
-```
-
 ## Development
 
 ### Pre-Requisites
