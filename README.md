@@ -129,6 +129,7 @@ print_info                               time:    [392.12 ms 398.22 ms 404.62 ms
 
 ### Pre-Requisites
 
+* `just assets` - download sample assets (spz) for tests, etc.
 * Install the `mold` linker: <https://github.com/rui314/mold>
 * [Install `nextest`](https://nexte.st/docs/installation/pre-built-binaries/)
 

@@ -42,5 +42,10 @@ run *args:
 runr *args:
 	{{cargo}} run --release --bin spz {{args}}
 
+assets:
+	mkdir assets || true
+	curl -o assets/racoonfamily.spz https://github.com/nianticlabs/spz/blob/main/samples/racoonfamily.spz
+	curl -o assets/hornedlizard.spz https://github.com/nianticlabs/spz/blob/main/samples/hornedlizard.spz
+
 clean:
 	rm -rf ./target
