@@ -6,7 +6,7 @@ export RUST_BACKTRACE := "full"
 default:
 	{{just}} --list
 
-test:
+test: assets
 	{{cargo}} nextest run \
 		-v \
 		--all-features \
@@ -23,7 +23,7 @@ lint:
 	{{cargo}} clippy
 	{{cargo}} deny check
 
-bench:
+bench: assets
 	{{cargo}} bench \
 		--all-features \
 		--benches \
@@ -44,8 +44,8 @@ runr *args:
 
 assets:
 	mkdir assets || true
-	curl -o assets/racoonfamily.spz https://github.com/nianticlabs/spz/blob/main/samples/racoonfamily.spz
-	curl -o assets/hornedlizard.spz https://github.com/nianticlabs/spz/blob/main/samples/hornedlizard.spz
+	test -e assets/racoonfamily.spz || curl -L -o assets/racoonfamily.spz https://github.com/nianticlabs/spz/raw/refs/heads/main/samples/racoonfamily.spz
+	test -e assets/hornedlizard.spz || curl -L -o assets/hornedlizard.spz https://github.com/nianticlabs/spz/raw/refs/heads/main/samples/hornedlizard.spz
 
 clean:
 	rm -rf ./target
