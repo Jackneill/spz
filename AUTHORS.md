@@ -2,6 +2,7 @@
 
 See the commit history for a full list.
 
-* Márk Bartos <r2ygm3d9f@mozmail.com>
+* SPZ File Format is developed by Niantic.
+* Initially a direct port of [nianticlabs/spz](https://github.com/nianticlabs/spz).
 
-Initially a direct port of [nianticlabs/spz](https://github.com/nianticlabs/spz).
+* Márk Bartos <r2ygm3d9f@mozmail.com>
