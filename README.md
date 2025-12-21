@@ -12,14 +12,22 @@
 		<img alt="docs.rs" src="https://img.shields.io/docsrs/spz?style=for-the-badge&label=docs.rs&link=docs.rs%2Fspz">
 	</a>
 	<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI">
+	<img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/Jackneill/spz/main?style=for-the-badge">
 	<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/Jackneill/spz?style=for-the-badge">
+	<br>
 	<a href="./LICENSE-APACHE">
 		<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=for-the-badge&label=LICENSE">
 	</a>
 	<a href="./LICENSE-MIT">
 		<img alt="GitHub License MIT" src="https://img.shields.io/badge/MIT-LICENSE?style=for-the-badge&label=LICENSE">
 	</a>
-	<img alt="GitHub License Apache 2.0" src="https://img.shields.io/github/last-commit/Jackneill/spz/main?style=for-the-badge">
+	<br>
+	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=license" alt="FOSSA Status">
+		<img alt="FOSSA Status" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=license"/>
+	</a>
+	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=security" alt="FOSSA Status">
+		<img alt="FOSSA Security" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=security"/>
+	</a>
 </p>
 
 ## What is SPZ?
@@ -127,7 +135,6 @@ just bench
 
 ### Pre-Requisites
 
-* `just assets` - download sample assets (spz) for tests, etc.
 * Install the `mold` linker: <https://github.com/rui314/mold>
 * [Install `nextest`](https://nexte.st/docs/installation/pre-built-binaries/)
 
@@ -150,3 +157,7 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the _Apache-2.0_ license, shall
 be dual licensed as above, without any additional terms or conditions.
+
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_large&issueType=license" alt="FOSSA Status">
+	<img alt="FOSSA Scan" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=large&issueType=license"/>
+</a>
