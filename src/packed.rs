@@ -4,8 +4,8 @@ use std::io::BufReader;
 use std::io::Read;
 use std::io::Write;
 
-use anyhow::Result;
 use anyhow::bail;
+use anyhow::{Context, Result};
 use likely_stable::unlikely;
 use serde::{Deserialize, Serialize};
 
@@ -338,36 +338,20 @@ impl TryFrom<&[u8]> for PackedGaussians {
 	type Error = anyhow::Error;
 
 	fn try_from(b: &[u8]) -> Result<Self, Self::Error> {
-		const HEADER_SIZE: usize = std::mem::size_of::<PackedGaussiansHeader>();
-
 		let mut from_reader = BufReader::new(b);
-		let header: PackedGaussiansHeader = {
-			let mut header_buf: [u8; HEADER_SIZE] = [0; HEADER_SIZE];
 
-			match from_reader.read_exact(&mut header_buf) {
-				Ok(_) => {},
-				Err(err) => {
-					bail!(err);
-				},
-			}
-			unsafe { std::mem::transmute(header_buf) }
-		};
-		if unlikely(header.magic != consts::PACKED_GAUSSIAN_HEADER_MAGIC) {
+		let header = PackedGaussiansHeader::read_from(&mut from_reader)
+			.with_context(|| "unable to read packed gaussians header")?;
+
+		if unlikely(header.magic != consts::HEADER_MAGIC) {
 			bail!("invalid magic number in packed gaussians header");
 		}
 		if unlikely(header.version < 1 || header.version > 3) {
 			bail!("unsupported version: {}", header.version);
 		}
-		if unlikely(header.num_points > consts::MAX_POINTS_TO_READ) {
-			bail!(
-				"number of points: {} exceeds maximum allowed: {}",
-				header.num_points,
-				consts::MAX_POINTS_TO_READ
-			);
-		}
 		if header.spherical_harmonics_degree > 3 {
 			bail!(
-				"unsupported SH degree: {}",
+				"unsupported spherical harmonics degree: {}",
 				header.spherical_harmonics_degree
 			);
 		}

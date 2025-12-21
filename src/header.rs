@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::io::Write;
+use std::io::{Read, Write};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 
 use crate::consts;
+
+pub const HEADER_SIZE: usize = std::mem::size_of::<PackedGaussiansHeader>();
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(C)]
@@ -32,6 +34,22 @@ pub struct PackedGaussiansHeader {
 
 impl PackedGaussiansHeader {
 	#[inline]
+	pub fn read_from<R>(reader: &mut R) -> Result<Self>
+	where
+		R: Read,
+	{
+		let mut header_buf: [u8; HEADER_SIZE] = [0; HEADER_SIZE];
+
+		match reader.read_exact(&mut header_buf) {
+			Ok(_) => {},
+			Err(err) => {
+				bail!(err);
+			},
+		}
+		Ok(unsafe { std::mem::transmute(header_buf) })
+	}
+
+	#[inline]
 	pub fn serialize_to<W>(&self, stream: &mut W) -> Result<()>
 	where
 		W: Write,
@@ -51,8 +69,8 @@ impl Default for PackedGaussiansHeader {
 	#[inline]
 	fn default() -> Self {
 		Self {
-			magic: consts::PACKED_GAUSSIAN_HEADER_MAGIC,
-			version: consts::PACKED_GAUSSIAN_HEADER_VERSION,
+			magic: consts::HEADER_MAGIC,
+			version: consts::SUPPORTED_SPZ_VERSION,
 			num_points: 0,
 			spherical_harmonics_degree: 0,
 			fractional_bits: 0,

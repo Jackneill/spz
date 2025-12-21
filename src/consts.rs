@@ -8,12 +8,11 @@
 /// smaller value.
 pub const COLOR_SCALE: f32 = 0.15;
 
-pub const MAX_POINTS_TO_READ: i32 = 10_000_000;
-
 /// "NGSP" in little-endian.
-pub const PACKED_GAUSSIAN_HEADER_MAGIC: i32 = 0x5053474e;
+pub const HEADER_MAGIC: i32 = 0x5053474e;
 
-pub const PACKED_GAUSSIAN_HEADER_VERSION: i32 = 3;
+/// Supported .spz version. This crate currently only supports version 3.
+pub const SUPPORTED_SPZ_VERSION: i32 = 3;
 
 pub const EXTENSION: &str = "spz";
 

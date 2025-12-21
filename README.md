@@ -46,7 +46,7 @@ See [docs/SPZ.md](docs/SPZ.md) for more information.
 ## Usage
 
 ```toml
-spz = { version = "0.0.2", default-features = false, features = [] }
+spz = { version = "0.0.3", default-features = false, features = [] }
 ```
 
 ## Examples
