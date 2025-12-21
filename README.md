@@ -157,9 +157,6 @@ Licensed under either of
 at your option.
  	* `SPDX-License-Identifier: MIT`
 
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_large)
-
 ## Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally submitted
