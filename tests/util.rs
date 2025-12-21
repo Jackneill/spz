@@ -9,9 +9,17 @@ pub fn assets_dir() -> PathBuf {
 	PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets")
 }
 
+pub fn mktmp() -> PathBuf {
+	let tmp = assets_dir().parent().unwrap().join("target").join("tmp");
+
+	std::fs::create_dir_all(&tmp).expect("failed to create temp dir");
+
+	tmp
+}
+
 pub struct SpzValues {
 	pub num_points: i32,
-	pub bounding_box_x: [f32; 2],
-	pub bounding_box_y: [f32; 2],
-	pub bounding_box_z: [f32; 2],
+	pub bbox_x: [f32; 2],
+	pub bbox_y: [f32; 2],
+	pub bbox_z: [f32; 2],
 }
