@@ -11,6 +11,7 @@
 	<a href="https://docs.rs/spz">
 		<img alt="docs.rs" src="https://img.shields.io/docsrs/spz?style=for-the-badge&label=docs.rs&link=docs.rs%2Fspz">
 	</a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield"/></a>
 	<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI">
 	<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/Jackneill/spz?style=for-the-badge">
 	<a href="./LICENSE-APACHE">
@@ -144,6 +145,9 @@ Licensed under either of
 * MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
 at your option.
  	* `SPDX-License-Identifier: MIT`
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_large)
 
 ## Contribution
 
