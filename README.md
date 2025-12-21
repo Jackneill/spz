@@ -13,8 +13,12 @@
 	</a>
 	<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI">
 	<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/Jackneill/spz?style=for-the-badge">
-	<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=for-the-badge&label=LICENSE">
-	<img alt="GitHub License MIT" src="https://img.shields.io/badge/MIT-LICENSE?style=for-the-badge&label=LICENSE">
+	<a href="./LICENSE-APACHE">
+		<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=for-the-badge&label=LICENSE">
+	</a>
+	<a href="./LICENSE-MIT">
+		<img alt="GitHub License MIT" src="https://img.shields.io/badge/MIT-LICENSE?style=for-the-badge&label=LICENSE">
+	</a>
 	<img alt="GitHub License Apache 2.0" src="https://img.shields.io/github/last-commit/Jackneill/spz/main?style=for-the-badge">
 </p>
 
