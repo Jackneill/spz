@@ -11,16 +11,28 @@
 	<a href="https://docs.rs/spz">
 		<img alt="docs.rs" src="https://img.shields.io/docsrs/spz?style=for-the-badge&label=docs.rs&link=docs.rs%2Fspz">
 	</a>
-<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield"/></a>
-	<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI">
+	<a href="https://lib.rs/crates/spz">
+		<img alt="lib.rs" src="https://img.shields.io/badge/spz-librs?style=for-the-badge&label=Lib.rs&link=https%3A%2F%2Flib.rs%2Fcrates%2Fspz">
+	</a>
 	<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/Jackneill/spz?style=for-the-badge">
+	<br>
+	<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI%3Amain">
+	<img alt="Deps" src="https://img.shields.io/deps-rs/repo/github/Jackneill/spz?style=for-the-badge">
+	<img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/Jackneill/spz/main?style=for-the-badge">
+	<br>
 	<a href="./LICENSE-APACHE">
 		<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=for-the-badge&label=LICENSE">
 	</a>
 	<a href="./LICENSE-MIT">
 		<img alt="GitHub License MIT" src="https://img.shields.io/badge/MIT-LICENSE?style=for-the-badge&label=LICENSE">
 	</a>
-	<img alt="GitHub License Apache 2.0" src="https://img.shields.io/github/last-commit/Jackneill/spz/main?style=for-the-badge">
+	<br>
+	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=license" alt="FOSSA Status">
+		<img alt="FOSSA Status" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=license"/>
+	</a>
+	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=security" alt="FOSSA Status">
+		<img alt="FOSSA Security" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=security"/>
+	</a>
 </p>
 
 ## What is SPZ?
@@ -34,7 +46,7 @@ See [docs/SPZ.md](docs/SPZ.md) for more information.
 ## Usage
 
 ```toml
-spz = { version = "0.0.2", default-features = false, features = [] }
+spz = { version = "0.0.3", default-features = false, features = [] }
 ```
 
 ## Examples
@@ -128,7 +140,6 @@ just bench
 
 ### Pre-Requisites
 
-* `just assets` - download sample assets (spz) for tests, etc.
 * Install the `mold` linker: <https://github.com/rui314/mold>
 * [Install `nextest`](https://nexte.st/docs/installation/pre-built-binaries/)
 
@@ -154,3 +165,7 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the _Apache-2.0_ license, shall
 be dual licensed as above, without any additional terms or conditions.
+
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_large&issueType=license" alt="FOSSA Status">
+	<img alt="FOSSA Scan" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=large&issueType=license"/>
+</a>

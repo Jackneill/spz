@@ -59,9 +59,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
 
-      - name: Download assets
-        run: |
-          just assets
       - name: Test
         run: just test
 
@@ -77,8 +74,5 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
 
-      - name: Download assets
-        run: |
-          just assets
       - name: Bench
         run: just bench
