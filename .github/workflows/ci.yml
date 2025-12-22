@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: extractions/setup-just@v3
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
@@ -36,6 +38,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: extractions/setup-just@v3
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
@@ -54,6 +58,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: extractions/setup-just@v3
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
@@ -69,6 +75,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: extractions/setup-just@v3
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2

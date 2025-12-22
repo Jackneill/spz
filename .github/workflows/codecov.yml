@@ -1,0 +1,53 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: extractions/setup-just@v3
+      - uses: rui314/setup-mold@v1
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@nextest
+
+      - name: Install cargo deny
+        run: |
+          cargo install cargo-deny
+
+      - name: Lint
+        run: just lint
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Prepare Coverage Environment
+        run: |
+          cargo llvm-cov clean --workspace
+
+      - name: Test
+        run: just test
+
+      - name: Generate Coverage Report
+        run: cargo llvm-cov --all-features --workspace --codecov --output-path codecov.json
+
+      - name: Upload Coverage Reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: codecov.json
+          fail_ci_if_error: true
