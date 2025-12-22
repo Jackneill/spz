@@ -23,3 +23,27 @@ pub struct SpzValues {
 	pub bbox_y: [f32; 2],
 	pub bbox_z: [f32; 2],
 }
+
+pub fn quat_norm(q: &[f32]) -> f32 {
+	(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]).sqrt()
+}
+
+pub fn normalize_quat(q: &[f32]) -> [f32; 4] {
+	let n = quat_norm(q);
+
+	[q[0] / n, q[1] / n, q[2] / n, q[3] / n]
+}
+
+pub fn quaternions_equivalent(q1: &[f32], q2: &[f32], tolerance: f32) -> bool {
+	let same = q1
+		.iter()
+		.zip(q2.iter())
+		.all(|(a, b)| (a - b).abs() < tolerance);
+
+	let negated = q1
+		.iter()
+		.zip(q2.iter())
+		.all(|(a, b)| (a + b).abs() < tolerance);
+
+	same || negated
+}

@@ -338,3 +338,121 @@ fn test_spherical_harmonics_coordinate_transformation() {
 	let _ = std::fs::remove_file(&filename);
 	let _ = std::fs::remove_file(&filename2);
 }
+
+fn sample_non_normalized_quats() -> [f32; 8] {
+	[
+		// Set up test data with non-normalized quaternions
+		2.0, 3.0, 4.0, 5.0, // First quaternion (not normalized)
+		1.0, 1.0, 1.0, 1.0, // Second quaternion (not normalized)
+	]
+}
+
+#[rstest]
+#[case(
+	GaussianSplat {
+		num_points: 2,
+		spherical_harmonics_degree: 0,
+		antialiased: false,
+		positions: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+		scales: vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+		rotations: sample_non_normalized_quats().to_vec(),
+		alphas: vec![0.5, 0.7],
+		colors: vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+		spherical_harmonics: vec![],
+	},
+)]
+fn test_quaternion_normalization_during_packing(#[case] gs: GaussianSplat) {
+	let temp_dir = mktmp();
+	let filename = temp_dir.join("quat_normalization_test.spz");
+
+	let packed_bytes = gs
+		.serialize_as_packed_bytes(&PackOptions::default())
+		.expect("failed to serialize splat");
+	std::fs::write(&filename, &packed_bytes).expect("failed to write file");
+
+	let loaded = GaussianSplat::load_packed_from_file(&filename, &UnpackOptions::default())
+		.expect("failed to load splat");
+
+	// Verify that the quaternions are now normalized
+	assert_eq!(loaded.rotations.len(), 8); // 2 quaternions × 4 components
+
+	// Check first quaternion is normalized
+	let q1 = &loaded.rotations[0..4];
+	let q1_norm = util::quat_norm(q1);
+
+	assert_relative_eq!(q1_norm, 1.0, epsilon = 1e-4);
+
+	// Check second quaternion is normalized
+	let q2 = &loaded.rotations[4..8];
+	let q2_norm = util::quat_norm(q2);
+
+	assert_relative_eq!(q2_norm, 1.0, epsilon = 1e-4);
+
+	// Verify the orientation is preserved (normalized quaternions should
+	// represent same rotation)
+	let expected_q1 = util::normalize_quat(&sample_non_normalized_quats()[0..4]);
+	let expected_q2 = util::normalize_quat(&sample_non_normalized_quats()[4..8]);
+
+	// Due to compression, we need to allow for some tolerance
+	assert!(
+		util::quaternions_equivalent(q1, &expected_q1, 0.02),
+		"q1 = {:?}, expected = {:?}",
+		q1,
+		expected_q1
+	);
+	assert!(
+		util::quaternions_equivalent(q2, &expected_q2, 0.02),
+		"q2 = {:?}, expected = {:?}",
+		q2,
+		expected_q2
+	);
+	let _ = std::fs::remove_file(&filename);
+}
+
+#[rstest]
+#[case(GaussianSplat { // Start with RUB data
+		num_points: 1,
+		spherical_harmonics_degree: 0,
+		antialiased: false,
+		positions: vec![1.0, 2.0, 3.0],
+		scales: vec![],
+		rotations: vec![0.1, 0.2, 0.3, 0.9], // x, y, z, w
+		alphas: vec![],
+		colors: vec![],
+		spherical_harmonics: vec![],
+	},
+	CoordinateSystem::RUB,
+	CoordinateSystem::RDF,
+	[1.0, -2.0, -3.0],
+	[0.1, -0.2, -0.3, 0.9],
+	[1.0, 2.0, 3.0],
+	[0.1, 0.2, 0.3, 0.9],
+)]
+fn test_convert_coordinates_method(
+	#[case] mut gs: GaussianSplat,
+	#[case] from: CoordinateSystem,
+	#[case] to: CoordinateSystem,
+	#[case] expected_pos0: [f32; 3],
+	#[case] expected_rot0: [f32; 4],
+	#[case] expected_pos1: [f32; 3],
+	#[case] expected_rot1: [f32; 4],
+) {
+	// Convert to
+	gs.convert_coordinates(from.clone(), to.clone());
+
+	for (actual, expected) in gs.positions.iter().zip(expected_pos0.iter()) {
+		assert_relative_eq!(actual, expected, epsilon = 1e-6);
+	}
+	for (actual, expected) in gs.rotations.iter().zip(expected_rot0.iter()) {
+		assert_relative_eq!(actual, expected, epsilon = 1e-6);
+	}
+	// Convert back: should restore original values
+	gs.convert_coordinates(to, from);
+
+	for (actual, expected) in gs.positions.iter().zip(expected_pos1.iter()) {
+		assert_relative_eq!(actual, expected, epsilon = 1e-6);
+	}
+	for (actual, expected) in gs.rotations.iter().zip(expected_rot1.iter()) {
+		assert_relative_eq!(actual, expected, epsilon = 1e-6);
+	}
+}

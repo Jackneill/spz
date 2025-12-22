@@ -49,6 +49,10 @@ See [docs/SPZ.md](docs/SPZ.md) for more information.
 spz = { version = "0.0.3", default-features = false, features = [] }
 ```
 
+```rust
+use spz::prelude::*;
+```
+
 ## Examples
 
 ```sh
