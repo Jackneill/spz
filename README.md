@@ -137,7 +137,7 @@ pub struct GaussianSplat {
 ### Pre-Requisites
 
 * Install `gnuplot` for html reports.
-* [Install `nextest` runner](https://nexte.st/docs/installation/pre-built-binaries/)
+* [Install `nextest` runner](https://nexte.st/docs/installation/pre-built-binaries/).
 
 ### Run
 
@@ -146,6 +146,7 @@ just bench
 ```
 
 * The html report of the benchmark can be found under `target/criterion/report/index.html`.
+* View Benchmark and Profiling data on [CodSpeed](https://codspeed.io/Jackneill/spz), (CI runs).
 
 ## Code Coverage
 
