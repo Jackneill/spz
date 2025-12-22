@@ -46,6 +46,7 @@ criterion = { version = "0.8", default-features = true, features = [
 	"html_reports",
 	"async_tokio",
 ] }
+codspeed-criterion-compat = { version = "4.1.0", default-features = true }
 rstest = { version = "0.26", default-features = true, features = [] }
 approx = { version = "0.5", default-features = true, features = [] }
 rand = { version = "0.9", default-features = true, features = [] }
