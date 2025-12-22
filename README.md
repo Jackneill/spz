@@ -23,6 +23,9 @@
 	<a href="https://codspeed.io/Jackneill/spz">
 		<img alt="CodSpeed" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcodspeed.io%2Fbadge.json&style=for-the-badge" />
 	</a>
+	<a href="https://codecov.io/github/Jackneill/spz">
+		<img alt="CodeCov" src="https://codecov.io/github/Jackneill/spz/graph/badge.svg?style=for-the-badge&token=10QLWY4MWG"/>
+	</a>
 	<br>
 	<a href="./LICENSE-APACHE">
 		<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=for-the-badge&label=LICENSE">
@@ -143,6 +146,12 @@ just bench
 ```
 
 * The html report of the benchmark can be found under `target/criterion/report/index.html`.
+
+## Code Coverage
+
+<a href="https://codecov.io/github/Jackneill/spz">
+	<img alt="CodeCov Grid" src="https://codecov.io/github/Jackneill/spz/graphs/tree.svg?token=10QLWY4MWG"/>
+</a>
 
 ## Development
 
