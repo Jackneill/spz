@@ -268,12 +268,13 @@ fn test_sh_encoding_for_zeros_and_edges() {
 	let _ = std::fs::remove_file(&filename);
 }
 
-#[test]
-fn test_spherical_harmonics_coordinate_transformation() {
-	// Set up test data with non-zero SH coefficients
-	let original_sh: Vec<f32> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
+fn sample_sh_coefficients() -> Vec<f32> {
+	vec![0.5, -0.5, 0.25, -0.25, 0.75, -0.75, 0.1, -0.1, 0.0]
+}
 
-	let src = GaussianSplat {
+#[rstest]
+#[case(
+	GaussianSplat {
 		num_points: 1,
 		spherical_harmonics_degree: 1,
 		antialiased: false,
@@ -282,23 +283,36 @@ fn test_spherical_harmonics_coordinate_transformation() {
 		rotations: vec![0.0, 0.0, 0.0, 1.0],
 		alphas: vec![0.5],
 		colors: vec![0.1, 0.2, 0.3],
-		spherical_harmonics: original_sh.clone(),
-	};
+		spherical_harmonics: sample_sh_coefficients(), // Set up test data with non-zero SH coefficients
+	},
+	PackOptions { // Save as RUB and load as RDF (180 degree rotation about X)
+		from: CoordinateSystem::RUB,
+	},
+	UnpackOptions {
+		to_coord_sys: CoordinateSystem::RDF,
+	},
+	PackOptions {
+		from: CoordinateSystem::RDF,
+	},
+	UnpackOptions {
+		to_coord_sys: CoordinateSystem::RDF,
+	}
+)]
+fn test_spherical_harmonics_coordinate_transformation(
+	#[case] gs: GaussianSplat,
+	#[case] pack_opts: PackOptions,
+	#[case] unpack_opts: UnpackOptions,
+	#[case] pack_opts2: PackOptions,
+	#[case] unpack_opts2: UnpackOptions,
+) {
 	let temp_dir = mktmp();
 	let filename = temp_dir.join("sh_coord_test.spz");
 
-	// Save as RUB and load as RDF (180 degree rotation about X)
-	let pack_opts = PackOptions {
-		from: CoordinateSystem::RUB,
-	};
-	let packed_bytes = src
+	let packed_bytes = gs
 		.serialize_as_packed_bytes(&pack_opts)
 		.expect("failed to serialize splat");
 	std::fs::write(&filename, &packed_bytes).expect("failed to write file");
 
-	let unpack_opts = UnpackOptions {
-		to_coord_sys: CoordinateSystem::RDF,
-	};
 	let loaded = GaussianSplat::load_packed_from_file(&filename, &unpack_opts)
 		.expect("failed to load splat");
 
@@ -309,21 +323,16 @@ fn test_spherical_harmonics_coordinate_transformation() {
 
 	// The SH coefficients should be different from the original (transformed)
 	// Some coefficients should be flipped according to the coordinate system change
-	assert_ne!(loaded.spherical_harmonics, original_sh);
+	assert_ne!(loaded.spherical_harmonics, sample_sh_coefficients());
 
 	// Verify the transformation is consistent - save and load again should give same result
 	let filename2 = temp_dir.join("sh_coord_test2.spz");
-	let pack_opts2 = PackOptions {
-		from: CoordinateSystem::RDF,
-	};
+
 	let packed_bytes2 = loaded
 		.serialize_as_packed_bytes(&pack_opts2)
 		.expect("failed to serialize splat");
 	std::fs::write(&filename2, &packed_bytes2).expect("failed to write file");
 
-	let unpack_opts2 = UnpackOptions {
-		to_coord_sys: CoordinateSystem::RDF,
-	};
 	let loaded2 = GaussianSplat::load_packed_from_file(&filename2, &unpack_opts2)
 		.expect("failed to load splat");
 
