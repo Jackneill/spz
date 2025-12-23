@@ -1,6 +1,6 @@
 <h1 align="center">SPZ<span></span></h1>
 
-<div align="center">Rust implementation of the .SPZ file format and CLI tools.</div>
+<div align="center"><b>Rust</b> and <b>Python</b> implementation of the <b>.SPZ</b> file format and <b>CLI</b> tools.</div>
 &nbsp;
 <div align="center"><b>WIP</b></div>
 &nbsp;
