@@ -524,6 +524,12 @@ impl GaussianSplat {
 		if unlikely(self.scales.is_empty()) {
 			return 0.01;
 		}
+		// The volume of an ellipsoid is 4/3 * pi * x * y * z,
+		// where x, y, and z are the radii on each axis.
+		// Scales are stored on a log scale, and
+		// 	exp(x) * exp(y) * exp(z) = exp(x + y + z).
+		// So we can sort by value = (x + y + z) and compute
+		// 	volume = 4/3 * pi * exp(value) later.
 		let mut sums = self
 			.scales
 			.chunks_exact(3)

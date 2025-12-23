@@ -65,6 +65,11 @@ spz = { version = "0.0.6", default-features = false, features = [] }
 use spz::prelude::*;
 ```
 
+```sh
+$ path/to/spz info assets/racoonfamily.spz
+GaussianSplat={num_points=932560, sh_degree=3, antialiased=true, median_ellipsoid_volume=0.0000000046213082, bbox=[x=-281.779541 to 258.382568, y=-240.000000 to 240.000000, z=-240.000000 to 240.000000]}
+```
+
 ## Examples
 
 ```sh
