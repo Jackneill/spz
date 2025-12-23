@@ -42,8 +42,8 @@
 	</a>
 	<hr>
 	<br>
-	<a href='https://flathub.org/apps/org.gimp.GIMP'>
-		<img width='240' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
+	<a href='https://flathub.org/apps/org.jackneill.spz'>
+		<img width='160' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
 	</a>
 </p>
 
