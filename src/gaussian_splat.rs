@@ -717,41 +717,42 @@ mod tests {
 	use rstest::rstest;
 
 	#[rstest]
-	fn test_median_volume() {
-		let mut gs = GaussianSplat::default();
-
-		assert_relative_eq!(gs.median_volume(), 0.01_f32);
-
-		// test with actual points (3 points)
-
-		// set up scales for volume calculation (log scale)
-		// volume = 4/3 * pi * exp(scale_sum)
-		// use known values: scales [-1,-1,-1], [0,0,0], [1,1,1]
-		// scale sums: -3, 0, 3
-		// median scale sum: 0
-		// expected median volume: 4/3 * pi * exp(0) = 4/3 * pi
-
-		gs.scales = vec![
+	#[case(
+		GaussianSplat::default(),
+		vec![
 			-1.0, -1.0, -1.0, // First gaussian: scale sum = -3
 			0.0, 0.0, 0.0, // Second gaussian: scale sum = 0
 			1.0, 1.0, 1.0, // Third gaussian: scale sum = 3
-		];
-		let median_vol = gs.median_volume();
-		let expected_vol = (4.0 / 3.0) * std::f32::consts::PI * 0.0_f32.exp(); // exp(0) = 1
-
-		assert_relative_eq!(median_vol, expected_vol, epsilon = 1e-5);
-
-		gs.scales = vec![
+		],
+		(4.0 / 3.0) * std::f32::consts::PI * 0.0_f32.exp(),
+		1e-5_f32,
+	)]
+	#[case(
+		GaussianSplat::default(),
+		vec![
 			-2.0, -2.0, -2.0, // First gaussian: scale sum = -6
 			-1.0, -1.0, -1.0, // Second gaussian: scale sum = -3
 			0.0, 0.0, 0.0, // Third gaussian: scale sum = 0 (median)
 			1.0, 1.0, 1.0, // Fourth gaussian: scale sum = 3
 			2.0, 2.0, 2.0, // Fifth gaussian: scale sum = 6
-		];
-		let median_vol = gs.median_volume();
-		// median scale sum is 0
-		let expected_vol = (4.0 / 3.0) * std::f32::consts::PI * 0.0_f32.exp();
+		],
+		(4.0 / 3.0) * std::f32::consts::PI * 0.0_f32.exp(),
+		1e-5_f32,
+	)]
+	// Set up scales for volume calculation (log scale)
+	// volume = 4/3 * pi * exp(scale_sum)
+	// use known values: scales [-1,-1,-1], [0,0,0], [1,1,1]
+	// scale sums: -3, 0, 3
+	// median scale sum: 0
+	// expected median volume: 4/3 * pi * exp(0) = 4/3 * pi
+	fn test_median_volume(
+		#[case] mut gs: GaussianSplat,
+		#[case] scales: Vec<f32>,
+		#[case] expected_vol: f32,
+		#[case] epsilon: f32,
+	) {
+		gs.scales = scales;
 
-		assert_relative_eq!(median_vol, expected_vol, epsilon = 1e-5);
+		assert_relative_eq!(gs.median_volume(), expected_vol, epsilon = epsilon);
 	}
 }
