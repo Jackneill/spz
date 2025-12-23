@@ -7,7 +7,7 @@ description = """SPZ file format handling for Python (in Rust)."""
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/Jackneill/spz"
 repository = "https://github.com/Jackneill/spz"
-readme = "README.md"
+readme = "../../README.md"
 keywords = ["gaussian-splatting", "point-cloud", "3d", "graphics", "rendering"]
 categories = [
 	"graphics",
