@@ -55,6 +55,8 @@ spherical harmonics degrees and coordinate system support.
 
 See [docs/SPZ.md](docs/SPZ.md) for more information.
 
+## Rust
+
 ## Usage
 
 ```toml
@@ -170,6 +172,10 @@ just bench
 
 * Install the `mold` linker: <https://github.com/rui314/mold>
 * [Install `nextest`](https://nexte.st/docs/installation/pre-built-binaries/)
+
+## Python
+
+TODO.
 
 ## Documentation
 
