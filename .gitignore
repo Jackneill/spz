@@ -9,6 +9,8 @@ lerna-debug.log*
 
 crates/pyspz/.env
 
+flatpak/cargo-sources.json
+
 node_modules
 dist/*
 dist-ssr
