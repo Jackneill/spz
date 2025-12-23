@@ -158,7 +158,7 @@ just bench
 * The html report of the benchmark can be found under `target/criterion/report/index.html`.
 * View Benchmark and Profiling data on [CodSpeed](https://codspeed.io/Jackneill/spz), (from CI runs).
 
-## Code Coverage
+## Test Code Coverage
 
 <a href="https://codecov.io/github/Jackneill/spz">
 	<img alt="CodeCov Grid" src="https://codecov.io/github/Jackneill/spz/graphs/tree.svg?token=10QLWY4MWG"/>
