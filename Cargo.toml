@@ -1,58 +1,6 @@
-[package]
-name = "spz"
-version = "0.0.6"
-edition = "2024"
-authors = ["See AUTHORS.md"]
-description = """SPZ file format handling for Rust, and CLI tooling."""
-license = "MIT OR Apache-2.0"
-homepage = "https://github.com/Jackneill/spz"
-repository = "https://github.com/Jackneill/spz"
-readme = "README.md"
-keywords = ["gaussian-splatting", "point-cloud", "3d", "graphics", "rendering"]
-categories = [
-	"graphics",
-	"game-development",
-	"rendering",
-	"rendering::data-formats",
-]
-publish = true
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
-
-[dependencies]
-anyhow = { version = "1.0", default-features = true, features = [] }
-thiserror = { version = "2.0", default-features = true, features = [] }
-clap = { version = "4.5", default-features = true, features = [
-	"env",
-	"unicode",
-	"derive",
-] }
-memmap2 = { version = "0.9", default-features = true, features = [] }
-libc = { version = "0.2", default-features = true, features = [] }
-flate2 = { version = "1.1", default-features = true, features = [] }
-serde_json = { version = "1.0", default-features = true, features = [
-	"float_roundtrip",
-] }
-serde = { version = "1.0", default-features = true, features = ["derive"] }
-static_assertions = { version = "1.1", default-features = true, features = [] }
-rayon = { version = "1.11", default-features = true, features = [] }
-tokio = { version = "1.48", default-features = true, features = ["full"] }
-likely_stable = { version = "0.1", default-features = true, features = [] }
-
-[dev-dependencies]
-criterion = { version = "0.8", default-features = true, features = [
-	"html_reports",
-	"async_tokio",
-] }
-codspeed-criterion-compat = { version = "4.1.0", default-features = true, features = [
-	"async",
-	"async_tokio",
-] }
-rstest = { version = "0.26", default-features = true, features = [] }
-approx = { version = "0.5", default-features = true, features = [] }
-rand = { version = "0.9", default-features = true, features = [] }
+[workspace]
+members = ["crates/spz", "crates/pyspz"]
+resolver = "2"
 
 [profile.release]
 opt-level = 3
@@ -69,8 +17,3 @@ lto = "thin"
 [profile.bench]
 lto = true
 codegen-units = 1
-
-[[bench]]
-name = "spz_bench"
-harness = false
-path = "benches/main.rs"
