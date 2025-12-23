@@ -27,7 +27,7 @@ async fn load_spz_async<P>(spz_file: P) -> Result<GaussianSplat>
 where
 	P: AsRef<Path>,
 {
-	let gs = spz::GaussianSplat::builder()
+	spz::GaussianSplat::builder()
 		.filepath(spz_file)
 		.packed(true)?
 		.unpack_options(
@@ -36,7 +36,5 @@ where
 				.build(),
 		)
 		.load_async()
-		.await?;
-
-	Ok(gs)
+		.await
 }
