@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 use std::path::PathBuf;
 
 pub const SH_4BIT_EPSILON: f32 = 2.0 / 32.0 + 0.5 / 255.0;

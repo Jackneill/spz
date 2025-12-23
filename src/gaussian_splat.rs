@@ -175,6 +175,13 @@ impl GaussianSplat {
 	{
 		let compressed = self.serialize_as_packed_bytes(pack_opts)?;
 
+		tokio::fs::create_dir_all(
+			filepath.as_ref()
+				.parent()
+				.ok_or_else(|| anyhow::anyhow!("recursive mkdir failed"))?,
+		)
+		.await?;
+
 		tokio::fs::write(filepath, compressed)
 			.await
 			.with_context(|| "unable to write to file")
@@ -187,12 +194,12 @@ impl GaussianSplat {
 	{
 		let compressed = self.serialize_as_packed_bytes(pack_opts)?;
 
-		// mmap on macos isn't great according to ripgrep code
-		if cfg!(target_os = "macos") {
-			return std::fs::write(filepath, compressed)
-				.with_context(|| "unable to write to file");
-		}
-		mmap::write(filepath, compressed).with_context(|| "cannot mmap file to write it")
+		std::fs::create_dir_all(
+			filepath.as_ref()
+				.parent()
+				.ok_or_else(|| anyhow::anyhow!("recursive mkdir failed"))?,
+		)?;
+		std::fs::write(filepath, compressed).with_context(|| "unable to write to file")
 	}
 
 	pub fn serialize_as_packed_bytes(&self, pack_opts: &PackOptions) -> Result<Vec<u8>> {

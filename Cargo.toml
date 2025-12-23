@@ -1,6 +1,6 @@
 [package]
 name = "spz"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2024"
 authors = ["See AUTHORS.md"]
 description = """SPZ file format handling for Rust, and CLI tooling."""
@@ -73,4 +73,4 @@ codegen-units = 1
 [[bench]]
 name = "spz_bench"
 harness = false
-path = "benches/lib.rs"
+path = "benches/main.rs"

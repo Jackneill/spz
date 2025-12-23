@@ -53,7 +53,7 @@ See [docs/SPZ.md](docs/SPZ.md) for more information.
 ## Usage
 
 ```toml
-spz = { version = "0.0.5", default-features = false, features = [] }
+spz = { version = "0.0.6", default-features = false, features = [] }
 ```
 
 ```rust
