@@ -23,6 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
+.flatpak-builder/
+flatpak/repo
+
 /target
 /debug
 /assets/*

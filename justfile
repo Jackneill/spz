@@ -70,7 +70,7 @@ flatpak-build: flatpak-cargo-sources
 		--force-clean \
 		--user \
 		-y \
-		repo \
+		flatpak/repo \
 		flatpak/org.jackneill.spz.yml
 	rm flatpak/cargo-sources.json
 
