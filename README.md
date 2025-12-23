@@ -40,6 +40,11 @@
 	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=security" alt="FOSSA Status">
 		<img alt="FOSSA Security" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=security"/>
 	</a>
+	<hr>
+	<br>
+	<a href='https://flathub.org/apps/org.gimp.GIMP'>
+		<img width='240' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
+	</a>
 </p>
 
 ## What is SPZ?
@@ -146,7 +151,7 @@ just bench
 ```
 
 * The html report of the benchmark can be found under `target/criterion/report/index.html`.
-* View Benchmark and Profiling data on [CodSpeed](https://codspeed.io/Jackneill/spz), (CI runs).
+* View Benchmark and Profiling data on [CodSpeed](https://codspeed.io/Jackneill/spz), (from CI runs).
 
 ## Code Coverage
 
