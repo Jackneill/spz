@@ -51,9 +51,6 @@ assets:
 	test -e assets/racoonfamily.spz || curl -L -o assets/racoonfamily.spz https://github.com/nianticlabs/spz/raw/refs/heads/main/samples/racoonfamily.spz
 	test -e assets/hornedlizard.spz || curl -L -o assets/hornedlizard.spz https://github.com/nianticlabs/spz/raw/refs/heads/main/samples/hornedlizard.spz
 
-clean:
-	rm -rf ./target
-
 flatpak-prepare: uv-install
 	flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 	flatpak install -y org.freedesktop.Sdk.Extension.rust-stable/x86_64/25.08
@@ -85,3 +82,14 @@ docker-build-image:
 
 dr *args:
 	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{app_name}} {{args}}
+
+py-setup:
+	uv run pip install maturin
+	uv run maturin develop --manifest-path crates/pyspz/Cargo.toml
+
+py:
+	#!/usr/bin/env -S just --justfile shebang
+	uv run python -i -c "import spz"
+
+clean:
+	rm -rf ./target

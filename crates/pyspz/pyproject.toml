@@ -4,10 +4,54 @@ build-backend = "maturin"
 
 [project]
 name = "spz"
+description = "SPZ file format handling for Python (in Rust)."
 requires-python = ">=3.8"
+readme = "../../README.md"
+license = { text = "MIT OR Apache-2.0" }
+keywords = [
+	"gaussian-splatting",
+	"point-cloud",
+	"3d",
+	"graphics",
+	"compression",
+	"spz",
+]
+authors = [{ name = "See AUTHORS.md" }]
 classifiers = [
-    "Programming Language :: Rust",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
+	#"Development Status :: 4 - Beta",
+	"Intended Audience :: Developers",
+	"Intended Audience :: Science/Research",
+	"License :: OSI Approved :: MIT License",
+	"License :: OSI Approved :: Apache License, Version 2.0",
+	"Operating System :: OS Independent",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+	"Programming Language :: Rust",
+	"Programming Language :: Python :: Implementation :: CPython",
+	"Programming Language :: Python :: Implementation :: PyPy",
+	"Topic :: Multimedia :: Graphics :: 3D Modeling",
+	"Topic :: Scientific/Engineering :: Visualization",
 ]
 dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = []
+
+[project.urls]
+Homepage = "https://github.com/Jackneill/spz"
+Repository = "https://github.com/Jackneill/spz.git"
+Documentation = "https://github.com/Jackneill/spz#readme"
+Issues = "https://github.com/Jackneill/spz/issues"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "spz"
+include = ["spz.pyi", "py.typed"]
+
+[dependency-groups]
+dev = ["maturin>=1.10.2"]

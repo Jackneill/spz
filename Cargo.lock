@@ -904,6 +904,7 @@ name = "pyspz"
 version = "0.0.1"
 dependencies = [
  "pyo3",
+ "spz 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1187,6 +1188,26 @@ dependencies = [
  "rand",
  "rayon",
  "rstest",
+ "serde",
+ "serde_json",
+ "static_assertions",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "spz"
+version = "0.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0aec3bab2adce9c75cb1ff13474edd66e06fe5ef7103789d9dee9856341431e"
+dependencies = [
+ "anyhow",
+ "clap",
+ "flate2",
+ "libc",
+ "likely_stable",
+ "memmap2",
+ "rayon",
  "serde",
  "serde_json",
  "static_assertions",

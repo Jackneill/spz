@@ -59,6 +59,7 @@ See [docs/SPZ.md](docs/SPZ.md) for more information.
 
 ```sh
 $ path/to/spz info assets/racoonfamily.spz
+
 GaussianSplat={num_points=932560, sh_degree=3, antialiased=true, median_ellipsoid_volume=0.0000000046213082, bbox=[x=-281.779541 to 258.382568, y=-240.000000 to 240.000000, z=-240.000000 to 240.000000]}
 ```
 
@@ -175,7 +176,57 @@ just bench
 
 ## Python
 
-TODO.
+## Usage
+
+```sh
+uv run pip install spz
+```
+
+```toml
+# pyproject.toml
+
+[project]
+dependencies = [
+    "spz",
+]
+```
+
+## Examples
+
+```py
+import spz
+
+# Load from file
+splat = spz.load("scene.spz")
+# or
+splat = spz.GaussianSplat.load("scene.spz", coordinate_system=spz.CoordinateSystem.RUB)
+
+# Access properties
+print(f"{splat.num_points:,} points")
+print(f"center: {splat.bbox.center}")
+print(f"size: {splat.bbox.size}")
+
+# Access data (flat arrays)
+positions = splat.positions  # [x1, y1, z1, x2, y2, z2, ...]
+scales = splat.scales
+rotations = splat.rotations
+alphas = splat.alphas
+colors = splat.colors
+sh = splat.spherical_harmonics
+
+data = splat.to_bytes()
+splat2 = spz.GaussianSplat.from_bytes(data)  # Serialize
+
+splat.save("output.spz")  # Save to file
+
+new_splat = spz.GaussianSplat(
+    positions=[0.0, 0.0, 0.0, 1.0, 2.0, 3.0],  # flat array
+    scales=[-5.0] * 6,
+    rotations=[1.0, 0.0, 0.0, 0.0] * 2,
+    alphas=[0.5, 0.8],
+    colors=[255.0, 0.0, 0.0, 0.0, 255.0, 0.0],
+)
+```
 
 ## Documentation
 

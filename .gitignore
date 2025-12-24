@@ -8,8 +8,8 @@ pnpm-debug.log*
 lerna-debug.log*
 
 crates/pyspz/.env
-
 flatpak/cargo-sources.json
+crates/pyspz/uv.lock
 
 node_modules
 dist/*
