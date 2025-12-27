@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::CoordinateSystem;
+use crate::coord::CoordinateSystem;
 
 #[derive(Clone, Debug)]
 pub struct UnpackOptionsBuilder {

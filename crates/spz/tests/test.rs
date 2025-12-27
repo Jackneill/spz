@@ -3,7 +3,10 @@
 use approx::assert_relative_eq;
 use rand::{Rng, SeedableRng, rngs::StdRng};
 use rstest::rstest;
-use spz::{CoordinateSystem, GaussianSplat, PackOptions, UnpackOptions, gaussian_splat};
+use spz::{
+	coord::CoordinateSystem, gaussian_splat, gaussian_splat::GaussianSplat,
+	packed::PackOptions, unpacked::UnpackOptions,
+};
 
 use crate::util::mktmp;
 

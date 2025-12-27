@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyList};
 
 // Import the spz crate with a different name to avoid conflict with the pymodule.
-use ::spz as spz_rs;
+use ::spz::{self as spz_rs};
 
 /// Convert spz::CoordinateSystem to/from our Python enum.
 fn coord_sys_from_str(s: &str) -> PyResult<spz_rs::CoordinateSystem> {
@@ -148,15 +148,10 @@ impl CoordinateSystem {
 }
 
 /// Bounding box of a Gaussian splat.
-#[pyclass(get_all)]
+#[pyclass]
 #[derive(Clone)]
 pub struct BoundingBox {
-	pub min_x: f32,
-	pub max_x: f32,
-	pub min_y: f32,
-	pub max_y: f32,
-	pub min_z: f32,
-	pub max_z: f32,
+	inner: spz_rs::gaussian_splat::BoundingBox,
 }
 
 #[pymethods]
@@ -164,33 +159,38 @@ impl BoundingBox {
 	fn __repr__(&self) -> String {
 		format!(
 			"BoundingBox(x=[{:.6}, {:.6}], y=[{:.6}, {:.6}], z=[{:.6}, {:.6}])",
-			self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z
+			self.inner.min_x,
+			self.inner.max_x,
+			self.inner.min_y,
+			self.inner.max_y,
+			self.inner.min_z,
+			self.inner.max_z
 		)
 	}
 
 	/// Get the size (extent) of the bounding box in each dimension.
 	///
 	/// Returns:
-	///     A tuple of (width, height, depth).
+	/// 	A tuple of (width, height, depth).
 	#[getter]
 	fn size(&self) -> (f32, f32, f32) {
 		(
-			self.max_x - self.min_x,
-			self.max_y - self.min_y,
-			self.max_z - self.min_z,
+			self.inner.max_x - self.inner.min_x,
+			self.inner.max_y - self.inner.min_y,
+			self.inner.max_z - self.inner.min_z,
 		)
 	}
 
 	/// Get the center of the bounding box.
 	///
 	/// Returns:
-	///     A tuple of (x, y, z) center coordinates.
+	/// 	A tuple of (x, y, z) center coordinates.
 	#[getter]
 	fn center(&self) -> (f32, f32, f32) {
 		(
-			(self.min_x + self.max_x) / 2.0,
-			(self.min_y + self.max_y) / 2.0,
-			(self.min_z + self.max_z) / 2.0,
+			(self.inner.min_x + self.inner.max_x) / 2.0,
+			(self.inner.min_y + self.inner.max_y) / 2.0,
+			(self.inner.min_z + self.inner.max_z) / 2.0,
 		)
 	}
 }
@@ -319,14 +319,15 @@ impl GaussianSplat {
 				if sh.len() != expected_sh_len {
 					return Err(PyValueError::new_err(format!(
 						"spherical_harmonics length must be {} for sh_degree={}, got {}",
-						expected_sh_len, sh_degree, sh.len()
+						expected_sh_len,
+						sh_degree,
+						sh.len()
 					)));
 				}
 				sh
 			},
 			None => vec![0.0_f32; expected_sh_len],
 		};
-
 		Ok(Self {
 			inner: spz_rs::GaussianSplat {
 				num_points: num_points as i32,
@@ -365,7 +366,9 @@ impl GaussianSplat {
 			to_coord_sys: coord_sys,
 		};
 		let inner = spz_rs::GaussianSplat::load_packed_from_file(path, &unpack_opts)
-			.map_err(|e| PyValueError::new_err(format!("Failed to load SPZ file: {}", e)))?;
+			.map_err(|e| {
+				PyValueError::new_err(format!("Failed to load SPZ file: {}", e))
+			})?;
 
 		Ok(Self { inner })
 	}
@@ -389,11 +392,13 @@ impl GaussianSplat {
 		let unpack_opts = spz_rs::UnpackOptions {
 			to_coord_sys: coord_sys,
 		};
-		let packed = spz_rs::GaussianSplat::load_packed(data)
-			.map_err(|e| PyValueError::new_err(format!("Failed to parse SPZ data: {}", e)))?;
-
+		let packed = spz_rs::GaussianSplat::load_packed(data).map_err(|e| {
+			PyValueError::new_err(format!("Failed to parse SPZ data: {}", e))
+		})?;
 		let inner = spz_rs::GaussianSplat::new_from_packed_gaussians(&packed, &unpack_opts)
-			.map_err(|e| PyValueError::new_err(format!("Failed to unpack SPZ data: {}", e)))?;
+			.map_err(|e| {
+				PyValueError::new_err(format!("Failed to unpack SPZ data: {}", e))
+			})?;
 
 		Ok(Self { inner })
 	}
@@ -405,15 +410,20 @@ impl GaussianSplat {
 	///     from_coordinate_system: Source coordinate system of the data.
 	///         Defaults to UNSPECIFIED (no conversion).
 	#[pyo3(signature = (path, from_coordinate_system=None))]
-	fn save(&self, path: &str, from_coordinate_system: Option<CoordinateSystem>) -> PyResult<()> {
+	fn save(
+		&self,
+		path: &str,
+		from_coordinate_system: Option<CoordinateSystem>,
+	) -> PyResult<()> {
 		let coord_sys = from_coordinate_system
 			.map(|cs| cs.inner)
 			.unwrap_or(spz_rs::CoordinateSystem::UNSPECIFIED);
 
 		let pack_opts = spz_rs::PackOptions { from: coord_sys };
-		self.inner
-			.save_as_packed(path, &pack_opts)
-			.map_err(|e| PyValueError::new_err(format!("Failed to save SPZ file: {}", e)))
+
+		self.inner.save_as_packed(path, &pack_opts).map_err(|e| {
+			PyValueError::new_err(format!("Failed to save SPZ file: {}", e))
+		})
 	}
 
 	/// Serialize the GaussianSplat to bytes.
@@ -435,10 +445,13 @@ impl GaussianSplat {
 			.unwrap_or(spz_rs::CoordinateSystem::UNSPECIFIED);
 
 		let pack_opts = spz_rs::PackOptions { from: coord_sys };
+
 		let bytes = self
 			.inner
 			.serialize_as_packed_bytes(&pack_opts)
-			.map_err(|e| PyValueError::new_err(format!("Failed to serialize SPZ: {}", e)))?;
+			.map_err(|e| {
+				PyValueError::new_err(format!("Failed to serialize SPZ: {}", e))
+			})?;
 
 		Ok(PyBytes::new(py, &bytes))
 	}
@@ -448,7 +461,11 @@ impl GaussianSplat {
 	/// Args:
 	///     from_system: The current coordinate system of the data.
 	///     to_system: The target coordinate system.
-	fn convert_coordinates(&mut self, from_system: CoordinateSystem, to_system: CoordinateSystem) {
+	fn convert_coordinates(
+		&mut self,
+		from_system: CoordinateSystem,
+		to_system: CoordinateSystem,
+	) {
 		self.inner
 			.convert_coordinates(from_system.inner, to_system.inner);
 	}
@@ -480,6 +497,7 @@ impl GaussianSplat {
 	#[getter]
 	fn positions<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
 		let list = PyList::new(py, &self.inner.positions)?;
+
 		Ok(list)
 	}
 
@@ -487,6 +505,7 @@ impl GaussianSplat {
 	#[getter]
 	fn scales<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
 		let list = PyList::new(py, &self.inner.scales)?;
+
 		Ok(list)
 	}
 
@@ -494,6 +513,7 @@ impl GaussianSplat {
 	#[getter]
 	fn rotations<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
 		let list = PyList::new(py, &self.inner.rotations)?;
+
 		Ok(list)
 	}
 
@@ -501,6 +521,7 @@ impl GaussianSplat {
 	#[getter]
 	fn alphas<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
 		let list = PyList::new(py, &self.inner.alphas)?;
+
 		Ok(list)
 	}
 
@@ -508,6 +529,7 @@ impl GaussianSplat {
 	#[getter]
 	fn colors<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
 		let list = PyList::new(py, &self.inner.colors)?;
+
 		Ok(list)
 	}
 
@@ -515,21 +537,25 @@ impl GaussianSplat {
 	#[getter]
 	fn spherical_harmonics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
 		let list = PyList::new(py, &self.inner.spherical_harmonics)?;
+
 		Ok(list)
 	}
 
 	/// Get the bounding box of the splat.
 	#[getter]
-	fn bbox(&self) -> BoundingBox {
+	fn bbox(&self) -> PyResult<BoundingBox> {
 		let bb = self.inner.bbox();
-		BoundingBox {
-			min_x: bb.min_x,
-			max_x: bb.max_x,
-			min_y: bb.min_y,
-			max_y: bb.max_y,
-			min_z: bb.min_z,
-			max_z: bb.max_z,
-		}
+
+		Ok(BoundingBox {
+			inner: spz_rs::gaussian_splat::BoundingBox {
+				min_x: bb.min_x,
+				max_x: bb.max_x,
+				min_y: bb.min_y,
+				max_y: bb.max_y,
+				min_z: bb.min_z,
+				max_z: bb.max_z,
+			},
+		})
 	}
 
 	/// Get the median ellipsoid volume of the Gaussians.
@@ -544,7 +570,9 @@ impl GaussianSplat {
 	fn __repr__(&self) -> String {
 		format!(
 			"GaussianSplat(num_points={}, sh_degree={}, antialiased={})",
-			self.inner.num_points, self.inner.spherical_harmonics_degree, self.inner.antialiased
+			self.inner.num_points,
+			self.inner.spherical_harmonics_degree,
+			self.inner.antialiased
 		)
 	}
 
@@ -595,5 +623,6 @@ fn spz(m: &Bound<'_, PyModule>) -> PyResult<()> {
 	m.add_class::<CoordinateSystem>()?;
 	m.add_class::<BoundingBox>()?;
 	m.add_function(wrap_pyfunction!(load, m)?)?;
+
 	Ok(())
 }

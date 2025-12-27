@@ -8,10 +8,11 @@ use serde::{Deserialize, Serialize};
 use tokio::io::AsyncReadExt;
 
 use crate::{
-	PackOptions, compression, consts,
+	compression, consts,
 	coord::{CoordinateConverter, CoordinateSystem},
 	math::{self, dim_for_degree, half_to_float},
 	mmap,
+	packed::PackOptions,
 	packed::PackedGaussians,
 	unpacked::UnpackOptions,
 };
@@ -651,6 +652,28 @@ pub struct BoundingBox {
 	pub max_y: f32,
 	pub min_z: f32,
 	pub max_z: f32,
+}
+
+impl BoundingBox {
+	pub fn size(&self) -> (f32, f32, f32) {
+		(
+			self.max_x - self.min_x,
+			self.max_y - self.min_y,
+			self.max_z - self.min_z,
+		)
+	}
+
+	/// Get the center of the bounding box.
+	///
+	/// Returns:
+	/// 	A tuple of (x, y, z) center coordinates.
+	pub fn center(&self) -> (f32, f32, f32) {
+		(
+			(self.min_x + self.max_x) / 2.0,
+			(self.min_y + self.max_y) / 2.0,
+			(self.min_z + self.max_z) / 2.0,
+		)
+	}
 }
 
 #[derive(Clone, Debug)]

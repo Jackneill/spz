@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use codspeed_criterion_compat::Criterion;
-use spz::{GaussianSplat, PackOptions, UnpackOptions};
+use spz::{packed::PackOptions, prelude::GaussianSplat, unpacked::UnpackOptions};
 use tokio::runtime::Runtime;
 
 use crate::util;

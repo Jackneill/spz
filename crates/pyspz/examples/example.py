@@ -1,4 +1,4 @@
-from ..py import spz
+from ..pypkg import spz
 
 # Load from file
 splat = spz.load("scene.spz")
@@ -33,3 +33,6 @@ new_splat = spz.GaussianSplat(
     alphas=[0.5, 0.8],
     colors=[255.0, 0.0, 0.0, 0.0, 255.0, 0.0],
 )
+
+with spz.modified_splat("scene.spz", "scene_rotated.spz") as splat:
+    splat.rotate_180_deg_about_x()

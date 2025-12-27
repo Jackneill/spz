@@ -9,9 +9,9 @@ use anyhow::{Context, Result};
 use likely_stable::unlikely;
 use serde::{Deserialize, Serialize};
 
-use crate::{CoordinateSystem, PackedGaussiansHeader};
-use crate::{UnpackedGaussian, coord::CoordinateConverter};
 use crate::{consts, math};
+use crate::{coord::CoordinateConverter, unpacked::UnpackedGaussian};
+use crate::{coord::CoordinateSystem, header::PackedGaussiansHeader};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PackOptions {

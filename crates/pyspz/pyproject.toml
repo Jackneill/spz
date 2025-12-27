@@ -51,7 +51,7 @@ Issues = "https://github.com/Jackneill/spz/issues"
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "spz"
-include = ["spz.pyi", "py.typed"]
+python-source = "pypkg"
 
 [dependency-groups]
 dev = ["maturin>=1.10.2"]

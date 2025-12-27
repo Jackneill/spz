@@ -1,6 +1,6 @@
 <h1 align="center">SPZ<span></span></h1>
 
-<div align="center"><b>Rust</b> and <b>Python</b> implementation of the <b>.SPZ</b> file format and <b>CLI</b> tools.</div>
+<div align="center"><b>Rust</b> and <b>Python</b> implementation of the <b>.SPZ</b> file format (v3) and <b>CLI</b> tools.</div>
 &nbsp;
 <div align="center"><b>WIP</b></div>
 &nbsp;
@@ -89,18 +89,18 @@ cargo run --example load_spz
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
-use spz::{GaussianSplat, UnpackOptions};
+use spz::{coord::CoordinateSystem, prelude::GaussianSplat, unpacked::UnpackOptions};
 
 fn main() -> Result<()> {
 	let mut sample_spz = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 	sample_spz.push("assets/racoonfamily.spz");
 
-	let _gs = spz::GaussianSplat::builder()
+	let _gs = GaussianSplat::builder()
 		.filepath(sample_spz)
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
-				.to_coord_system(spz::CoordinateSystem::default())
+				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
 		.load()?;
@@ -113,12 +113,12 @@ async fn load_spz_async<P>(spz_file: P) -> Result<GaussianSplat>
 where
 	P: AsRef<Path>,
 {
-	spz::GaussianSplat::builder()
+	GaussianSplat::builder()
 		.filepath(spz_file)
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
-				.to_coord_system(spz::CoordinateSystem::default())
+				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
 		.load_async()
@@ -145,12 +145,18 @@ pub struct GaussianSplat {
 }
 ```
 
+## Tests
+
+### Pre-Requisites
+
+* [Install `nextest` runner](https://nexte.st/docs/installation/pre-built-binaries/).
+
 ## Benches
 
 ### Pre-Requisites
 
+* `cargo install cargo-criterion`.
 * Install `gnuplot` for html reports.
-* [Install `nextest` runner](https://nexte.st/docs/installation/pre-built-binaries/).
 
 ### Run
 
@@ -158,28 +164,48 @@ pub struct GaussianSplat {
 just bench
 ```
 
-* The html report of the benchmark can be found under `target/criterion/report/index.html`.
+* The html report of the benchmark can be found under `./target/criterion/report/index.html`.
 * View Benchmark and Profiling data on [CodSpeed](https://codspeed.io/Jackneill/spz), (from CI runs).
 
 ## Test Code Coverage
 
-<a href="https://codecov.io/github/Jackneill/spz">
-	<img alt="CodeCov Grid" src="https://codecov.io/github/Jackneill/spz/graphs/tree.svg?token=10QLWY4MWG"/>
-</a>
+<table>
+	<tr>
+		<td align="center"><b>spz (Rust crate)</b></td>
+		<td align="center"><b>pyspz (Rust crate)</b></td>
+		<td align="center"><b>spz (Python)</b></td>
+	</tr>
+	<tr>
+		<td>
+			<a href="https://codecov.io/github/Jackneill/spz">
+				<img alt="CodeCov Grid" src="https://codecov.io/github/Jackneill/spz/graphs/tree.svg?token=10QLWY4MWG" width="300"/>
+			</a>
+		</td>
+		<td>
+			<a href="https://codecov.io/github/Jackneill/spz">
+				<img alt="CodeCov Sunburst" src="https://codecov.io/github/Jackneill/spz/graphs/sunburst.svg?token=10QLWY4MWG" width="300"/>
+			</a>
+		</td>
+		<td>
+			<a href="https://codecov.io/github/Jackneill/spz">
+				<img alt="CodeCov Icicle" src="https://codecov.io/github/Jackneill/spz/graphs/icicle.svg?token=10QLWY4MWG" width="300"/>
+			</a>
+		</td>
+	</tr>
+</table>
 
-## Development
+## Build
 
 ### Pre-Requisites
 
 * Install the `mold` linker: <https://github.com/rui314/mold>
-* [Install `nextest`](https://nexte.st/docs/installation/pre-built-binaries/)
 
 ## Python
 
 ## Usage
 
 ```sh
-uv run pip install spz
+uvx pip install spz
 ```
 
 ```toml
@@ -226,6 +252,9 @@ new_splat = spz.GaussianSplat(
     alphas=[0.5, 0.8],
     colors=[255.0, 0.0, 0.0, 0.0, 255.0, 0.0],
 )
+
+with spz.modified_splat("scene.spz", "scene_rotated.spz") as splat:
+    splat.rotate_180_deg_about_x()
 ```
 
 ## Documentation

@@ -16,6 +16,8 @@ dist/*
 dist-ssr
 *.local
 
+.ruff_cache
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

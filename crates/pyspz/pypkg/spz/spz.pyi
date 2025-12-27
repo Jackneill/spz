@@ -1,9 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
 """SPZ - Gaussian Splat file format handling.
 
 Python implementation (in Rust) of the .SPZ file format.
 """
-
-from typing import Optional
 
 
 class CoordinateSystem:
@@ -139,7 +138,7 @@ class GaussianSplat:
         alphas: list[float],
         colors: list[float],
         sh_degree: int = 0,
-        spherical_harmonics: Optional[list[float]] = None,
+        spherical_harmonics: list[float] | None = None,
         antialiased: bool = False,
     ) -> None:
         """Create a new GaussianSplat from arrays.
@@ -164,8 +163,8 @@ class GaussianSplat:
 
     @staticmethod
     def load(
-        path: str, coordinate_system: Optional[CoordinateSystem] = None
-    ) -> "GaussianSplat":
+        path: str, coordinate_system = CoordinateSystem.UNSPECIFIED
+    ) -> GaussianSplat:
         """Load a GaussianSplat from an SPZ file.
 
         Args:
@@ -183,8 +182,8 @@ class GaussianSplat:
 
     @staticmethod
     def from_bytes(
-        data: bytes, coordinate_system: Optional[CoordinateSystem] = None
-    ) -> "GaussianSplat":
+        data: bytes, coordinate_system = CoordinateSystem.UNSPECIFIED,
+    ) -> GaussianSplat:
         """Load a GaussianSplat from bytes.
 
         Args:
@@ -200,7 +199,7 @@ class GaussianSplat:
     def save(
         self,
         path: str,
-        from_coordinate_system: Optional[CoordinateSystem] = None,
+        from_coordinate_system = CoordinateSystem.UNSPECIFIED,
     ) -> None:
         """Save the GaussianSplat to an SPZ file.
 
@@ -212,7 +211,7 @@ class GaussianSplat:
         ...
 
     def to_bytes(
-        self, from_coordinate_system: Optional[CoordinateSystem] = None
+        self, from_coordinate_system = CoordinateSystem.UNSPECIFIED,
     ) -> bytes:
         """Serialize the GaussianSplat to bytes.
 
@@ -305,7 +304,7 @@ class GaussianSplat:
 
 
 def load(
-    path: str, coordinate_system: Optional[CoordinateSystem] = None
+    path: str, coordinate_system = CoordinateSystem.UNSPECIFIED,
 ) -> GaussianSplat:
     """Load a GaussianSplat from an SPZ file.
 

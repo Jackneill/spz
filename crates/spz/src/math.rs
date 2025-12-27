@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use std::f32::consts::FRAC_1_SQRT_2;
+
 #[inline]
 pub fn degree_for_dim(dim: u8) -> u8 {
 	if dim < 3 {
@@ -51,9 +53,8 @@ pub fn unpack_quaternion_first_three(rotation: &mut [f32], r: &[u8]) {
 }
 
 pub fn unpack_quaternion_first_three_with_flip(rotation: &mut [f32], r: &[u8], flip_q: [f32; 3]) {
-	if rotation.len() < 4 || r.len() < 3 {
-		return;
-	}
+	debug_assert!(rotation.len() >= 4 && r.len() >= 3);
+
 	let scale = 1.0_f32 / 127.5_f32;
 
 	let mut xyz = [
@@ -84,9 +85,8 @@ pub fn unpack_quaternion_smallest_three_with_flip(
 	r: &[u8],
 	flip_q: [f32; 3],
 ) {
-	if rotation.len() < 4 || r.len() < 4 {
-		return;
-	}
+	debug_assert!(rotation.len() >= 4 && r.len() >= 4);
+
 	let mut comp: u32 = (r[0] as u32)
 		| ((r[1] as u32) << 8)
 		| ((r[2] as u32) << 16)
@@ -138,19 +138,18 @@ pub fn pack_quaternion_smallest_three(rotation: &[f32; 4], flip_q: [f32; 3]) -> 
 	let negate = q[i_largest] < 0.0;
 
 	let c_mask = (1_u32 << 9) - 1;
-	let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
-
 	let mut comp: u32 = i_largest as u32;
 
 	for i in 0..4 {
-		if i != i_largest {
-			let negbit = if (q[i] < 0.0) ^ negate { 1_u32 } else { 0_u32 };
-
-			let mag = ((c_mask as f32) * (q[i].abs() / sqrt1_2) + 0.5).floor() as u32;
-			let mag = mag.min(c_mask);
-
-			comp = (comp << 10) | (negbit << 9) | mag;
+		if i == i_largest {
+			continue;
 		}
+		let negbit = if (q[i] < 0.0) ^ negate { 1_u32 } else { 0_u32 };
+
+		let mag = ((c_mask as f32) * (q[i].abs() / FRAC_1_SQRT_2) + 0.5).floor() as u32;
+		let mag = mag.min(c_mask);
+
+		comp = (comp << 10) | (negbit << 9) | mag;
 	}
 	let r = {
 		let mut r = [0_u8; 4];

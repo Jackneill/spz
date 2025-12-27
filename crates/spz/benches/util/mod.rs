@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use rand::{Rng, SeedableRng, rngs::StdRng};
-use spz::{GaussianSplat, UnpackOptions, math};
+use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, math, unpacked::UnpackOptions};
 
 pub fn create_splat(num_points: i32) -> GaussianSplat {
 	let sh_degree = 2_i32;
@@ -43,24 +43,24 @@ pub fn create_splat(num_points: i32) -> GaussianSplat {
 }
 
 pub fn load_packed_from_file() -> Result<GaussianSplat> {
-	spz::GaussianSplat::builder()
+	GaussianSplat::builder()
 		.filepath("assets/racoonfamily.spz")
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
-				.to_coord_system(spz::CoordinateSystem::default())
+				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
 		.load()
 }
 
 pub async fn load_packed_from_file_async() -> Result<GaussianSplat> {
-	spz::GaussianSplat::builder()
+	GaussianSplat::builder()
 		.filepath("assets/racoonfamily.spz")
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
-				.to_coord_system(spz::CoordinateSystem::default())
+				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
 		.load_async()

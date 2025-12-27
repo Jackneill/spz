@@ -25,7 +25,9 @@ test: assets
 lint:
 	{{cargo}} fmt --check
 	{{cargo}} clippy
-	{{cargo}} deny check
+
+py-lint:
+	uvx ruff check crates/pyspz
 
 bench: assets
 	{{cargo}} bench \
@@ -34,11 +36,29 @@ bench: assets
 		--profile release \
 		--workspace
 
+bench-native: assets
+	RUSTFLAGS='-C target-cpu=native' {{cargo}} bench \
+		--all-features \
+		--benches \
+		--profile release \
+		--workspace
+
+security:
+	{{cargo}} deny check
+	{{cargo}} audit
+
 build-release: lint test
+	#RUSTFLAGS='-C target-cpu=native' {{cargo}} build --release
 	{{cargo}} build --release
+
+build-release-native: lint test
+	RUSTFLAGS='-C target-cpu=native' {{cargo}} build --release
 
 build:
 	{{cargo}} build
+
+build-native:
+	RUSTFLAGS='-C target-cpu=native' {{cargo}} build
 
 run *args:
 	{{cargo}} run --bin spz {{args}}
@@ -83,13 +103,14 @@ docker-build-image:
 dr *args:
 	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{app_name}} {{args}}
 
-py-setup:
-	uv run pip install maturin
-	uv run maturin develop --manifest-path crates/pyspz/Cargo.toml
+py-dev:
+	uvx maturin develop --manifest-path crates/pyspz/Cargo.toml
 
-py:
-	#!/usr/bin/env -S just --justfile shebang
-	uv run python -i -c "import spz"
+py-build:
+	uvx maturin build --release --manifest-path crates/pyspz/Cargo.toml
+
+py-publish:
+	uvx maturin publish --manifest-path crates/pyspz/Cargo.toml
 
 clean:
 	rm -rf ./target

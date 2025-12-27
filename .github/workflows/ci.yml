@@ -43,13 +43,37 @@ jobs:
       - uses: extractions/setup-just@v3
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@nextest
+
       - name: Install cargo deny
         run: |
           cargo install cargo-deny
 
       - name: Build
         run: just build
+
+  security:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: extractions/setup-just@v3
+      - uses: rui314/setup-mold@v1
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo deny
+        run: |
+          cargo install cargo-deny
+
+      - name: Install cargo audit
+        run: |
+          cargo install cargo-audit
+
+      - name: Security
+        run: just security
 
   test:
     runs-on: ubuntu-latest

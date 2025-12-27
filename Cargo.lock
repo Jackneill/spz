@@ -1188,6 +1188,7 @@ dependencies = [
  "rand",
  "rayon",
  "rstest",
+ "rustversion",
  "serde",
  "serde_json",
  "static_assertions",
