@@ -114,3 +114,7 @@ py-publish:
 
 clean:
 	rm -rf ./target
+	rm -rf ./flatpak/repo
+	rm ./flatpak/cargo-sources.json
+	rm -rf ./.flatpak-builder
+	rm -rf ./.ruff_cache

@@ -19,5 +19,5 @@ modules:
       - install -Dm0755 target/release/spz ${FLATPAK_DEST}/bin/spz
     sources:
       - cargo-sources.json
-      - type: dir
-        path: ../
+      #- type: dir
+      #  path: ../
