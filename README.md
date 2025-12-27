@@ -169,30 +169,9 @@ just bench
 
 ## Test Code Coverage
 
-<table>
-	<tr>
-		<td align="center"><b>spz (Rust crate)</b></td>
-		<td align="center"><b>pyspz (Rust crate)</b></td>
-		<td align="center"><b>spz (Python)</b></td>
-	</tr>
-	<tr>
-		<td>
-			<a href="https://codecov.io/github/Jackneill/spz">
-				<img alt="CodeCov Grid" src="https://codecov.io/github/Jackneill/spz/graphs/tree.svg?token=10QLWY4MWG" width="300"/>
-			</a>
-		</td>
-		<td>
-			<a href="https://codecov.io/github/Jackneill/spz">
-				<img alt="CodeCov Sunburst" src="https://codecov.io/github/Jackneill/spz/graphs/sunburst.svg?token=10QLWY4MWG" width="300"/>
-			</a>
-		</td>
-		<td>
-			<a href="https://codecov.io/github/Jackneill/spz">
-				<img alt="CodeCov Icicle" src="https://codecov.io/github/Jackneill/spz/graphs/icicle.svg?token=10QLWY4MWG" width="300"/>
-			</a>
-		</td>
-	</tr>
-</table>
+<a href="https://codecov.io/github/Jackneill/spz">
+	<img alt="CodeCov Grid" src="https://codecov.io/github/Jackneill/spz/graphs/tree.svg?token=10QLWY4MWG" width="300"/>
+</a>
 
 ## Build
 
