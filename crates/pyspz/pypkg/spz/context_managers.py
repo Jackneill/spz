@@ -28,7 +28,7 @@ PathLike = str | Path
 @contextmanager
 def open_spz(
     path: PathLike,
-    coordinate_system = CoordinateSystem.UNSPECIFIED,
+    coordinate_system=CoordinateSystem.UNSPECIFIED,
 ) -> Iterator[GaussianSplat]:
     """Context manager for loading an SPZ file.
 
@@ -76,7 +76,7 @@ class SplatReader:
     def __init__(
         self,
         path: PathLike,
-        from_coordinate_system = CoordinateSystem.UNSPECIFIED,
+        from_coordinate_system=CoordinateSystem.UNSPECIFIED,
     ) -> None:
         """Initialize the SplatReader.
 
@@ -127,7 +127,7 @@ class SplatWriter:
     def __init__(
         self,
         path: PathLike,
-        from_coordinate_system = CoordinateSystem.UNSPECIFIED,
+        from_coordinate_system=CoordinateSystem.UNSPECIFIED,
     ) -> None:
         """Initialize the SplatWriter.
 
@@ -158,7 +158,7 @@ class SplatWriter:
 @contextmanager
 def temp_splat(
     splat: GaussianSplat,
-    from_coordinate_system = CoordinateSystem.UNSPECIFIED,
+    from_coordinate_system=CoordinateSystem.UNSPECIFIED,
     suffix: str = ".spz",
 ) -> Iterator[Path]:
     """Context manager that saves a GaussianSplat to a temporary file.
@@ -195,8 +195,8 @@ def temp_splat(
 def modified_splat(
     path: PathLike,
     output_path: PathLike | None = None,
-    from_coordinate_system = CoordinateSystem.UNSPECIFIED,
-    to_coordinate_system = CoordinateSystem.UNSPECIFIED,
+    from_coordinate_system=CoordinateSystem.UNSPECIFIED,
+    to_coordinate_system=CoordinateSystem.UNSPECIFIED,
 ) -> Iterator[GaussianSplat]:
     """Context manager for loading, modifying, and saving an SPZ file.
 
