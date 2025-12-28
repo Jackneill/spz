@@ -44,7 +44,7 @@
 	</a>
 	<hr>
 	<br>
-	<a href='https://flathub.org/apps/org.jackneill.spz'>
+	<a href='https://flathub.org/apps/io.github.jackneill.spz'>
 		<img width='160' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
 	</a>
 </p>

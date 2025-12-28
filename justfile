@@ -76,23 +76,29 @@ flatpak-prepare: uv-install
 	flatpak install -y org.freedesktop.Sdk.Extension.rust-stable/x86_64/25.08
 	flatpak install -y org.flatpak.Builder
 
-flatpak-lint: flatpak-cargo-sources
-	flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest flatpak/org.jackneill.spz.yml
-	rm flatpak/cargo-sources.json
+flatpak-lint:
+	flatpak run --command=flatpak-builder-lint \
+		org.flatpak.Builder \
+		manifest flatpak/io.github.jackneill.spz.yml
 
-flatpak-build: flatpak-cargo-sources
+flatpak-build:
+	rm -rf ./.flatpak-build
+	rm -rf ./flatpak/repo
+	rm -rf ./flatpak/build
+
 	flatpak run org.flatpak.Builder \
+		-v \
 		--install \
 		--install-deps-from=flathub \
 		--force-clean \
+		--disable-rofiles-fuse \
+		--repo=flatpak/repo \
 		--user \
 		-y \
-		flatpak/repo \
-		flatpak/org.jackneill.spz.yml
-	rm flatpak/cargo-sources.json
+		flatpak/build \
+		flatpak/io.github.jackneill.spz.yml
 
-flatpak-cargo-sources: uv-install
-	uv run https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/refs/heads/master/cargo/flatpak-cargo-generator.py -o flatpak/cargo-sources.json Cargo.lock
+	flatpak run --command=flatpak-builder-lint -v org.flatpak.Builder repo flatpak/repo
 
 uv-install:
 	[ -x "$(command -v uv)" ] || curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -115,6 +121,6 @@ py-publish:
 clean:
 	rm -rf ./target
 	rm -rf ./flatpak/repo
-	rm ./flatpak/cargo-sources.json
+	rm -rf ./flatpak/build
 	rm -rf ./.flatpak-builder
 	rm -rf ./.ruff_cache

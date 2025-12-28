@@ -10,6 +10,7 @@ from __future__ import annotations
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
+from os import PathLike
 from pathlib import Path
 
 from spz import CoordinateSystem, GaussianSplat
@@ -20,9 +21,6 @@ __all__ = [
     "temp_splat",
     "modified_splat",
 ]
-
-
-PathLike = str | Path
 
 
 @contextmanager
@@ -220,6 +218,7 @@ def modified_splat(
     from spz import GaussianSplat
 
     splat = GaussianSplat.load(str(path), from_coordinate_system)
+
     try:
         yield splat
     finally:
