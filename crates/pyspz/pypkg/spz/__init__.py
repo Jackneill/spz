@@ -23,7 +23,7 @@ __all__ = [
     "CoordinateSystem",
     "BoundingBox",
     "load",
-    # Context managers (Python)
+    # Context managers
     "SplatReader",
     "SplatWriter",
     "temp_splat",

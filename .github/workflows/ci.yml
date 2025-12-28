@@ -11,13 +11,29 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  python-lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: extractions/setup-just@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Python Lint
+        run: just py-lint
+
   lint:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - uses: extractions/setup-just@v3
@@ -37,7 +53,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - uses: extractions/setup-just@v3
@@ -57,7 +73,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - uses: extractions/setup-just@v3
@@ -81,7 +97,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
       - uses: extractions/setup-just@v3
@@ -98,7 +114,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
       - uses: extractions/setup-just@v3
