@@ -36,7 +36,7 @@ allow = [
 	"Unicode-3.0",
 	"Zlib",
 	"Apache-2.0 WITH LLVM-exception",
-	"(MIT OR Apache-2.0) AND NCSA",
+	"NCSA",
 ]
 confidence-threshold = 1.0
 exceptions = []
