@@ -8,7 +8,7 @@ pub const SH_5BIT_EPSILON: f32 = 2.0 / 64.0 + 0.5 / 255.0;
 pub const EPSILON: f32 = 0.1;
 
 pub fn assets_dir() -> PathBuf {
-	PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets")
+	PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../assets")
 }
 
 pub fn mktmp() -> PathBuf {

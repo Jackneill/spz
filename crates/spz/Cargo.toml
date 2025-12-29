@@ -41,6 +41,7 @@ static_assertions = { version = "1.1", default-features = true, features = [] }
 rayon = { version = "1.11", default-features = true, features = [] }
 tokio = { version = "1.48", default-features = true, features = ["full"] }
 likely_stable = { version = "0.1", default-features = true, features = [] }
+arbitrary = { version = "1.4", default-features = true, features = ["derive"] }
 
 [dev-dependencies]
 criterion = { version = "0.8", default-features = true, features = [

@@ -8,7 +8,7 @@ use pyo3::types::{PyBytes, PyList};
 use ::spz::{self as spz_rs};
 
 /// Convert spz::CoordinateSystem to/from our Python enum.
-fn coord_sys_from_str(s: &str) -> PyResult<spz_rs::CoordinateSystem> {
+/*fn coord_sys_from_str(s: &str) -> PyResult<spz_rs::CoordinateSystem> {
 	match s.to_uppercase().as_str() {
 		"LDB" => Ok(spz_rs::CoordinateSystem::LDB),
 		"RDB" => Ok(spz_rs::CoordinateSystem::RDB),
@@ -38,7 +38,7 @@ fn coord_sys_to_str(cs: &spz_rs::CoordinateSystem) -> &'static str {
 		spz_rs::CoordinateSystem::RUF => "RUF",
 		spz_rs::CoordinateSystem::UNSPECIFIED => "UNSPECIFIED",
 	}
-}
+}*/
 
 /// Coordinate system enum.
 #[pyclass(eq, frozen)]
@@ -49,13 +49,13 @@ pub struct CoordinateSystem {
 
 #[pymethods]
 impl CoordinateSystem {
-	#[new]
+	/*#[new]
 	#[pyo3(signature = (name="UNSPECIFIED"))]
 	fn new(name: &str) -> PyResult<Self> {
 		Ok(Self {
 			inner: coord_sys_from_str(name)?,
 		})
-	}
+	}*/
 
 	/// Left Down Back
 	#[classattr]
@@ -137,14 +137,14 @@ impl CoordinateSystem {
 			inner: spz_rs::CoordinateSystem::UNSPECIFIED,
 		}
 	}
-
+	/*
 	fn __repr__(&self) -> String {
 		format!("CoordinateSystem.{}", coord_sys_to_str(&self.inner))
 	}
 
 	fn __str__(&self) -> &'static str {
 		coord_sys_to_str(&self.inner)
-	}
+	}*/
 }
 
 /// Bounding box of a Gaussian splat.

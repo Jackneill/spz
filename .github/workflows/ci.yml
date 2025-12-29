@@ -114,6 +114,33 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+      - uses: extractions/setup-just@v3
+      - uses: rui314/setup-mold@v1
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@nextest
+
+      - name: Install cargo fuzz
+        run: |
+          cargo install cargo-fuzz
+
+      - name: Fuzz
+        run: just fuzz
+
+      - name: Upload fuzz results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   bench:
     runs-on: ubuntu-latest
     strategy:

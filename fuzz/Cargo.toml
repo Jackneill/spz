@@ -1,0 +1,70 @@
+[package]
+name = "spz-fuzz"
+version = "0.0.0"
+edition = "2024"
+authors = ["See AUTHORS.md"]
+description = """Fuzz testing for the spz crate."""
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/Jackneill/spz"
+repository = "https://github.com/Jackneill/spz"
+readme = "README.md"
+keywords = [
+	"fuzz",
+	"test",
+	"gaussian-splatting",
+	"point-cloud",
+	"3d",
+	"graphics",
+	"rendering",
+]
+categories = [
+	"graphics",
+	"game-development",
+	"rendering",
+	"rendering::data-formats",
+]
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+spz = { path = "../crates/spz", default-features = false, features = [] }
+
+libfuzzer-sys = { version = "0.4", default-features = true, features = [] }
+arbitrary = { version = "1.4", default-features = true, features = ["derive"] }
+
+[[bin]]
+name = "splat"
+path = "fuzz_targets/splat.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "coord"
+path = "fuzz_targets/coord.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "compression"
+path = "fuzz_targets/compression.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "header"
+path = "fuzz_targets/header.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "packed"
+path = "fuzz_targets/packed.rs"
+test = false
+doc = false
+bench = false

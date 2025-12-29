@@ -3,13 +3,14 @@
 use std::io::{Read, Write};
 
 use anyhow::{Context, Result, bail};
+use arbitrary::Arbitrary;
 use serde::{Deserialize, Serialize};
 
 use crate::consts;
 
 pub const HEADER_SIZE: usize = std::mem::size_of::<PackedGaussiansHeader>();
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
 #[repr(C)]
 pub struct PackedGaussiansHeader {
 	/// Always `0x5053474e`. "NGSP" = Niantic Gaussian SPlat.

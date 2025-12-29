@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use arbitrary::Arbitrary;
 use serde::{Deserialize, Serialize};
 
 impl std::fmt::Display for CoordinateSystem {
@@ -36,7 +37,7 @@ impl From<&str> for CoordinateSystem {
 	}
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
 pub enum CoordinateSystem {
 	#[default]
 	UNSPECIFIED = 0,
@@ -52,6 +53,22 @@ pub enum CoordinateSystem {
 }
 
 impl CoordinateSystem {
+	#[inline]
+	pub fn values() -> impl Iterator<Item = CoordinateSystem> {
+		[
+			CoordinateSystem::UNSPECIFIED,
+			CoordinateSystem::LDB,
+			CoordinateSystem::RDB,
+			CoordinateSystem::LUB,
+			CoordinateSystem::RUB,
+			CoordinateSystem::LDF,
+			CoordinateSystem::RDF,
+			CoordinateSystem::LUF,
+			CoordinateSystem::RUF,
+		]
+		.into_iter()
+	}
+
 	pub fn convert(&self, to: CoordinateSystem) -> CoordinateConverter {
 		let (x_match, y_match, z_match) = self.axes_match(to);
 
@@ -97,7 +114,7 @@ impl CoordinateSystem {
 	}
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct CoordinateConverter {
 	pub flip_p: [f32; 3],
 	pub flip_q: [f32; 3],

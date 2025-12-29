@@ -44,7 +44,7 @@ pub fn create_splat(num_points: i32) -> GaussianSplat {
 
 pub fn load_packed_from_file() -> Result<GaussianSplat> {
 	GaussianSplat::builder()
-		.filepath("assets/racoonfamily.spz")
+		.filepath("../../assets/racoonfamily.spz")
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
@@ -56,7 +56,7 @@ pub fn load_packed_from_file() -> Result<GaussianSplat> {
 
 pub async fn load_packed_from_file_async() -> Result<GaussianSplat> {
 	GaussianSplat::builder()
-		.filepath("assets/racoonfamily.spz")
+		.filepath("../../assets/racoonfamily.spz")
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()

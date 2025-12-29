@@ -4,7 +4,6 @@
 Python implementation (in Rust) of the .SPZ file format.
 """
 
-
 class CoordinateSystem:
     """Coordinate system enumeration.
 
@@ -12,6 +11,7 @@ class CoordinateSystem:
         - L/R: Left/Right for X axis
         - U/D: Up/Down for Y axislibrary
         - F/B: Front/Back for Z axis
+
 
     Common systems:
         - RUB: Three.js coordinate system (Right, Up, Back)
@@ -60,7 +60,6 @@ class CoordinateSystem:
     def __eq__(self, other: object) -> bool: ...
     def __hash__(self) -> int: ...
 
-
 class BoundingBox:
     """Bounding box of a Gaussian splat.
 
@@ -102,7 +101,6 @@ class BoundingBox:
         ...
 
     def __repr__(self) -> str: ...
-
 
 class GaussianSplat:
     """A 3D Gaussian Splat point cloud.
@@ -163,7 +161,7 @@ class GaussianSplat:
 
     @staticmethod
     def load(
-        path: str, coordinate_system = CoordinateSystem.UNSPECIFIED
+        path: str, coordinate_system=CoordinateSystem.UNSPECIFIED
     ) -> GaussianSplat:
         """Load a GaussianSplat from an SPZ file.
 
@@ -182,7 +180,8 @@ class GaussianSplat:
 
     @staticmethod
     def from_bytes(
-        data: bytes, coordinate_system = CoordinateSystem.UNSPECIFIED,
+        data: bytes,
+        coordinate_system=CoordinateSystem.UNSPECIFIED,
     ) -> GaussianSplat:
         """Load a GaussianSplat from bytes.
 
@@ -199,7 +198,7 @@ class GaussianSplat:
     def save(
         self,
         path: str,
-        from_coordinate_system = CoordinateSystem.UNSPECIFIED,
+        from_coordinate_system=CoordinateSystem.UNSPECIFIED,
     ) -> None:
         """Save the GaussianSplat to an SPZ file.
 
@@ -211,7 +210,8 @@ class GaussianSplat:
         ...
 
     def to_bytes(
-        self, from_coordinate_system = CoordinateSystem.UNSPECIFIED,
+        self,
+        from_coordinate_system=CoordinateSystem.UNSPECIFIED,
     ) -> bytes:
         """Serialize the GaussianSplat to bytes.
 
@@ -302,9 +302,9 @@ class GaussianSplat:
     def __str__(self) -> str: ...
     def __len__(self) -> int: ...
 
-
 def load(
-    path: str, coordinate_system = CoordinateSystem.UNSPECIFIED,
+    path: str,
+    coordinate_system=CoordinateSystem.UNSPECIFIED,
 ) -> GaussianSplat:
     """Load a GaussianSplat from an SPZ file.
 

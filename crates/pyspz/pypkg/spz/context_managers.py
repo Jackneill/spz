@@ -7,10 +7,10 @@ and helper functions that complement the Rust-based core.
 
 from __future__ import annotations
 
+import os
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
-from os import PathLike
 from pathlib import Path
 
 from spz import CoordinateSystem, GaussianSplat
@@ -21,6 +21,9 @@ __all__ = [
     "temp_splat",
     "modified_splat",
 ]
+
+
+PathLike = str | Path | os.PathLike
 
 
 @contextmanager

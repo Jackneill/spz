@@ -11,13 +11,18 @@ crates/pyspz/.env
 flatpak/cargo-sources.json
 crates/pyspz/uv.lock
 
+mutants.out
+mutants.out.old
+
 node_modules
 dist/*
 dist-ssr
 *.local
 
 .ruff_cache
-
+fuzz/corpus
+fuzz/artifacts
+coverage
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -33,6 +38,8 @@ dist-ssr
 flatpak/repo
 flatpak/build
 
+/crates/target
+/crates/spz/target
 /target
 /debug
 /assets/*

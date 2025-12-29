@@ -152,12 +152,24 @@ pub struct GaussianSplat {
 ### Pre-Requisites
 
 * [Install `nextest` runner](https://nexte.st/docs/installation/pre-built-binaries/).
+* For fuzz testing: `cargo install cargo-fuzz`
+ 	* Further documentation is available in [fuzz/README.md](./fuzz/README.md).
+* [Install cargo-mutants](https://mutants.rs/getting-started.html) for test insights.
+ 	* `cargo install cargo-mutants`
+
+### Run
+
+```sh
+just test
+just fuzz
+just mutants
+```
 
 ## Benches
 
 ### Pre-Requisites
 
-* `cargo install cargo-criterion`.
+* `cargo install cargo-criterion`
 * Install `gnuplot` for html reports.
 
 ### Run

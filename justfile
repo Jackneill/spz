@@ -18,9 +18,28 @@ test: assets
 		--examples \
 		--tests \
 		--all-targets \
+		--exclude spz-fuzz \
 		-j num-cpus \
 		--workspace
 	#-- --nocapture
+
+fuzz:
+	#!/usr/bin/env bash
+	set -euxo pipefail
+
+	max_len=`calc 4096*32 | xargs`
+
+	for f in `cargo fuzz list`; do \
+		echo "Running fuzz target: ${f}"; \
+		{{cargo}} +nightly fuzz run \
+			--release \
+			--all-features \
+			--sanitizer none \
+			$f -- -max_len=$max_len -max_total_time=60; \
+	done
+
+mutants:
+	{{cargo}} mutants -d crates/spz
 
 lint:
 	{{cargo}} fmt --check
