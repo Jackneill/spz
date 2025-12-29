@@ -108,6 +108,12 @@ jobs:
       - name: Test
         run: just test
 
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   bench:
     runs-on: ubuntu-latest
     strategy:
