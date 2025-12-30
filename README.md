@@ -5,46 +5,59 @@
 <div align="center"><b>WIP</b></div>
 &nbsp;
 <p align="center">
-	<a href="https://crates.io/crates/spz">
+	<a href="https://crates.io/crates/spz" target="_blank">
 		<img alt="Crates.io Version" src="https://img.shields.io/crates/v/spz?style=for-the-badge&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fspz">
 	</a>
-	<a href="https://docs.rs/spz">
+	<a href="https://docs.rs/spz" target="_blank">
 		<img alt="docs.rs" src="https://img.shields.io/docsrs/spz?style=for-the-badge&label=docs.rs&link=docs.rs%2Fspz">
 	</a>
-	<a href="https://lib.rs/crates/spz">
+	<a href="https://lib.rs/crates/spz" target="_blank">
 		<img alt="lib.rs" src="https://img.shields.io/badge/spz-librs?style=for-the-badge&label=Lib.rs&link=https%3A%2F%2Flib.rs%2Fcrates%2Fspz">
 	</a>
 	<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/Jackneill/spz?style=for-the-badge">
 	<br>
 	<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI%3Amain">
-	<a href="https://deps.rs/repo/github/Jackneill/spz">
+	<a href="https://deps.rs/repo/github/Jackneill/spz" target="_blank">
 		<img alt="Deps" src="https://img.shields.io/deps-rs/repo/github/Jackneill/spz?style=for-the-badge">
 	</a>
 	<img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/Jackneill/spz/main?style=for-the-badge">
 	<br>
-	<a href="https://codspeed.io/Jackneill/spz">
+	<a href="https://codspeed.io/Jackneill/spz" target="_blank">
 		<img alt="CodSpeed" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcodspeed.io%2Fbadge.json&style=for-the-badge" />
 	</a>
-	<a href="https://codecov.io/github/Jackneill/spz">
+	<a href="https://codecov.io/github/Jackneill/spz" target="_blank">
 		<img alt="CodeCov" src="https://codecov.io/github/Jackneill/spz/graph/badge.svg?style=for-the-badge&token=10QLWY4MWG"/>
 	</a>
+	<a href="https://app.codacy.com/gh/Jackneill/spz/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade" target="_blank">
+		<img alt="Codacy grade" src="https://img.shields.io/codacy/grade/07c0a96e3369423988ba06a2691695ea/main?label=CODE%20QUALITY&style=for-the-badge&link=https%3A%2F%2Fapp.codacy.com%2Fgh%2FJackneill%2Fspz%2Fdashboard%3Futm_source%3Dgh%26utm_medium%3Dreferral%26utm_content%3D%26utm_campaign%3DBadge_grade">
+	</a>
 	<br>
-	<a href="./LICENSE-APACHE">
+	<a href="./LICENSE-APACHE" target="_blank">
 		<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=for-the-badge&label=LICENSE">
 	</a>
-	<a href="./LICENSE-MIT">
+	<a href="./LICENSE-MIT" target="_blank">
 		<img alt="GitHub License MIT" src="https://img.shields.io/badge/MIT-LICENSE?style=for-the-badge&label=LICENSE">
 	</a>
 	<br>
-	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=license" alt="FOSSA Status">
+	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=license" alt="FOSSA Status" target="_blank">
 		<img alt="FOSSA Status" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=license"/>
 	</a>
-	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=security" alt="FOSSA Status">
+	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=security" alt="FOSSA Status" target="_blank">
 		<img alt="FOSSA Security" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=security"/>
+	</a>
+	<br>
+	<a href="https://pypi.org/project/spz/" target="_blank">
+		<img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/spz?style=for-the-badge&label=PyPI&link=https%3A%2F%2Fpypi.org%2Fproject%2Fspz%2F">
+	</a>
+	<a href="https://github.com/Jackneill/spz" target="_blank">
+		<img alt="Python Version from PEP 621 TOML" src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FJackneill%2Fspz%2Frefs%2Fheads%2Fmain%2Fcrates%2Fspz-pywrapper%2Fpyproject.toml&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2FJackneill%2Fspz">
+	</a>
+	<a href="https://pypi.org/project/spz/" target="_blank">
+		<img alt="PyPI - Wheel" src="https://img.shields.io/pypi/wheel/spz?style=for-the-badge&link=https%3A%2F%2Fpypi.org%2Fproject%2Fspz%2F">
 	</a>
 	<hr>
 	<br>
-	<a href='https://flathub.org/apps/io.github.jackneill.spz'>
+	<a href='https://flathub.org/apps/io.github.jackneill.spz' target="_blank">
 		<img width='160' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
 	</a>
 </p>
@@ -213,12 +226,20 @@ dependencies = [
 ## Examples
 
 ```py
-import spz
+from ..pypkg import spz
 
 # Load from file
 splat = spz.load("scene.spz")
 # or
 splat = spz.GaussianSplat.load("scene.spz", coordinate_system=spz.CoordinateSystem.RUB)
+# or
+with spz.SplatReader("scene.spz") as ctx:
+    splat2 = ctx.splat
+
+with spz.temp_save(splat) as tmp_path:
+    import subprocess
+
+    subprocess.run(["viewer", str(tmp_path)])
 
 # Access properties
 print(f"{splat.num_points:,} points")
@@ -233,11 +254,11 @@ alphas = splat.alphas
 colors = splat.colors
 sh = splat.spherical_harmonics
 
+# Serialize
 data = splat.to_bytes()
-splat2 = spz.GaussianSplat.from_bytes(data)  # Serialize
+splat2 = spz.GaussianSplat.from_bytes(data)
 
-splat.save("output.spz")  # Save to file
-
+# Create from data
 new_splat = spz.GaussianSplat(
     positions=[0.0, 0.0, 0.0, 1.0, 2.0, 3.0],  # flat array
     scales=[-5.0] * 6,
@@ -245,6 +266,12 @@ new_splat = spz.GaussianSplat(
     alphas=[0.5, 0.8],
     colors=[255.0, 0.0, 0.0, 0.0, 255.0, 0.0],
 )
+
+# Save to file
+new_splat.save("output.spz")
+
+with spz.SplatWriter("output2.spz") as writer:
+    writer.splat = splat2
 
 with spz.modified_splat("scene.spz", "scene_rotated.spz") as splat:
     splat.rotate_180_deg_about_x()

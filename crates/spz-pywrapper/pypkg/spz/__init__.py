@@ -9,7 +9,7 @@ from .context_managers import (
     SplatReader,
     SplatWriter,
     modified_splat,
-    temp_splat,
+    temp_save,
 )
 from .spz import (
     BoundingBox,
@@ -26,6 +26,6 @@ __all__ = [
     # Context managers
     "SplatReader",
     "SplatWriter",
-    "temp_splat",
+    "temp_save",
     "modified_splat",
 ]

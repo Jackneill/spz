@@ -18,7 +18,7 @@ from spz import CoordinateSystem, GaussianSplat
 __all__ = [
     "SplatReader",
     "SplatWriter",
-    "temp_splat",
+    "temp_save",
     "modified_splat",
 ]
 
@@ -157,8 +157,8 @@ class SplatWriter:
 
 
 @contextmanager
-def temp_splat(
-    splat: GaussianSplat,
+def temp_save(
+    gaussian_splat: GaussianSplat,
     from_coordinate_system=CoordinateSystem.UNSPECIFIED,
     suffix: str = ".spz",
 ) -> Iterator[Path]:
@@ -168,7 +168,7 @@ def temp_splat(
     The temporary file is automatically deleted when the context exits.
 
     Args:
-        splat: The GaussianSplat to save.
+        gaussian_splat: The GaussianSplat to save.
         from_coordinate_system: Source coordinate system when saving.
         suffix: File suffix for the temporary file.
 
@@ -185,7 +185,7 @@ def temp_splat(
         temp_path = Path(f.name)
 
     try:
-        splat.save(str(temp_path), from_coordinate_system)
+        gaussian_splat.save(str(temp_path), from_coordinate_system)
 
         yield temp_path
     finally:

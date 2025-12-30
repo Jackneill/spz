@@ -4,6 +4,14 @@ from ..pypkg import spz
 splat = spz.load("scene.spz")
 # or
 splat = spz.GaussianSplat.load("scene.spz", coordinate_system=spz.CoordinateSystem.RUB)
+# or
+with spz.SplatReader("scene.spz") as ctx:
+    splat2 = ctx.splat
+
+with spz.temp_save(splat) as tmp_path:
+    import subprocess
+
+    subprocess.run(["viewer", str(tmp_path)])
 
 # Access properties
 print(f"{splat.num_points:,} points")
@@ -22,9 +30,6 @@ sh = splat.spherical_harmonics
 data = splat.to_bytes()
 splat2 = spz.GaussianSplat.from_bytes(data)
 
-# Save to file
-splat.save("output.spz")
-
 # Create from data
 new_splat = spz.GaussianSplat(
     positions=[0.0, 0.0, 0.0, 1.0, 2.0, 3.0],  # flat array
@@ -33,6 +38,12 @@ new_splat = spz.GaussianSplat(
     alphas=[0.5, 0.8],
     colors=[255.0, 0.0, 0.0, 0.0, 255.0, 0.0],
 )
+
+# Save to file
+new_splat.save("output.spz")
+
+with spz.SplatWriter("output2.spz") as writer:
+    writer.splat = splat2
 
 with spz.modified_splat("scene.spz", "scene_rotated.spz") as splat:
     splat.rotate_180_deg_about_x()

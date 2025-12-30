@@ -19,6 +19,8 @@ dist/*
 dist-ssr
 *.local
 
+.codacy
+
 /.ruff_cache
 fuzz/corpus
 fuzz/artifacts
@@ -105,3 +107,7 @@ docs/_build/
 
 # Pyenv
 .python-version
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
