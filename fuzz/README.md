@@ -2,7 +2,7 @@
 
 This directory contains fuzz tests for the SPZ library.
 
-## Prerequisites
+## Pre-Requisites
 
 Install cargo-fuzz:
 

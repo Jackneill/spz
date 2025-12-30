@@ -942,14 +942,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pyspz"
-version = "0.0.1"
-dependencies = [
- "pyo3",
- "spz 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1260,6 +1252,14 @@ dependencies = [
  "arbitrary",
  "libfuzzer-sys",
  "spz 0.0.6",
+]
+
+[[package]]
+name = "spz-pywrapper"
+version = "0.0.1"
+dependencies = [
+ "pyo3",
+ "spz 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

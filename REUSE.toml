@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+version = 3
+SPDX-PackageName = "spz"
+SPDX-PackageSupplier = "SPZ Developers (.mailmap)"
+SPDX-PackageDownloadLocation = "https://github.com/Jackneill/spz"
+SPDX-License-Identifier = "Apache-2.0 OR MIT"

@@ -1,5 +1,5 @@
 [package]
-name = "pyspz"
+name = "spz-pywrapper"
 version = "0.0.1"
 edition = "2024"
 authors = ["See AUTHORS.md"]

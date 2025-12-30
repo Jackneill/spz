@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
 just := "just"
 cargo := "cargo"
 docker := "podman"
@@ -44,9 +46,10 @@ mutants:
 lint:
 	{{cargo}} fmt --check
 	{{cargo}} clippy
+	uvx reuse lint
 
 py-lint:
-	uvx ruff check crates/pyspz
+	uvx ruff check crates/spz-pywrapper
 
 bench: assets
 	{{cargo}} bench \
@@ -129,13 +132,13 @@ dr *args:
 	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{app_name}} {{args}}
 
 py-dev:
-	uvx maturin develop --manifest-path crates/pyspz/Cargo.toml
+	uvx maturin develop --manifest-path crates/spz-pywrapper/Cargo.toml
 
 py-build:
-	uvx maturin build --release --manifest-path crates/pyspz/Cargo.toml
+	uvx maturin build --release --manifest-path crates/spz-pywrapper/Cargo.toml
 
 py-publish:
-	uvx maturin publish --manifest-path crates/pyspz/Cargo.toml
+	uvx maturin publish --manifest-path crates/spz-pywrapper/Cargo.toml
 
 clean:
 	rm -rf ./target

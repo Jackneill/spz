@@ -174,11 +174,7 @@ impl BoundingBox {
 	/// 	A tuple of (width, height, depth).
 	#[getter]
 	fn size(&self) -> (f32, f32, f32) {
-		(
-			self.inner.max_x - self.inner.min_x,
-			self.inner.max_y - self.inner.min_y,
-			self.inner.max_z - self.inner.min_z,
-		)
+		self.inner.size()
 	}
 
 	/// Get the center of the bounding box.
@@ -187,11 +183,7 @@ impl BoundingBox {
 	/// 	A tuple of (x, y, z) center coordinates.
 	#[getter]
 	fn center(&self) -> (f32, f32, f32) {
-		(
-			(self.inner.min_x + self.inner.max_x) / 2.0,
-			(self.inner.min_y + self.inner.max_y) / 2.0,
-			(self.inner.min_z + self.inner.max_z) / 2.0,
-		)
+		self.inner.center()
 	}
 }
 

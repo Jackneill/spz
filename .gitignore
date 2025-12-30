@@ -7,9 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-crates/pyspz/.env
+crates/spz-pywrapper/.env
 flatpak/cargo-sources.json
-crates/pyspz/uv.lock
+crates/spz-pywrapper/uv.lock
 
 mutants.out
 mutants.out.old
@@ -19,7 +19,7 @@ dist/*
 dist-ssr
 *.local
 
-.ruff_cache
+/.ruff_cache
 fuzz/corpus
 fuzz/artifacts
 coverage

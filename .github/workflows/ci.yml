@@ -130,7 +130,7 @@ jobs:
 
       - name: Install calc
         run: |
-          apt install calc
+          sudo apt install -y calc
 
       - name: Install cargo fuzz
         run: |
