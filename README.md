@@ -104,7 +104,7 @@ cargo run --example load_spz
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
-use spz::{coord::CoordinateSystem, prelude::GaussianSplat, unpacked::UnpackOptions};
+use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, unpacked::UnpackOptions};
 
 fn main() -> Result<()> {
 	let mut sample_spz = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

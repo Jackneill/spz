@@ -3,7 +3,6 @@
 		"rust-lang.rust-analyzer",
 		"ms-python.python",
 		"charliermarsh.ruff",
-		"timonwong.shellcheck",
-		"codacy-app.codacy"
+		"timonwong.shellcheck"
 	]
 }
