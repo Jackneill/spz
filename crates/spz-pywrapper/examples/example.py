@@ -1,12 +1,14 @@
 from ..pypkg import spz
 
 # Load from file
-splat = spz.load("scene.spz")
+splat = spz.load("scene.spz")  # -> GaussianSplat
 # or
-splat = spz.GaussianSplat.load("scene.spz", coordinate_system=spz.CoordinateSystem.RUB)
+splat = spz.GaussianSplat.load(
+    "scene.spz", coordinate_system=spz.CoordinateSystem.RUB
+)  # -> GaussianSplat
 # or
 with spz.SplatReader("scene.spz") as ctx:
-    splat2 = ctx.splat
+    splat2 = ctx.splat  # -> GaussianSplat
 
 with spz.temp_save(splat) as tmp_path:
     import subprocess
@@ -18,7 +20,7 @@ print(f"{splat.num_points:,} points")
 print(f"center: {splat.bbox.center}")
 print(f"size: {splat.bbox.size}")
 
-# Access data (flat arrays)
+# Access data (flat arrays, list[float])
 positions = splat.positions  # [x1, y1, z1, x2, y2, z2, ...]
 scales = splat.scales
 rotations = splat.rotations
@@ -27,8 +29,8 @@ colors = splat.colors
 sh = splat.spherical_harmonics
 
 # Serialize
-data = splat.to_bytes()
-splat2 = spz.GaussianSplat.from_bytes(data)
+data = splat.to_bytes()  # -> bytes
+splat2 = spz.GaussianSplat.from_bytes(data)  # -> GaussianSplat
 
 # Create from data
 new_splat = spz.GaussianSplat(
@@ -37,7 +39,7 @@ new_splat = spz.GaussianSplat(
     rotations=[1.0, 0.0, 0.0, 0.0] * 2,
     alphas=[0.5, 0.8],
     colors=[255.0, 0.0, 0.0, 0.0, 255.0, 0.0],
-)
+)  # -> GaussianSplat
 
 # Save to file
 new_splat.save("output.spz")
