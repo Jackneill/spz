@@ -14,13 +14,19 @@
 	<a href="https://lib.rs/crates/spz" target="_blank">
 		<img alt="lib.rs" src="https://img.shields.io/badge/spz-librs?style=for-the-badge&label=Lib.rs&link=https%3A%2F%2Flib.rs%2Fcrates%2Fspz">
 	</a>
-	<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/Jackneill/spz?style=for-the-badge">
+	<a href="https://github.com/Jackneill/spz/tags" target="_blank">
+		<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/Jackneill/spz?style=for-the-badge">
+	</a>
 	<br>
-	<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI%3Amain">
+	<a href="https://github.com/Jackneill/spz/actions" target="_blank">
+		<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?	style=for-the-badge&label=CI%3Amain">
+	</a>
 	<a href="https://deps.rs/repo/github/Jackneill/spz" target="_blank">
 		<img alt="Deps" src="https://img.shields.io/deps-rs/repo/github/Jackneill/spz?style=for-the-badge">
 	</a>
-	<img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/Jackneill/spz/main?style=for-the-badge">
+	<a href="https://github.com/Jackneill/spz/commits/main/" target="_blank">
+		<img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/Jackneill/spz/main?style=for-the-badge">
+	</a>
 	<br>
 	<a href="https://codspeed.io/Jackneill/spz" target="_blank">
 		<img alt="CodSpeed" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fcodspeed.io%2Fbadge.json&style=for-the-badge" />
@@ -32,13 +38,9 @@
 		<img alt="Codacy grade" src="https://img.shields.io/codacy/grade/07c0a96e3369423988ba06a2691695ea/main?label=CODE%20QUALITY&style=for-the-badge&link=https%3A%2F%2Fapp.codacy.com%2Fgh%2FJackneill%2Fspz%2Fdashboard%3Futm_source%3Dgh%26utm_medium%3Dreferral%26utm_content%3D%26utm_campaign%3DBadge_grade">
 	</a>
 	<br>
-	<a href="./LICENSE-APACHE" target="_blank">
-		<img alt="GitHub License" src="https://img.shields.io/github/license/Jackneill/spz?style=for-the-badge&label=LICENSE">
-	</a>
 	<a href="./LICENSE-MIT" target="_blank">
-		<img alt="GitHub License MIT" src="https://img.shields.io/badge/MIT-LICENSE?style=for-the-badge&label=LICENSE">
+		<img alt="Licenses" src="https://img.shields.io/crates/l/spz?style=for-the-badge&link=github.com%2FJackneill%2Fspz%23license-mit">
 	</a>
-	<br>
 	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=license" alt="FOSSA Status" target="_blank">
 		<img alt="FOSSA Status" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=license"/>
 	</a>
@@ -46,9 +48,6 @@
 		<img alt="FOSSA Security" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=security"/>
 	</a>
 	<br>
-	<a href="https://pypi.org/project/spz/" target="_blank">
-		<img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/spz?style=for-the-badge&label=PyPI&link=https%3A%2F%2Fpypi.org%2Fproject%2Fspz%2F">
-	</a>
 	<a href="https://github.com/Jackneill/spz" target="_blank">
 		<img alt="Python Version from PEP 621 TOML" src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FJackneill%2Fspz%2Frefs%2Fheads%2Fmain%2Fcrates%2Fspz-pywrapper%2Fpyproject.toml&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2FJackneill%2Fspz">
 	</a>
@@ -57,8 +56,11 @@
 	</a>
 	<hr>
 	<br>
-	<a href='https://flathub.org/apps/io.github.jackneill.spz' target="_blank">
-		<img width='160' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
+	<a href="https://flathub.org/apps/io.github.jackneill.spz" target="_blank">
+		<img width="160" alt="Get it on Flathub" src="https://flathub.org/api/badge?locale=en"/>
+	</a>
+	<a href="https://snapcraft.io/spz" target="_blank">
+		<img width="160" alt="Get it on Snapcraft Store" src="./assets/images/snap_badge.svg"/>
 	</a>
 </p>
 
@@ -73,6 +75,14 @@ See [docs/SPZ.md](docs/SPZ.md) for more information.
 ## CLI
 
 ```sh
+$ # install:
+$ cargo install spz
+$ # or
+$ flatpak install io.github.jackneill.spz
+$ # or
+$ snap install spz
+$
+$ # run:
 $ path/to/spz info assets/racoonfamily.spz
 
 GaussianSplat={num_points=932560, sh_degree=3, antialiased=true, median_ellipsoid_volume=0.0000000046213082, bbox=[x=-281.779541 to 258.382568, y=-240.000000 to 240.000000, z=-240.000000 to 240.000000]}
@@ -83,7 +93,8 @@ GaussianSplat={num_points=932560, sh_degree=3, antialiased=true, median_ellipsoi
 ## Usage
 
 ```toml
-spz = { version = "0.0.6", default-features = false, features = [] }
+[dependencies]
+spz = { version = "0.0.7", default-features = false, features = [] }
 ```
 
 ```rust
@@ -103,22 +114,25 @@ cargo run --example load_spz
 
 use std::path::{Path, PathBuf};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, unpacked::UnpackOptions};
 
 fn main() -> Result<()> {
 	let mut sample_spz = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-	sample_spz.push("assets/racoonfamily.spz");
+	sample_spz.push("../../assets/racoonfamily.spz");
 
-	let _gs = GaussianSplat::builder()
-		.filepath(sample_spz)
+	let _gs1 = GaussianSplat::builder()
+		.filepath(&sample_spz)
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
-				.to_coord_system(CoordinateSystem::default())
+				.to_coord_system(CoordinateSystem::UNSPECIFIED)
 				.build(),
 		)
-		.load()?;
+		.load()
+		.with_context(|| format!("unable to load file: {:?}", sample_spz))?;
+
+	let _gs0 = GaussianSplat::builder().filepath(&sample_spz).load()?;
 
 	Ok(())
 }
@@ -129,15 +143,16 @@ where
 	P: AsRef<Path>,
 {
 	GaussianSplat::builder()
-		.filepath(spz_file)
+		.filepath(spz_file.as_ref())
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
-				.to_coord_system(CoordinateSystem::default())
+				.to_coord_system(CoordinateSystem::UNSPECIFIED)
 				.build(),
 		)
 		.load_async()
 		.await
+		.with_context(|| format!("unable to load file: {:?}", spz_file.as_ref()))
 }
 ```
 
@@ -226,7 +241,7 @@ dependencies = [
 ## Examples
 
 ```py
-from ..pypkg import spz
+import spz
 
 # Load from file
 splat = spz.load("scene.spz")  # -> GaussianSplat
