@@ -2,10 +2,10 @@
 
 use std::io::{Read, Write};
 
-use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 
 use crate::consts;
+use crate::errors::SpzError;
 
 pub const HEADER_SIZE: usize = std::mem::size_of::<PackedGaussiansHeader>();
 
@@ -35,23 +35,18 @@ pub struct PackedGaussiansHeader {
 
 impl PackedGaussiansHeader {
 	#[inline]
-	pub fn read_from<R>(reader: &mut R) -> Result<Self>
+	pub fn read_from<R>(reader: &mut R) -> Result<Self, SpzError>
 	where
 		R: Read,
 	{
 		let mut header_buf: [u8; HEADER_SIZE] = [0; HEADER_SIZE];
+		reader.read_exact(&mut header_buf)?;
 
-		match reader.read_exact(&mut header_buf) {
-			Ok(_) => {},
-			Err(err) => {
-				bail!(err);
-			},
-		}
 		Ok(unsafe { std::mem::transmute(header_buf) })
 	}
 
 	#[inline]
-	pub fn serialize_to<W>(&self, stream: &mut W) -> Result<()>
+	pub fn serialize_to<W>(&self, stream: &mut W) -> Result<(), SpzError>
 	where
 		W: Write,
 	{
@@ -61,8 +56,9 @@ impl PackedGaussiansHeader {
 				std::mem::size_of::<Self>(),
 			)
 		};
-		stream.write_all(b)
-			.with_context(|| "unable to write packed gaussians header to stream")
+		stream.write_all(b)?;
+
+		Ok(())
 	}
 }
 

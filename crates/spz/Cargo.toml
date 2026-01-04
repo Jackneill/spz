@@ -22,18 +22,14 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-anyhow = { version = "1.0", default-features = true, features = [] }
 thiserror = { version = "2.0", default-features = true, features = [] }
 memmap2 = { version = "0.9", default-features = true, features = [] }
 flate2 = { version = "1.1", default-features = true, features = [] }
-serde_json = { version = "1.0", default-features = true, features = [
-	"float_roundtrip",
-] }
 serde = { version = "1.0", default-features = true, features = ["derive"] }
 static_assertions = { version = "1.1", default-features = true, features = [] }
-tokio = { version = "1.48", default-features = true, features = ["full"] }
 likely_stable = { version = "0.1", default-features = true, features = [] }
 arbitrary = { version = "1.4", default-features = true, features = ["derive"], optional = true }
+futures = { version = "0.3", default-features = false, features = ["std"] }
 
 [features]
 fuzzing = ["dep:arbitrary"]
@@ -41,12 +37,8 @@ fuzzing = ["dep:arbitrary"]
 [dev-dependencies]
 criterion = { version = "0.8", default-features = true, features = [
 	"html_reports",
-	"async_tokio",
 ] }
-codspeed-criterion-compat = { version = "4.1.0", default-features = true, features = [
-	"async",
-	"async_tokio",
-] }
+codspeed-criterion-compat = { version = "4.1.0", default-features = true, features = [] }
 rstest = { version = "0.26", default-features = true, features = [] }
 approx = { version = "0.5", default-features = true, features = [] }
 rand = { version = "0.9", default-features = true, features = [] }

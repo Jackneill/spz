@@ -1,40 +1,40 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use anyhow::Result;
-use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, unpacked::UnpackOptions};
+use spz::{
+	coord::CoordinateSystem, errors::SpzError, gaussian_splat::GaussianSplat,
+	unpacked::UnpackOptions,
+};
 
-fn main() -> Result<()> {
+fn main() -> Result<(), SpzError> {
 	let mut sample_spz = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 	sample_spz.push("assets/racoonfamily.spz");
 
 	let _gs = GaussianSplat::builder()
-		.filepath(sample_spz)
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
 				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
-		.load()?;
+		.load(sample_spz)?;
 
 	Ok(())
 }
 
 #[allow(unused)]
-async fn load_spz_async<P>(spz_file: P) -> Result<GaussianSplat>
+async fn load_spz_async<R>(reader: R) -> Result<GaussianSplat, SpzError>
 where
-	P: AsRef<Path>,
+	R: futures::io::AsyncRead + Unpin,
 {
 	GaussianSplat::builder()
-		.filepath(spz_file)
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
 				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
-		.load_async()
+		.load_async(reader)
 		.await
 }

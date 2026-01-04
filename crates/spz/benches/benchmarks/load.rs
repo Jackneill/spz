@@ -2,7 +2,6 @@
 
 use codspeed_criterion_compat::Criterion;
 use spz::{packed::PackOptions, prelude::GaussianSplat, unpacked::UnpackOptions};
-use tokio::runtime::Runtime;
 
 use crate::util;
 
@@ -24,12 +23,7 @@ pub fn bench_cloud_load_n(c: &mut Criterion) {
 }
 
 pub fn bench_load_packed_from_file(c: &mut Criterion) {
-	let rt = Runtime::new().unwrap();
-
 	c.bench_function("load_packed_from_file", |b| {
 		b.iter(|| util::load_packed_from_file());
-	});
-	c.bench_function("load_packed_from_file_async", |b| {
-		b.to_async(&rt).iter(|| util::load_packed_from_file_async());
 	});
 }
