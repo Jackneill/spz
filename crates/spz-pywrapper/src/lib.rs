@@ -44,7 +44,7 @@ fn coord_sys_to_str(cs: &spz_rs::CoordinateSystem) -> &'static str {
 #[pyclass(eq, frozen)]
 #[derive(Clone, PartialEq)]
 pub struct CoordinateSystem {
-	inner: spz_rs::CoordinateSystem,
+	inner: spz_rs::coord::CoordinateSystem,
 }
 
 #[pymethods]
@@ -62,7 +62,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn LDB() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::LDB,
+			inner: spz_rs::coord::CoordinateSystem::LDB,
 		}
 	}
 
@@ -71,7 +71,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn RDB() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::RDB,
+			inner: spz_rs::coord::CoordinateSystem::RDB,
 		}
 	}
 
@@ -80,7 +80,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn LUB() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::LUB,
+			inner: spz_rs::coord::CoordinateSystem::LUB,
 		}
 	}
 
@@ -89,7 +89,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn RUB() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::RUB,
+			inner: spz_rs::coord::CoordinateSystem::RUB,
 		}
 	}
 
@@ -98,7 +98,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn LDF() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::LDF,
+			inner: spz_rs::coord::CoordinateSystem::LDF,
 		}
 	}
 
@@ -107,7 +107,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn RDF() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::RDF,
+			inner: spz_rs::coord::CoordinateSystem::RDF,
 		}
 	}
 
@@ -116,7 +116,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn LUF() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::LUF,
+			inner: spz_rs::coord::CoordinateSystem::LUF,
 		}
 	}
 
@@ -125,7 +125,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn RUF() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::RUF,
+			inner: spz_rs::coord::CoordinateSystem::RUF,
 		}
 	}
 
@@ -134,7 +134,7 @@ impl CoordinateSystem {
 	#[allow(non_snake_case)]
 	fn UNSPECIFIED() -> Self {
 		Self {
-			inner: spz_rs::CoordinateSystem::UNSPECIFIED,
+			inner: spz_rs::coord::CoordinateSystem::UNSPECIFIED,
 		}
 	}
 	/*
@@ -213,7 +213,7 @@ impl BoundingBox {
 #[pyclass]
 #[derive(Clone)]
 pub struct GaussianSplat {
-	inner: spz_rs::GaussianSplat,
+	inner: spz_rs::gaussian_splat::GaussianSplat,
 }
 
 #[pymethods]
@@ -321,7 +321,7 @@ impl GaussianSplat {
 			None => vec![0.0_f32; expected_sh_len],
 		};
 		Ok(Self {
-			inner: spz_rs::GaussianSplat {
+			inner: spz_rs::gaussian_splat::GaussianSplat {
 				num_points: num_points as i32,
 				spherical_harmonics_degree: sh_degree,
 				antialiased,
@@ -352,15 +352,16 @@ impl GaussianSplat {
 	fn load(path: &str, coordinate_system: Option<CoordinateSystem>) -> PyResult<Self> {
 		let coord_sys = coordinate_system
 			.map(|cs| cs.inner)
-			.unwrap_or(spz_rs::CoordinateSystem::UNSPECIFIED);
+			.unwrap_or(spz_rs::coord::CoordinateSystem::UNSPECIFIED);
 
-		let unpack_opts = spz_rs::UnpackOptions {
+		let unpack_opts = spz_rs::unpacked::UnpackOptions {
 			to_coord_sys: coord_sys,
 		};
-		let inner = spz_rs::GaussianSplat::load_packed_from_file(path, &unpack_opts)
-			.map_err(|e| {
-				PyValueError::new_err(format!("Failed to load SPZ file: {}", e))
-			})?;
+		let inner = spz_rs::gaussian_splat::GaussianSplat::load_packed_from_file(
+			path,
+			&unpack_opts,
+		)
+		.map_err(|e| PyValueError::new_err(format!("Failed to load SPZ file: {}", e)))?;
 
 		Ok(Self { inner })
 	}
@@ -379,18 +380,20 @@ impl GaussianSplat {
 	fn from_bytes(data: &[u8], coordinate_system: Option<CoordinateSystem>) -> PyResult<Self> {
 		let coord_sys = coordinate_system
 			.map(|cs| cs.inner)
-			.unwrap_or(spz_rs::CoordinateSystem::UNSPECIFIED);
+			.unwrap_or(spz_rs::coord::CoordinateSystem::UNSPECIFIED);
 
-		let unpack_opts = spz_rs::UnpackOptions {
+		let unpack_opts = spz_rs::unpacked::UnpackOptions {
 			to_coord_sys: coord_sys,
 		};
-		let packed = spz_rs::GaussianSplat::load_packed(data).map_err(|e| {
-			PyValueError::new_err(format!("Failed to parse SPZ data: {}", e))
-		})?;
-		let inner = spz_rs::GaussianSplat::new_from_packed_gaussians(&packed, &unpack_opts)
-			.map_err(|e| {
-				PyValueError::new_err(format!("Failed to unpack SPZ data: {}", e))
+		let packed =
+			spz_rs::gaussian_splat::GaussianSplat::load_packed(data).map_err(|e| {
+				PyValueError::new_err(format!("Failed to parse SPZ data: {}", e))
 			})?;
+		let inner = spz_rs::gaussian_splat::GaussianSplat::new_from_packed_gaussians(
+			&packed,
+			&unpack_opts,
+		)
+		.map_err(|e| PyValueError::new_err(format!("Failed to unpack SPZ data: {}", e)))?;
 
 		Ok(Self { inner })
 	}
@@ -409,9 +412,9 @@ impl GaussianSplat {
 	) -> PyResult<()> {
 		let coord_sys = from_coordinate_system
 			.map(|cs| cs.inner)
-			.unwrap_or(spz_rs::CoordinateSystem::UNSPECIFIED);
+			.unwrap_or(spz_rs::coord::CoordinateSystem::UNSPECIFIED);
 
-		let pack_opts = spz_rs::PackOptions { from: coord_sys };
+		let pack_opts = spz_rs::packed::PackOptions { from: coord_sys };
 
 		self.inner.save_as_packed(path, &pack_opts).map_err(|e| {
 			PyValueError::new_err(format!("Failed to save SPZ file: {}", e))
@@ -434,9 +437,9 @@ impl GaussianSplat {
 	) -> PyResult<Bound<'py, PyBytes>> {
 		let coord_sys = from_coordinate_system
 			.map(|cs| cs.inner)
-			.unwrap_or(spz_rs::CoordinateSystem::UNSPECIFIED);
+			.unwrap_or(spz_rs::coord::CoordinateSystem::UNSPECIFIED);
 
-		let pack_opts = spz_rs::PackOptions { from: coord_sys };
+		let pack_opts = spz_rs::packed::PackOptions { from: coord_sys };
 
 		let bytes = self
 			.inner

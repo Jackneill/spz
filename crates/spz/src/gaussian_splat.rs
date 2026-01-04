@@ -3,7 +3,6 @@
 use std::{path::Path, path::PathBuf};
 
 use anyhow::{Context, Result, bail};
-use arbitrary::Arbitrary;
 use likely_stable::unlikely;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncReadExt;
@@ -18,7 +17,8 @@ use crate::{
 	unpacked::UnpackOptions,
 };
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct GaussianSplat {
 	/// The number of gaussians.
 	pub num_points: i32,
@@ -645,7 +645,8 @@ impl std::fmt::Display for GaussianSplat {
 	}
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BoundingBox {
 	pub min_x: f32,
 	pub max_x: f32,
@@ -677,7 +678,8 @@ impl BoundingBox {
 	}
 }
 
-#[derive(Clone, Debug, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug)]
 pub struct GaussianSplatBuilder {
 	filepath: Option<PathBuf>,
 	unpack_opts: UnpackOptions,

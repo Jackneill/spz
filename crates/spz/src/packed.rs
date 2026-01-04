@@ -6,7 +6,6 @@ use std::io::Write;
 
 use anyhow::bail;
 use anyhow::{Context, Result};
-use arbitrary::Arbitrary;
 use likely_stable::unlikely;
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +13,8 @@ use crate::{consts, math};
 use crate::{coord::CoordinateConverter, unpacked::UnpackedGaussian};
 use crate::{coord::CoordinateSystem, header::PackedGaussiansHeader};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PackOptions {
 	pub from: CoordinateSystem,
 }
@@ -26,7 +26,8 @@ impl PackOptions {
 	}
 }
 
-#[derive(Clone, Debug, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug)]
 pub struct PackOptionsBuilder {
 	from: CoordinateSystem,
 }
@@ -152,7 +153,8 @@ impl PackedGaussian {
 /// Each splat has at most 64 bytes, although splats with fewer spherical
 /// harmonics degrees will have less.
 /// The data is stored non-interleaved.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct PackedGaussians {
 	// Total number of points (gaussians).
 	pub num_points: i32,

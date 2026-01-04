@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use arbitrary::Arbitrary;
 use serde::{Deserialize, Serialize};
 
 impl std::fmt::Display for CoordinateSystem {
@@ -37,7 +36,8 @@ impl From<&str> for CoordinateSystem {
 	}
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CoordinateSystem {
 	#[default]
 	UNSPECIFIED = 0,
@@ -114,7 +114,8 @@ impl CoordinateSystem {
 	}
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CoordinateConverter {
 	pub flip_p: [f32; 3],
 	pub flip_q: [f32; 3],
