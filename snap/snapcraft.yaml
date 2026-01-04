@@ -1,0 +1,34 @@
+name: spz
+title: .SPZ cli
+version: 0.0.1
+license: Apache-2.0 OR MIT
+type: app
+grade: devel
+summary: CLI tool for handling SPZ Gaussian Splat files.
+description: |
+  SPZ is a command-line tool for working with SPZ files, a compressed
+  file format for 3D Gaussian Splats designed by Niantic. It provides
+  efficient storage and manipulation of Gaussian Splat point cloud data.
+
+base: core24
+confinement: strict
+
+issues:
+  - https://github.com/Jackneill/spz/issues
+website:
+  - https://github.com/Jackneill/spz
+source-code:
+  - https://github.com/Jackneill/spz
+contact:
+  - https://github.com/Jackneill/spz
+  - r2ygm3d9f@mozmail.com
+
+parts:
+  spz:
+    plugin: rust
+    source: ..
+
+apps:
+  spz:
+    command: bin/spz
+    plugs: [home, removable-media]

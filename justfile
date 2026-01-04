@@ -93,7 +93,7 @@ assets:
 	test -e assets/racoonfamily.spz || curl -L -o assets/racoonfamily.spz https://github.com/nianticlabs/spz/raw/refs/heads/main/samples/racoonfamily.spz
 	test -e assets/hornedlizard.spz || curl -L -o assets/hornedlizard.spz https://github.com/nianticlabs/spz/raw/refs/heads/main/samples/hornedlizard.spz
 
-flatpak-prepare: uv-install
+flatpak-prepare:
 	flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 	flatpak install -y org.freedesktop.Sdk.Extension.rust-stable/x86_64/25.08
 	flatpak install -y org.flatpak.Builder
