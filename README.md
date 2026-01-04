@@ -19,7 +19,7 @@
 	</a>
 	<br>
 	<a href="https://github.com/Jackneill/spz/actions" target="_blank">
-		<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?	style=for-the-badge&label=CI%3Amain">
+		<img alt="GitHub CI" src="https://img.shields.io/github/check-runs/Jackneill/spz/main?style=for-the-badge&label=CI%3Amain">
 	</a>
 	<a href="https://deps.rs/repo/github/Jackneill/spz" target="_blank">
 		<img alt="Deps" src="https://img.shields.io/deps-rs/repo/github/Jackneill/spz?style=for-the-badge">

@@ -10,6 +10,7 @@ lerna-debug.log*
 crates/spz-pywrapper/.env
 flatpak/cargo-sources.json
 crates/spz-pywrapper/uv.lock
+fuzz/crash-*
 
 mutants.out
 mutants.out.old
