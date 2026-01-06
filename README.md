@@ -83,10 +83,19 @@ $ # or
 $ snap install spz
 $
 $ # run:
-$ path/to/spz info assets/racoonfamily.spz
+$ spz info assets/racoonfamily.spz
+$ # or in container:
+$ podman/docker run --rm -it -v "${PWD}:/app" -w /app spz \
+$	info assets/racoonfamily.spz
 
 GaussianSplat={num_points=932560, sh_degree=3, antialiased=true, median_ellipsoid_volume=0.0000000046213082, bbox=[x=-281.779541 to 258.382568, y=-240.000000 to 240.000000, z=-240.000000 to 240.000000]}
 ```
+
+## Development
+
+<a href="https://codespaces.new/Jackneill/spz?quickstart=1" target="_blank">
+	<img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg"></img>
+</a>
 
 ## Rust
 

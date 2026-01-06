@@ -1,0 +1,2 @@
+# All shell scripts are being run using bash, even if they are lacking a shebang.
+shell=bash

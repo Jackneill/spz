@@ -2,9 +2,10 @@
 
 just := "just"
 cargo := "cargo"
-docker := "podman"
+docker := "docker"
 
 app_name := "spz"
+container_img := "ghcr.io/Jackneill/spz"
 
 export RUST_BACKTRACE := "full"
 export DOCKER_BUILDKIT := "1"
@@ -126,13 +127,21 @@ uv-install:
 	[ -x "$(command -v uv)" ] || curl -LsSf https://astral.sh/uv/install.sh | sh
 
 docker-build-image:
-	{{docker}} build -t {{app_name}} .
+	{{docker}} build -t {{container_img}} .
 
-dr *args:
-	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{app_name}} {{args}}
+docker-build-image-multi-arch:
+	{{docker}} buildx build \
+		--platform linux/amd64,linux/arm64,linux/arm/v6,linux/riscv64 \
+		-t {{container_img}} .
+
+docker-run *args:
+	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{container_img}} {{args}}
 
 py-dev:
 	uvx maturin develop --manifest-path crates/spz-pywrapper/Cargo.toml
+
+py-test:
+	uv run crates/spz-pywrapper/.venv/bin/python -m pytest
 
 py-build:
 	uvx maturin build --release --manifest-path crates/spz-pywrapper/Cargo.toml
@@ -140,9 +149,14 @@ py-build:
 py-publish:
 	uvx maturin publish --manifest-path crates/spz-pywrapper/Cargo.toml
 
+shellcheck script:
+	{{docker}} run --rm -v "${PWD}:/mnt" koalaman/shellcheck:stable {{script}}
+
 clean:
 	rm -rf ./target
 	rm -rf ./flatpak/repo
 	rm -rf ./flatpak/build
 	rm -rf ./.flatpak-builder
 	rm -rf ./.ruff_cache
+	# remove image locally
+	{{docker}} rmi {{container_img}}:latest

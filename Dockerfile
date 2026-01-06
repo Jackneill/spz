@@ -1,5 +1,7 @@
-FROM rust:1.92-alpine3.23 as builder
+FROM rust:1.92-alpine3.23 AS builder
 LABEL stage="builder"
+
+ARG tag
 
 RUN apk add --no-cache \
 	tzdata \
@@ -24,7 +26,7 @@ RUN git config --global url."git@bitbucket.org:".insteadOf "https://bitbucket.or
 COPY . /app
 WORKDIR /app
 
-RUN --mount=type=ssh cargo build --release
+RUN --mount=type=ssh cargo build --release -p spz
 
 FROM alpine:3.23.0
 
