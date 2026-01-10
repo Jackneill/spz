@@ -48,7 +48,7 @@ criterion = { version = "0.8", default-features = true, features = [
 	"html_reports",
 	"async_tokio",
 ] }
-codspeed-criterion-compat = { version = "4.1.0", default-features = true, features = [
+codspeed-criterion-compat = { version = "4.2.1", default-features = true, features = [
 	"async",
 	"async_tokio",
 ] }
