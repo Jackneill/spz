@@ -1,5 +1,11 @@
-FROM rust:1.92-alpine3.23 as builder
+FROM rust:1.92-alpine3.23 AS builder
 LABEL stage="builder"
+
+ARG tag
+
+LABEL org.opencontainers.image.source=https://github.com/Jackneill/spz
+LABEL org.opencontainers.image.description="CLI tooling for the .SPZ (v3) Gaussian Splatting library."
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 
 RUN apk add --no-cache \
 	tzdata \
@@ -24,9 +30,13 @@ RUN git config --global url."git@bitbucket.org:".insteadOf "https://bitbucket.or
 COPY . /app
 WORKDIR /app
 
-RUN --mount=type=ssh cargo build --release
+RUN --mount=type=ssh cargo build --release -p spz
 
-FROM alpine:3.23.0
+FROM alpine:3.23
+
+LABEL org.opencontainers.image.source=https://github.com/Jackneill/spz
+LABEL org.opencontainers.image.description="CLI tooling for the .SPZ (v3) Gaussian Splatting library."
+LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 
 RUN apk add --no-cache \
 	tzdata \

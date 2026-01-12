@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github
 #
-name: Python
+name: Python CI
 
 on:
   push:
@@ -18,6 +18,20 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: extractions/setup-just@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Lint
+        run: just py-lint
+
   linux:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
