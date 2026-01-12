@@ -29,7 +29,7 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-spz = { path = "../crates/spz", default-features = false, features = [] }
+spz = { path = "../crates/spz", default-features = false, features = ["fuzzing"] }
 
 libfuzzer-sys = { version = "0.4", default-features = true, features = [] }
 arbitrary = { version = "1.4", default-features = true, features = ["derive"] }

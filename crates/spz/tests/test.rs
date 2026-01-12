@@ -127,8 +127,7 @@ fn test_spz_values(#[case] filename: &str, #[case] spz_values: util::SpzValues) 
 	let spz_path = util::assets_dir().join(filename);
 
 	let gs = GaussianSplat::builder()
-		.filepath(spz_path)
-		.load()
+		.load(spz_path)
 		.expect("failed to load gaussian splat");
 
 	assert_eq!(gs.num_points, spz_values.num_points);

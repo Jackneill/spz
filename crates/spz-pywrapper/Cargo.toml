@@ -33,7 +33,7 @@ name = "spz"
 crate-type = ["cdylib"]
 
 [dependencies]
-spz = { version = "0.0.6", default-features = false, features = [] }
+spz = { path = "../spz", default-features = false, features = [] }
 pyo3 = { version = "0.27", default-features = true, features = [] }
 
 [dev-dependencies]

@@ -4,17 +4,15 @@ use std::io::BufReader;
 use std::io::Read;
 use std::io::Write;
 
-use anyhow::bail;
-use anyhow::{Context, Result};
-use arbitrary::Arbitrary;
 use likely_stable::unlikely;
 use serde::{Deserialize, Serialize};
 
-use crate::{consts, math};
+use crate::{consts, errors::SpzError, math};
 use crate::{coord::CoordinateConverter, unpacked::UnpackedGaussian};
 use crate::{coord::CoordinateSystem, header::PackedGaussiansHeader};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PackOptions {
 	pub from: CoordinateSystem,
 }
@@ -26,7 +24,8 @@ impl PackOptions {
 	}
 }
 
-#[derive(Clone, Debug, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug)]
 pub struct PackOptionsBuilder {
 	from: CoordinateSystem,
 }
@@ -78,7 +77,7 @@ impl PackedGaussian {
 		uses_quaternion_smallest_three: bool,
 		fractional_bits: i32,
 		coord_flip: &CoordinateConverter,
-	) -> Result<UnpackedGaussian> {
+	) -> Result<UnpackedGaussian, SpzError> {
 		let mut result = UnpackedGaussian::default();
 
 		// positions
@@ -95,7 +94,7 @@ impl PackedGaussian {
 			let s = 1u32 << (fractional_bits as u32);
 
 			if s == 0 {
-				bail!("invalid fractional bits (= 0): {}", fractional_bits);
+				return Err(SpzError::InvalidFractionalBits(0, fractional_bits));
 			}
 			let scale = 1.0_f32 / s as f32;
 
@@ -152,7 +151,8 @@ impl PackedGaussian {
 /// Each splat has at most 64 bytes, although splats with fewer spherical
 /// harmonics degrees will have less.
 /// The data is stored non-interleaved.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct PackedGaussians {
 	// Total number of points (gaussians).
 	pub num_points: i32,
@@ -190,7 +190,7 @@ impl PackedGaussians {
 		}
 	}
 
-	pub fn as_bytes_vec(&self) -> Result<Vec<u8>> {
+	pub fn as_bytes_vec(&self) -> Result<Vec<u8>, SpzError> {
 		let mut ret = Vec::new();
 
 		self.construct_header().serialize_to(&mut ret)?;
@@ -205,7 +205,7 @@ impl PackedGaussians {
 		Ok(ret)
 	}
 
-	pub fn write_self_to<W>(&self, stream: &mut W) -> Result<()>
+	pub fn write_self_to<W>(&self, stream: &mut W) -> Result<(), SpzError>
 	where
 		W: Write,
 	{
@@ -226,9 +226,9 @@ impl PackedGaussians {
 		self.positions.len() == self.num_points as usize * 3 * 2
 	}
 
-	pub fn at(&self, i: usize) -> Result<PackedGaussian> {
+	pub fn at(&self, i: usize) -> Result<PackedGaussian, SpzError> {
 		if i >= self.num_points as usize {
-			bail!("index out of bounds: {}", i);
+			return Err(SpzError::IndexOutOfBounds(i));
 		}
 		let idx = i as usize;
 		let mut result = PackedGaussian::default();
@@ -292,7 +292,7 @@ impl PackedGaussians {
 		&self,
 		i: usize,
 		coord_flip: &CoordinateConverter,
-	) -> Result<UnpackedGaussian> {
+	) -> Result<UnpackedGaussian, SpzError> {
 		self.at(i)?.unpack(
 			self.uses_float16(),
 			self.uses_quaternion_smallest_three,
@@ -328,7 +328,7 @@ impl PackedGaussians {
 }
 
 impl TryFrom<Vec<u8>> for PackedGaussians {
-	type Error = anyhow::Error;
+	type Error = SpzError;
 
 	fn try_from(b: Vec<u8>) -> Result<Self, Self::Error> {
 		Self::try_from(b.as_slice())
@@ -336,25 +336,23 @@ impl TryFrom<Vec<u8>> for PackedGaussians {
 }
 
 impl TryFrom<&[u8]> for PackedGaussians {
-	type Error = anyhow::Error;
+	type Error = SpzError;
 
 	fn try_from(b: &[u8]) -> Result<Self, Self::Error> {
 		let mut from_reader = BufReader::new(b);
 
-		let header = PackedGaussiansHeader::read_from(&mut from_reader)
-			.with_context(|| "unable to read packed gaussians header")?;
+		let header = PackedGaussiansHeader::read_from(&mut from_reader)?;
 
 		if unlikely(header.magic != consts::HEADER_MAGIC) {
-			bail!("invalid magic number in packed gaussians header");
+			return Err(SpzError::InvalidMagicNumber);
 		}
 		if unlikely(header.version < 1 || header.version > 3) {
-			bail!("unsupported version: {}", header.version);
+			return Err(SpzError::UnsupportedVersion(header.version));
 		}
 		if header.spherical_harmonics_degree > 3 {
-			bail!(
-				"unsupported spherical harmonics degree: {}",
-				header.spherical_harmonics_degree
-			);
+			return Err(SpzError::UnsupportedSphericalHarmonicsDegree(
+				header.spherical_harmonics_degree,
+			));
 		}
 		let num_points = header.num_points;
 		let uses_float16 = header.version == 1;
@@ -385,24 +383,12 @@ impl TryFrom<&[u8]> for PackedGaussians {
 						as usize * 3
 			],
 		};
-		if let Err(err) = from_reader.read_exact(&mut result.positions) {
-			bail!("read error (positions): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.alphas) {
-			bail!("read error (alphas): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.colors) {
-			bail!("read error (colors): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.scales) {
-			bail!("read error (scales): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.rotations) {
-			bail!("read error (rotations): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) {
-			bail!("read error (sh): {}", err);
-		}
+		from_reader.read_exact(&mut result.positions)?;
+		from_reader.read_exact(&mut result.alphas)?;
+		from_reader.read_exact(&mut result.colors)?;
+		from_reader.read_exact(&mut result.scales)?;
+		from_reader.read_exact(&mut result.rotations)?;
+		from_reader.read_exact(&mut result.spherical_harmonics)?;
 		Ok(result)
 	}
 }

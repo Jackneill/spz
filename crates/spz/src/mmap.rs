@@ -2,15 +2,18 @@
 
 use std::{fs::File, path::Path};
 
-use anyhow::Context;
-use anyhow::Result;
+use crate::errors::SpzError;
 use memmap2::Mmap;
 
-pub fn open<F>(file: F) -> Result<Mmap>
+pub fn open<F>(file: F) -> Result<Mmap, SpzError>
 where
 	F: AsRef<Path>,
 {
 	let infile = File::open(&file)?;
 
-	unsafe { Mmap::map(&infile).with_context(|| "unable to open file with mmap()") }
+	unsafe {
+		Mmap::map(&infile).map_err(|_| {
+			SpzError::LoadPackedError("unable to open file with mmap()".to_string())
+		})
+	}
 }

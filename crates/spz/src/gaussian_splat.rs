@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::{path::Path, path::PathBuf};
+use std::path::Path;
 
-use anyhow::{Context, Result, bail};
-use arbitrary::Arbitrary;
+use futures::io::AsyncReadExt;
 use likely_stable::unlikely;
 use serde::{Deserialize, Serialize};
-use tokio::io::AsyncReadExt;
 
 use crate::{
 	compression, consts,
 	coord::{CoordinateConverter, CoordinateSystem},
+	errors::SpzError,
 	math::{self, dim_for_degree, half_to_float},
 	mmap,
 	packed::PackOptions,
@@ -18,7 +17,8 @@ use crate::{
 	unpacked::UnpackOptions,
 };
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct GaussianSplat {
 	/// The number of gaussians.
 	pub num_points: i32,
@@ -83,47 +83,28 @@ impl GaussianSplat {
 		GaussianSplatBuilder::default()
 	}
 
-	/// Loads Gaussian splat from a file in packed format, async.
+	/// Loads Gaussian splat from an async reader containing packed data.
 	///
-	/// `filepath` - gzip compressed, packed gaussian data file.
-	pub async fn load_packed_from_file_into_buf_async<F>(
-		filepath: F,
+	/// `reader` - gzip compressed, packed gaussian data stream.
+	pub async fn load_packed_from_reader<R>(
+		mut reader: R,
 		unpack_opts: &UnpackOptions,
-		contents: &mut Vec<u8>,
-	) -> Result<Self>
+	) -> Result<Self, SpzError>
 	where
-		F: AsRef<Path>,
-	{
-		let mut infile = tokio::fs::File::open(filepath).await?;
-
-		infile.read_to_end(contents).await?;
-
-		return Self::new_from_packed_gaussians(
-			&Self::load_packed(&contents)?,
-			unpack_opts,
-		);
-	}
-
-	/// Loads Gaussian splat from a file in packed format, async.
-	///
-	/// `filepath` - gzip compressed, packed gaussian data file.
-	pub async fn load_packed_from_file_async<F>(
-		filepath: F,
-		unpack_opts: &UnpackOptions,
-	) -> Result<Self>
-	where
-		F: AsRef<Path>,
+		R: futures::io::AsyncRead + Unpin,
 	{
 		let mut contents = Vec::new();
-
-		Self::load_packed_from_file_into_buf_async(filepath, unpack_opts, &mut contents)
-			.await
+		reader.read_to_end(&mut contents).await?;
+		Self::new_from_packed_gaussians(&Self::load_packed(&contents)?, unpack_opts)
 	}
 
 	/// Loads Gaussian splat from a file in packed format.
 	///
 	/// `filepath` - gzip compressed, packed gaussian data file.
-	pub fn load_packed_from_file<F>(filepath: F, unpack_opts: &UnpackOptions) -> Result<Self>
+	pub fn load_packed_from_file<F>(
+		filepath: F,
+		unpack_opts: &UnpackOptions,
+	) -> Result<Self, SpzError>
 	where
 		F: AsRef<Path>,
 	{
@@ -137,8 +118,7 @@ impl GaussianSplat {
 			);
 		}
 		let mmap = mmap::open(filepath)?;
-		let packed = Self::load_packed(mmap.as_ref())
-			.with_context(|| "unable to load packed file")?;
+		let packed = Self::load_packed(mmap.as_ref())?;
 
 		Self::new_from_packed_gaussians(&packed, unpack_opts)
 	}
@@ -146,65 +126,70 @@ impl GaussianSplat {
 	/// Loads Gaussian splat from a slice of bytes in packed format.
 	///
 	/// `data` - gzip compressed, packed gaussian data.
-	pub fn load_packed<D>(data: D) -> Result<PackedGaussians>
+	pub fn load_packed<D>(data: D) -> Result<PackedGaussians, SpzError>
 	where
 		D: AsRef<[u8]>,
 	{
 		if unlikely(data.as_ref().is_empty()) {
 			// we cannot return an empty struct as there is no header
-			bail!("data is empty");
+			return Err(SpzError::DataIsEmpty);
 		}
 		let mut decompressed = Vec::<u8>::new();
 
-		crate::compression::gzip_to_bytes(data, &mut decompressed)
-			.with_context(|| "unable to decompress gzip data")?;
+		crate::compression::gzip_to_bytes(data, &mut decompressed).map_err(|_| {
+			SpzError::LoadPackedError("unable to decompress gzip data".to_string())
+		})?;
 
-		let packed: PackedGaussians = decompressed
-			.try_into()
-			.with_context(|| "unable to parse packed gaussian data")?;
+		let packed: PackedGaussians = decompressed.try_into().map_err(|_| {
+			SpzError::LoadPackedError(
+				"unable to parse packed gaussian data".to_string(),
+			)
+		})?;
 
 		Ok(packed)
 	}
 
 	#[inline]
-	pub async fn save_as_packed_async<F>(
+	pub async fn save_as_packed_async<W>(
 		&self,
-		filepath: F,
+		mut writer: W,
 		pack_opts: &PackOptions,
-	) -> Result<()>
+	) -> Result<(), SpzError>
 	where
-		F: AsRef<Path>,
+		W: futures::io::AsyncWrite + Unpin,
 	{
+		use futures::io::AsyncWriteExt;
+
 		let compressed = self.serialize_as_packed_bytes(pack_opts)?;
+		writer.write_all(&compressed).await?;
+		writer.flush().await?;
 
-		tokio::fs::create_dir_all(
-			filepath.as_ref()
-				.parent()
-				.ok_or_else(|| anyhow::anyhow!("recursive mkdir failed"))?,
-		)
-		.await?;
-
-		tokio::fs::write(filepath, compressed)
-			.await
-			.with_context(|| "unable to write to file")
+		Ok(())
 	}
 
 	#[inline]
-	pub fn save_as_packed<F>(&self, filepath: F, pack_opts: &PackOptions) -> Result<()>
+	pub fn save_as_packed<F>(
+		&self,
+		filepath: F,
+		pack_opts: &PackOptions,
+	) -> Result<(), SpzError>
 	where
 		F: AsRef<Path>,
 	{
 		let compressed = self.serialize_as_packed_bytes(pack_opts)?;
 
-		std::fs::create_dir_all(
-			filepath.as_ref()
-				.parent()
-				.ok_or_else(|| anyhow::anyhow!("recursive mkdir failed"))?,
-		)?;
-		std::fs::write(filepath, compressed).with_context(|| "unable to write to file")
+		if let Some(parent) = filepath.as_ref().parent() {
+			std::fs::create_dir_all(parent)?;
+		};
+		std::fs::write(filepath, compressed)?;
+
+		Ok(())
 	}
 
-	pub fn serialize_as_packed_bytes(&self, pack_opts: &PackOptions) -> Result<Vec<u8>> {
+	pub fn serialize_as_packed_bytes(
+		&self,
+		pack_opts: &PackOptions,
+	) -> Result<Vec<u8>, SpzError> {
 		let packed = self.to_packed_gaussians(pack_opts)?;
 
 		let uncompressed = packed.as_bytes_vec()?;
@@ -218,13 +203,13 @@ impl GaussianSplat {
 	pub fn new_from_packed_gaussians(
 		packed: &PackedGaussians,
 		unpack_opts: &UnpackOptions,
-	) -> Result<Self> {
+	) -> Result<Self, SpzError> {
 		let num_points = packed.num_points as usize;
 		let sh_dim = dim_for_degree(packed.sh_degree as u8);
 		let uses_float16 = packed.uses_float16();
 
 		if unlikely(!packed.check_sizes(num_points, sh_dim, uses_float16)) {
-			bail!("inconsistent sizes");
+			return Err(SpzError::InconsistentSizes);
 		}
 		let mut result = Self {
 			num_points: packed.num_points,
@@ -304,9 +289,12 @@ impl GaussianSplat {
 		Ok(result)
 	}
 
-	pub fn to_packed_gaussians(&self, pack_opts: &PackOptions) -> Result<PackedGaussians> {
+	pub fn to_packed_gaussians(
+		&self,
+		pack_opts: &PackOptions,
+	) -> Result<PackedGaussians, SpzError> {
 		if unlikely(!self.check_sizes()) {
-			bail!("inconsistent sizes");
+			return Err(SpzError::InconsistentSizes);
 		}
 		let num_points = self.num_points as usize;
 		let sh_dim = math::dim_for_degree(self.spherical_harmonics_degree as u8) as usize;
@@ -645,7 +633,8 @@ impl std::fmt::Display for GaussianSplat {
 	}
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BoundingBox {
 	pub min_x: f32,
 	pub max_x: f32,
@@ -677,9 +666,9 @@ impl BoundingBox {
 	}
 }
 
-#[derive(Clone, Debug, Arbitrary)]
+#[cfg_attr(feature = "fuzzing", derive(arbitrary::Arbitrary))]
+#[derive(Clone, Debug)]
 pub struct GaussianSplatBuilder {
-	filepath: Option<PathBuf>,
 	unpack_opts: UnpackOptions,
 	packed: bool,
 }
@@ -688,7 +677,6 @@ impl Default for GaussianSplatBuilder {
 	#[inline]
 	fn default() -> Self {
 		GaussianSplatBuilder {
-			filepath: None,
 			unpack_opts: UnpackOptions::default(),
 			packed: true,
 		}
@@ -696,17 +684,11 @@ impl Default for GaussianSplatBuilder {
 }
 
 impl GaussianSplatBuilder {
-	pub fn filepath<F>(mut self, filepath: F) -> Self
-	where
-		F: AsRef<Path>,
-	{
-		self.filepath = Some(filepath.as_ref().to_path_buf());
-		self
-	}
-
-	pub fn packed(mut self, packed: bool) -> Result<Self> {
+	pub fn packed(mut self, packed: bool) -> Result<Self, SpzError> {
 		if !packed {
-			bail!("only packed format loading is supported currently");
+			return Err(SpzError::UnsupportedFormat(
+				"only packed format loading is supported currently".to_string(),
+			));
 		}
 		self.packed = packed;
 
@@ -718,19 +700,18 @@ impl GaussianSplatBuilder {
 		self
 	}
 
-	pub fn load(self) -> Result<GaussianSplat> {
-		GaussianSplat::load_packed_from_file(
-			self.filepath.as_ref().unwrap(),
-			&self.unpack_opts,
-		)
+	pub fn load<F>(self, filepath: F) -> Result<GaussianSplat, SpzError>
+	where
+		F: AsRef<Path>,
+	{
+		GaussianSplat::load_packed_from_file(filepath, &self.unpack_opts)
 	}
 
-	pub async fn load_async(self) -> Result<GaussianSplat> {
-		GaussianSplat::load_packed_from_file_async(
-			self.filepath.as_ref().unwrap(),
-			&self.unpack_opts,
-		)
-		.await
+	pub async fn load_async<R>(self, reader: R) -> Result<GaussianSplat, SpzError>
+	where
+		R: futures::io::AsyncRead + Unpin,
+	{
+		GaussianSplat::load_packed_from_reader(reader, &self.unpack_opts).await
 	}
 }
 
