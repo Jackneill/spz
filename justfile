@@ -49,7 +49,11 @@ lint:
 	{{cargo}} clippy
 	uvx reuse lint
 
-py-lint:
+lint-ci:
+	go install github.com/rhysd/actionlint/cmd/actionlint@latest
+	actionlint ./.github/workflows/*
+
+lint-py:
 	uvx ruff check crates/spz-pywrapper
 
 bench: assets
