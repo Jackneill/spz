@@ -8,6 +8,8 @@ on:
 jobs:
   check:
     name: Check License Headers
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Check License Header
