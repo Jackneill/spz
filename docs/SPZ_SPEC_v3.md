@@ -3,7 +3,7 @@
 **Creator:** [Niantic Labs](https://github.com/nianticlabs) //
 **License:** [MIT](../LICENSE-MIT)
 
-*Last updated: 2025-12-28*
+*Last updated: 2026-01-15*
 
 ---
 
