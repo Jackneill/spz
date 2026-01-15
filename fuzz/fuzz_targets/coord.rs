@@ -17,6 +17,6 @@ struct Input {
 }
 
 fuzz_target!(|input: Input| {
-	let _ = input.from_sys.convert(input.to_sys.clone());
-	let _ = input.from_sys.axes_match(input.to_sys);
+	let _ = input.from_sys.axis_flips_to(input.to_sys.clone());
+	let _ = input.from_sys.axes_align(input.to_sys);
 });

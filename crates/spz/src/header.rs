@@ -57,18 +57,6 @@ pub const HEADER_SIZE: usize = std::mem::size_of::<PackedGaussiansHeader>();
 /// | 13     | 1    | `fractional_bits`           |
 /// | 14     | 1    | `flags`                     |
 /// | 15     | 1    | `reserved` (must be `0`)    |
-///
-/// # Example
-///
-/// ```no_run
-/// use std::fs::File;
-/// use spz::header::PackedGaussiansHeader;
-///
-/// let mut file = File::open("scene.spz").unwrap();
-/// let header = PackedGaussiansHeader::read_from(&mut file).unwrap();
-///
-/// println!("Contains {} gaussians", header.num_points);
-/// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
 #[repr(C)]
 pub struct PackedGaussiansHeader {
@@ -128,11 +116,10 @@ impl PackedGaussiansHeader {
 		W: Write,
 	{
 		let b = unsafe {
-			//std::slice::from_raw_parts(
-			//	self as *const Self as *const u8,
-			//	std::mem::size_of::<Self>(),
-			//);
-			std::mem::transmute::<Self, &[u8]>(self.clone())
+			std::slice::from_raw_parts(
+				self as *const Self as *const u8,
+				std::mem::size_of::<Self>(),
+			)
 		};
 		stream.write_all(b)
 			.with_context(|| "unable to write packed gaussians header to stream")

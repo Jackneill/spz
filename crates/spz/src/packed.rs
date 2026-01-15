@@ -1,5 +1,29 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+//! Compressed (packed) Gaussian splat data for SPZ files.
+//!
+//! This module provides types for working with quantized, compressed splat data
+//! as stored in SPZ files.
+//!
+//! The packed format uses:
+//! - fixed-point encoding for positions
+//! - quantized quaternions for rotations
+//! - byte-quantized values for colors
+//! - byte-quantized values for spherical harmonics,
+//! achieving significant size reduction compared to raw floats.
+//!
+//! # Key Types
+//!
+//! - [`PackedGaussians`] — Collection of all packed splat data (non-interleaved)
+//! - [`PackedGaussian`] — Single packed splat (65 bytes)
+//! - [`PackOptions`] — Settings for packing (source coordinate system)
+//!
+//! # Data Layout
+//!
+//! SPZ files store data in non-interleaved format for better compression:
+//! `[header][positions][alphas][colors][scales][rotations][spherical_harmonics]`
+//! ```
+
 use std::io::BufReader;
 use std::io::Read;
 use std::io::Write;
@@ -14,30 +38,39 @@ use crate::{consts, math};
 use crate::{coord::AxisFlips, unpacked::UnpackedGaussian};
 use crate::{coord::CoordinateSystem, header::PackedGaussiansHeader};
 
+/// Options for packing [`GaussianSplat`](crate::gaussian_splat::GaussianSplat) data.
+///
+/// Specifies the source coordinate system so axis flips can be applied during
+/// compression to convert to the SPZ internal format (RightUpBack).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
 pub struct PackOptions {
+	/// The coordinate system of the source data.
 	pub from: CoordinateSystem,
 }
 
 impl PackOptions {
+	/// Creates a new [`PackOptionsBuilder`].
 	#[inline]
 	pub fn builder() -> PackOptionsBuilder {
 		PackOptionsBuilder::default()
 	}
 }
 
+/// Builder for [`PackOptions`].
 #[derive(Clone, Debug, Arbitrary)]
 pub struct PackOptionsBuilder {
 	from: CoordinateSystem,
 }
 
 impl PackOptionsBuilder {
+	/// Sets the source coordinate system.
 	#[inline]
 	pub fn from(mut self, from: CoordinateSystem) -> Self {
 		self.from = from;
 		self
 	}
 
+	/// Builds the [`PackOptions`].
 	#[inline]
 	pub fn build(self) -> PackOptions {
 		PackOptions { from: self.from }
@@ -72,6 +105,22 @@ pub struct PackedGaussian {
 }
 
 impl PackedGaussian {
+	/// Decompresses this packed Gaussian into full-precision values,
+	/// [`UnpackedGaussian`].
+	///
+	/// Decodes quantized position, rotation, scale, color, alpha, and spherical
+	/// harmonics back to `f32` values, applying coordinate axis flips as specified.
+	///
+	/// # Arguments
+	///
+	/// * `uses_float16` — If `true`, positions are float16 (6 bytes); otherwise fixed24 (9 bytes)
+	/// * `uses_quaternion_smallest_three` — If `true`, rotations use 4-byte smallest-three encoding
+	/// * `fractional_bits` — Bits for fractional part in fixed-point position encoding
+	/// * `coord_flip` — Sign multipliers for coordinate system transformation
+	///
+	/// # Returns
+	///
+	/// An [`UnpackedGaussian`] with all attributes decoded to `f32`.
 	pub fn unpack(
 		&self,
 		uses_float16: bool,
@@ -147,33 +196,51 @@ impl PackedGaussian {
 	}
 }
 
-/// Represents a full splat with lower precision.
+/// Compressed Gaussian splat collection in SPZ format.
 ///
-/// Each splat has at most 64 bytes, although splats with fewer spherical
-/// harmonics degrees will have less.
-/// The data is stored non-interleaved.
+/// Stores all splat data in non-interleaved arrays for efficient compression.
+/// Each attribute (positions, rotations, etc.) is stored contiguously across
+/// all splats rather than per-splat.
+///
+/// # Data Sizes per Splat
+///
+/// | Attribute | Bytes | Encoding |
+/// |-----------|-------|----------|
+/// | position  | 6 or 9 | float16 or fixed24 |
+/// | scale     | 3 | quantized log-scale |
+/// | rotation  | 3 or 4 | packed quaternion |
+/// | alpha     | 1 | quantized sigmoid |
+/// | color     | 3 | quantized RGB |
+/// | SH        | 0-45 | quantized, per degree |
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct PackedGaussians {
-	// Total number of points (gaussians).
+	/// Total number of Gaussian splats.
 	pub num_points: i32,
-	// Degree of spherical harmonics.
+	/// Spherical harmonics degree (0-3).
 	pub sh_degree: i32,
-	// Number of bits used for fractional part of fixed-point coords.
+	/// Bits used for fractional part of fixed-point positions.
 	pub fractional_bits: i32,
-	// Whether gaussians should be rendered with mip-splat antialiasing.
+	/// Whether splats use mip-splatting antialiasing.
 	pub antialiased: bool,
-	// Whether gaussians use the smallest three method to store quaternions.
+	/// Whether rotations use smallest-three quaternion encoding.
 	pub uses_quaternion_smallest_three: bool,
 
+	/// Quantized positions (6 or 9 bytes per splat).
 	pub positions: Vec<u8>,
+	/// Quantized log-scales (3 bytes per splat).
 	pub scales: Vec<u8>,
+	/// Packed quaternion rotations (3 or 4 bytes per splat).
 	pub rotations: Vec<u8>,
+	/// Quantized opacity (1 byte per splat).
 	pub alphas: Vec<u8>,
+	/// Quantized RGB colors (3 bytes per splat).
 	pub colors: Vec<u8>,
+	/// Quantized spherical harmonics (variable size based on degree).
 	pub spherical_harmonics: Vec<u8>,
 }
 
 impl PackedGaussians {
+	/// Constructs an SPZ header from this packed data's metadata.
 	#[inline]
 	pub fn construct_header(&self) -> PackedGaussiansHeader {
 		PackedGaussiansHeader {
@@ -190,6 +257,9 @@ impl PackedGaussians {
 		}
 	}
 
+	/// Serializes to a complete SPZ file as a byte vector.
+	///
+	/// Returns header followed by all attribute arrays in SPZ order.
 	pub fn as_bytes_vec(&self) -> Result<Vec<u8>> {
 		let mut ret = Vec::new();
 
@@ -205,6 +275,7 @@ impl PackedGaussians {
 		Ok(ret)
 	}
 
+	/// Writes this packed data to a writer in SPZ format.
 	pub fn write_self_to<W>(&self, stream: &mut W) -> Result<()>
 	where
 		W: Write,
@@ -221,11 +292,13 @@ impl PackedGaussians {
 		Ok(())
 	}
 
+	/// Returns `true` if positions are stored as float16.
 	#[inline]
 	pub fn uses_float16(&self) -> bool {
 		self.positions.len() == self.num_points as usize * 3 * 2
 	}
 
+	/// Returns the packed data for a single splat at index `i`.
 	pub fn at(&self, i: usize) -> Result<PackedGaussian> {
 		if i >= self.num_points as usize {
 			bail!("index out of bounds: {}", i);
@@ -287,6 +360,9 @@ impl PackedGaussians {
 		Ok(result)
 	}
 
+	/// Unpacks a single splat at index `i` with coordinate transformation.
+	///
+	/// Applies the given axis flips during decompression.
 	#[inline]
 	pub fn unpack(&self, i: usize, coord_flip: &AxisFlips) -> Result<UnpackedGaussian> {
 		self.at(i)?.unpack(
@@ -297,6 +373,10 @@ impl PackedGaussians {
 		)
 	}
 
+	/// Validates that all internal arrays have the expected sizes.
+	///
+	/// Returns `true` if sizes match the expected layout for the given
+	/// number of points and SH dimension.
 	pub fn check_sizes(&self, num_points: usize, sh_dim: u8, uses_float16: bool) -> bool {
 		let np = num_points;
 		let pos_expected = np * 3 * if uses_float16 { 2 } else { 3 };

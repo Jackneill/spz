@@ -289,16 +289,16 @@ fn sample_sh_coefficients() -> Vec<f32> {
 		spherical_harmonics: sample_sh_coefficients(), // Set up test data with non-zero SH coefficients
 	},
 	PackOptions { // Save as RUB and load as RDF (180 degree rotation about X)
-		from: CoordinateSystem::RUB,
+		from: CoordinateSystem::RightUpBack,
 	},
 	UnpackOptions {
-		to_coord_sys: CoordinateSystem::RDF,
+		to_coord_sys: CoordinateSystem::RightDownFront,
 	},
 	PackOptions {
-		from: CoordinateSystem::RDF,
+		from: CoordinateSystem::RightDownFront,
 	},
 	UnpackOptions {
-		to_coord_sys: CoordinateSystem::RDF,
+		to_coord_sys: CoordinateSystem::RightDownFront,
 	}
 )]
 fn test_spherical_harmonics_coordinate_transformation(
@@ -427,8 +427,8 @@ fn test_quaternion_normalization_during_packing(#[case] gs: GaussianSplat) {
 		colors: vec![],
 		spherical_harmonics: vec![],
 	},
-	CoordinateSystem::RUB,
-	CoordinateSystem::RDF,
+	CoordinateSystem::RightUpBack,
+	CoordinateSystem::RightDownFront,
 	[1.0, -2.0, -3.0],
 	[0.1, -0.2, -0.3, 0.9],
 	[1.0, 2.0, 3.0],

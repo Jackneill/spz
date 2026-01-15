@@ -62,6 +62,7 @@
 	<a href="https://snapcraft.io/spz" target="_blank">
 		<img width="160" alt="Get it on Snapcraft Store" src="./assets/images/snap_badge.svg"/>
 	</a>
+
 </p>
 
 ## What is SPZ?
@@ -167,20 +168,241 @@ where
 
 ## API
 
-### Overview
+### Outline Overview
+
+* This outline is _non-exhaustive_.
 
 ```rust
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+// mod gaussian_splat ──────────────────────────────────────────────────────────
+
+pub struct GaussianSplatBuilder { /* ... */ }
+
+impl GaussianSplatBuilder {
+	pub fn filepath<F: AsRef<Path>>(self, filepath: F) -> Self;
+	pub fn packed(self, packed: bool) -> Result<Self>;
+	pub fn unpack_options(self, opts: UnpackOptions) -> Self;
+	pub fn load(self) -> Result<GaussianSplat>;
+	pub async fn load_async(self) -> Result<GaussianSplat>;
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct GaussianSplat {
 	pub num_points: i32,
-	pub spherical_harmonics_degree: i32,
+	pub spherical_harmonics_degree: i32, // 0-3
 	pub antialiased: bool,
-	pub positions: Vec<f32>,
-	pub scales: Vec<f32>,
-	pub rotations: Vec<f32>,
-	pub alphas: Vec<f32>,
-	pub colors: Vec<f32>,
-	pub spherical_harmonics: Vec<f32>,
+	pub positions: Vec<f32>,	// flattened: [x0, y0, z0, x1, y1, z1, ...]
+	pub scales: Vec<f32>,		// flattened: [x0, y0, z0, x1, y1, z1, ...], log-scale
+	pub rotations: Vec<f32>,	// flattened: [x0, y0, z0, w0, x1, y1, z1, w1, ...]
+	pub alphas: Vec<f32>,		// opacity (sigmoid-encoded)
+	pub colors: Vec<f32>,		// flattened: [r0, g0, b0, r1, g1, b1, ...], DC color
+	pub spherical_harmonics: Vec<f32>, // SH coefficients (degrees 1-3)
+}
+
+impl GaussianSplat {
+	// Construction & Loading
+	pub fn builder() -> GaussianSplatBuilder;
+	pub fn load_packed_from_file<F: AsRef<Path>>(filepath: F, opts: &UnpackOptions) -> Result<Self>;
+	pub fn load_packed<D: AsRef<[u8]>>(data: D) -> Result<PackedGaussians>;
+	pub fn new_from_packed_gaussians(packed: &PackedGaussians, opts: &UnpackOptions) -> Result<Self>;
+
+	// Serialization
+	pub fn save_as_packed<F: AsRef<Path>>(&self, filepath: F, opts: &PackOptions) -> Result<()>;
+	pub fn serialize_as_packed_bytes(&self, opts: &PackOptions) -> Result<Vec<u8>>;
+	pub fn to_packed_gaussians(&self, opts: &PackOptions) -> Result<PackedGaussians>;
+
+	// Transforms
+	pub fn convert_coordinates(&mut self, from: CoordinateSystem, to: CoordinateSystem);
+
+	// Introspection
+	pub fn bbox(&self) -> BoundingBox;
+	/// Compute median ellipsoid volume.
+	pub fn median_volume(&self) -> f32;
+	/// Validates that all internal arrays have consistent sizes.
+	pub fn check_sizes(&self) -> bool;
+}
+
+pub struct BoundingBox {
+	pub x_min: f32, pub x_max: f32,
+	pub y_min: f32, pub y_max: f32,
+	pub z_min: f32, pub z_max: f32,
+}
+
+impl BoundingBox {
+	pub fn size(&self) -> (f32, f32, f32);	 // (width, height, depth)
+	pub fn center(&self) -> (f32, f32, f32); // (x, y, z)
+}
+
+// mod coord ───────────────────────────────────────────────────────────────────
+
+pub enum CoordinateSystem {
+	Unspecified = 0,
+
+	/* LDB */ LeftDownBack = 1,
+	/* RDB */ RightDownBack = 2,
+	/* LUB */ LeftUpBack = 3,
+	/* RUB */ RightUpBack = 4,	// SPZ Internal, Three.js coordinate system
+	/* LDF */ LeftDownFront = 5,
+	/* RDF */ RightDownFront = 6, 	// PLY coordinate system
+	/* LUF */ LeftUpFront = 7,	// GLB coordinate system
+	/* RUF */ RightUpFront = 8,	// Unity coordinate system
+}
+
+impl CoordinateSystem {
+	/// Computes the axis flip multipliers needed to convert from `self` to `target`.
+	pub fn axis_flips_to(self, target: CoordinateSystem) -> AxisFlips;
+	/// Compares axis orientations between two coordinate systems.
+	pub fn axes_align(self, other: CoordinateSystem) -> (bool, bool, bool);
+	/// Returns a short 3-letter abbreviation for the coordinate system.
+	pub fn as_short_str(&self) -> &'static str;
+	/// Returns an iterator over all coordinate system variants.
+	pub fn iter() -> impl Iterator<Item = CoordinateSystem>;
+}
+
+/// Sign multipliers (+1.0 or -1.0) for transforming Gaussian splat data between
+/// coordinate systems.
+pub struct AxisFlips {
+	/// Sign multipliers for XYZ position coordinates.
+	pub position: [f32; 3],
+	/// Sign multipliers for quaternion rotation components (X, Y, Z; W is unchanged).
+	pub rotation: [f32; 3],
+	/// Sign multipliers for spherical harmonic coefficients (15 values for degrees 1-3).
+	pub spherical_harmonics: [f32; 15],
+}
+
+// mod packed ──────────────────────────────────────────────────────────────────
+
+/// Represents a full splat with lower precision.
+pub struct PackedGaussians {
+	// Total number of points (gaussians).
+	pub num_points: i32,
+	// Degree of spherical harmonics.
+	pub sh_degree: i32,
+	// Number of bits used for fractional part of fixed-point coords.
+	pub fractional_bits: i32,
+	// Whether gaussians should be rendered with mip-splat antialiasing.
+	pub antialiased: bool,
+	// Whether gaussians use the smallest three method to store quaternions.
+	pub uses_quaternion_smallest_three: bool,
+
+	pub positions: Vec<u8>,
+	pub scales: Vec<u8>,
+	pub rotations: Vec<u8>,
+	pub alphas: Vec<u8>,
+	pub colors: Vec<u8>,
+	pub spherical_harmonics: Vec<u8>,
+}
+
+impl PackedGaussians {
+	/// Constructs an SPZ header from this packed data's metadata.
+	pub fn construct_header(&self) -> PackedGaussiansHeader;
+	/// Serializes to a complete SPZ file as a byte vector.
+	pub fn as_bytes_vec(&self) -> Result<Vec<u8>>;
+	/// Writes this packed data to a writer in SPZ format.
+	pub fn write_self_to<W>(&self, stream: &mut W) -> Result<()>;
+	/// Returns `true` if positions are stored as float16.
+	pub fn uses_float16(&self) -> bool;
+	/// Returns the packed data for a single splat at index `i`.
+	pub fn at(&self, i: usize) -> Result<PackedGaussian>;
+	/// Unpacks a single splat at index `i` with coordinate transformation.
+	pub fn unpack(&self, i: usize, coord_flip: &AxisFlips) -> Result<UnpackedGaussian>;
+	/// Validates that all internal arrays have the expected sizes.
+	pub fn check_sizes(&self, num_points: usize, sh_dim: u8, uses_float16: bool) -> bool;
+}
+
+impl TryFrom<Vec<u8>> for PackedGaussians;
+impl TryFrom<&[u8]> for PackedGaussians;
+
+/// Represents a single low precision gaussian.
+pub struct PackedGaussian {
+	pub position: [u8; 9],
+	pub rotation: [u8; 4],
+	pub scale: [u8; 3],
+	pub color: [u8; 3],
+	pub alpha: u8,
+	pub sh_r: [u8; 15],
+	pub sh_g: [u8; 15],
+	pub sh_b: [u8; 15],
+}
+
+impl PackedGaussian {
+	/// Decompresses this packed Gaussian into full-precision values,
+	/// [`UnpackedGaussian`].
+	pub fn unpack(
+		&self,
+		uses_float16: bool,
+		uses_quaternion_smallest_three: bool,
+		fractional_bits: i32,
+		coord_flip: &AxisFlips,
+	) -> Result<UnpackedGaussian>;
+}
+
+pub struct PackOptions {
+	pub from: CoordinateSystem,
+}
+
+impl PackOptions {
+	pub fn builder() -> PackOptionsBuilder;
+}
+
+pub struct PackOptionsBuilder {
+	from: CoordinateSystem,
+}
+
+impl PackOptionsBuilder {
+	pub fn from(mut self, from: CoordinateSystem) -> Self;
+	pub fn build(self) -> PackOptions;
+}
+
+// mod unpacked ────────────────────────────────────────────────────────────────
+
+/// Represents a single inflated gaussian.
+pub struct UnpackedGaussian {
+	pub position: [f32; 3], // x, y, z
+	pub rotation: [f32; 4], // x, y, z, w
+	pub scale: [f32; 3],	// std::log(scale)
+	pub color: [f32; 3],	// rgb sh0 encoding
+	pub alpha: f32,		// inverse logistic
+	pub sh_r: [f32; 15],
+	pub sh_g: [f32; 15],
+	pub sh_b: [f32; 15],
+}
+
+pub struct UnpackOptions {
+	pub to_coord_system: CoordinateSystem,
+}
+
+impl UnpackOptions {
+	pub fn builder() -> UnpackOptionsBuilder;
+}
+
+pub struct UnpackOptionsBuilder {
+	to_coord_sys: CoordinateSystem,
+}
+
+impl UnpackOptionsBuilder {
+	pub fn to_coord_system(mut self, coord_sys: CoordinateSystem) -> Self;
+	pub fn build(self) -> UnpackOptions;
+}
+
+// mod header ──────────────────────────────────────────────────────────────────
+
+/// Fixed-size 16-byte header for SPZ (packed Gaussian splat) files.
+#[repr(C)]
+pub struct PackedGaussiansHeader {
+	pub magic: i32,				// 0x5053474e "NGSP"
+	pub version: i32,			// 3 (this lib only supports spz v3)
+	pub num_points: i32,
+	pub spherical_harmonics_degree: u8,	// 0-3
+	pub fractional_bits: u8,
+	pub flags: u8,				// 0x1 = antialiased
+	pub reserved: u8,
+}
+
+impl PackedGaussiansHeader {
+	/// Reads a header from the given reader.
+	pub fn read_from<R: Read>(reader: &mut R) -> Result<Self>;
+	/// Writes this header to the given writer.
+	pub fn serialize_to<W: Write>(&self, writer: &mut W) -> Result<()>;
 }
 ```
 

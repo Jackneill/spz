@@ -515,15 +515,6 @@ impl GaussianSplat {
 		}
 	}
 
-	/// Rotate 180 degrees about X axis (RUB <-> RDF).
-	#[inline]
-	pub fn rotate_180_deg_about_x(&mut self) {
-		self.convert_coordinates(
-			crate::coord::CoordinateSystem::RightUpBack,
-			crate::coord::CoordinateSystem::RightDownFront,
-		);
-	}
-
 	/// Compute median ellipsoid volume.
 	pub fn median_volume(&self) -> f32 {
 		if unlikely(self.scales.is_empty()) {
@@ -565,6 +556,21 @@ impl GaussianSplat {
 		(std::f32::consts::PI * 4.0 / 3.0) * median.exp()
 	}
 
+	/// Validates that all internal arrays have consistent sizes.
+	///
+	/// Checks that:
+	/// - `num_points` is non-negative
+	/// - `spherical_harmonics_degree` is in range 0..=3
+	/// - `positions` has length `num_points * 3`
+	/// - `scales` has length `num_points * 3`
+	/// - `rotations` has length `num_points * 4`
+	/// - `alphas` has length `num_points`
+	/// - `colors` has length `num_points * 3`
+	/// - `spherical_harmonics` has length `num_points * sh_dim * 3`
+	///
+	/// # Returns
+	///
+	/// Returns `true` if all sizes are valid, `false` otherwise.
 	pub fn check_sizes(&self) -> bool {
 		if self.num_points < 0 {
 			return false;
@@ -708,7 +714,7 @@ impl GaussianSplatBuilder {
 	}
 
 	pub fn packed(mut self, packed: bool) -> Result<Self> {
-		if !packed {
+		if unlikely(!packed) {
 			bail!("only packed format loading is supported currently");
 		}
 		self.packed = packed;

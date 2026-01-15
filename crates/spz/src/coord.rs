@@ -80,6 +80,19 @@ impl From<&str> for CoordinateSystem {
 }
 
 impl CoordinateSystem {
+	/// Returns an iterator over all coordinate system variants.
+	///
+	/// Useful for enumerating supported systems in UI or validation.
+	///
+	/// # Example
+	///
+	/// ```
+	/// use spz::CoordinateSystem;
+	///
+	/// for coord in CoordinateSystem::iter() {
+	///     println!("{}", coord.as_short_str());
+	/// }
+	/// ```
 	pub fn iter() -> impl Iterator<Item = CoordinateSystem> {
 		[
 			CoordinateSystem::Unspecified,
@@ -95,6 +108,23 @@ impl CoordinateSystem {
 		.into_iter()
 	}
 
+	/// Returns a short 3-letter abbreviation for the coordinate system.
+	///
+	/// The abbreviation encodes the axis directions:
+	/// - First letter: `L` (Left) or `R` (Right) for X-axis
+	/// - Second letter: `U` (Up) or `D` (Down) for Y-axis
+	/// - Third letter: `F` (Front) or `B` (Back) for Z-axis
+	///
+	/// Returns `"UNSPECIFIED"` for [`CoordinateSystem::Unspecified`].
+	///
+	/// # Example
+	///
+	/// ```
+	/// use spz::CoordinateSystem;
+	///
+	/// assert_eq!(CoordinateSystem::RightDownFront.as_short_str(), "RDF");
+	/// assert_eq!(CoordinateSystem::LeftUpFront.as_short_str(), "LUF");
+	/// ```
 	pub fn as_short_str(&self) -> &'static str {
 		match self {
 			CoordinateSystem::LeftDownBack => "LDB",
@@ -109,9 +139,9 @@ impl CoordinateSystem {
 		}
 	}
 
-	/// Computes the axis flip multipliers needed to convert from `self` to `coord_sys`.
+	/// Computes the axis flip multipliers needed to convert from `self` to `target`.
 	///
-	/// Returns an [`AxisFlips`] containing sign multipliers (`1.0` or `-1.0`) for
+	/// Returns an [`AxisFlips`], containing sign multipliers (`1.0` or `-1.0`) for
 	/// _positions_, _rotations_, and _spherical harmonics_.
 	/// Multiply each component by its corresponding sign to transform data
 	/// between coordinate systems.
@@ -132,8 +162,8 @@ impl CoordinateSystem {
 	///     ply_pos[2] * axis_flips.position[2],
 	/// ];
 	/// ```
-	pub fn axis_flips_to(self, coord_sys: CoordinateSystem) -> AxisFlips {
-		let (x_match, y_match, z_match) = self.axes_align(coord_sys);
+	pub fn axis_flips_to(self, target: CoordinateSystem) -> AxisFlips {
+		let (x_match, y_match, z_match) = self.axes_align(target);
 
 		let x = if x_match { 1.0_f32 } else { -1.0_f32 };
 		let y = if y_match { 1.0_f32 } else { -1.0_f32 };
@@ -198,7 +228,8 @@ impl CoordinateSystem {
 	}
 }
 
-/// Sign multipliers for transforming Gaussian splat data between coordinate systems.
+/// Sign multipliers (+1.0 or -1.0) for transforming Gaussian splat data between
+/// coordinate systems.
 ///
 /// When converting splats from one [`CoordinateSystem`] to another, each axis may need
 /// to be flipped (negated) to account for differences in handedness or axis orientation.
