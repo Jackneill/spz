@@ -51,7 +51,7 @@ lint:
 
 lint-ci:
 	go install github.com/rhysd/actionlint/cmd/actionlint@latest
-	actionlint ./.github/workflows/*
+	actionlint
 
 lint-py:
 	uvx ruff check crates/spz-pywrapper
