@@ -15,6 +15,7 @@
 1. [Compression Layer](#compression-layer)
 1. [Header Structure](#header-structure)
 	1. [C/C++ Header Definition](#cc-header-definition)
+1. [Arrays Description](#arrays-description)
 1. [Coordinate Systems](#coordinate-systems)
 1. [File Extension](#file-extension)
 1. [References](#references)
