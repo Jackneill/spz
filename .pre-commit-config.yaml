@@ -1,8 +1,10 @@
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v6.0.0
-  hooks:
-    - id: trailing-whitespace
-    - id: check-case-conflict
-    - id: check-json
-    - id: check-symlinks
-    - id: end-of-file-fixer
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-yaml
+      - id: check-symlinks
+      - id: end-of-file-fixer
