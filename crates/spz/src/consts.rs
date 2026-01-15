@@ -16,9 +16,6 @@ pub const SUPPORTED_SPZ_VERSION: i32 = 3;
 
 pub const EXTENSION: &str = "spz";
 
-pub const MIME_TYPE: &str = "application/x-spz";
-pub const MIME_MODEL: &str = "model/x-gaussian-splat";
-
 pub mod flag {
 	pub const ANTIALIASED: u8 = 0x1;
 }

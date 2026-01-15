@@ -29,7 +29,7 @@ impl Default for UnpackOptionsBuilder {
 	#[inline]
 	fn default() -> Self {
 		Self {
-			to_coord_sys: CoordinateSystem::UNSPECIFIED,
+			to_coord_sys: CoordinateSystem::Unspecified,
 		}
 	}
 }

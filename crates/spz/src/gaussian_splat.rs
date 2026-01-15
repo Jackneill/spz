@@ -10,7 +10,7 @@ use tokio::io::AsyncReadExt;
 
 use crate::{
 	compression, consts,
-	coord::{CoordinateConverter, CoordinateSystem},
+	coord::{AxisFlips, CoordinateSystem},
 	math::{self, dim_for_degree, half_to_float},
 	mmap,
 	packed::PackOptions,
@@ -136,7 +136,7 @@ impl GaussianSplat {
 				unpack_opts,
 			);
 		}
-		let mmap = mmap::open(filepath)?;
+		let mmap = mmap::mmap(filepath)?;
 		let packed = Self::load_packed(mmap.as_ref())
 			.with_context(|| "unable to load packed file")?;
 
@@ -299,7 +299,10 @@ impl GaussianSplat {
 			result.spherical_harmonics[i] =
 				math::unquantize_sh(packed.spherical_harmonics[i]) as f32;
 		}
-		result.convert_coordinates(CoordinateSystem::RUB, unpack_opts.to_coord_sys.clone());
+		result.convert_coordinates(
+			CoordinateSystem::RightUpBack,
+			unpack_opts.to_coord_sys.clone(),
+		);
 
 		Ok(result)
 	}
@@ -310,7 +313,7 @@ impl GaussianSplat {
 		}
 		let num_points = self.num_points as usize;
 		let sh_dim = math::dim_for_degree(self.spherical_harmonics_degree as u8) as usize;
-		let coord_flip = pack_opts.from.convert(CoordinateSystem::RUB);
+		let axis_flips = pack_opts.from.axis_flips_to(CoordinateSystem::RightUpBack);
 		let fractional_bits: i32 = 12;
 		let scale = (1_i32 << fractional_bits) as f32;
 
@@ -329,8 +332,8 @@ impl GaussianSplat {
 		};
 		for i in 0..(num_points * 3) {
 			let axis = i % 3;
-			let fixed32 = (coord_flip.flip_p[axis] * self.positions[i] * scale).round()
-				as i32;
+			let fixed32 = (axis_flips.position[axis] * self.positions[i] * scale)
+				.round() as i32;
 
 			packed.positions[i * 3 + 0] = (fixed32 & 0xff) as u8;
 			packed.positions[i * 3 + 1] = ((fixed32 >> 8) & 0xff) as u8;
@@ -351,9 +354,9 @@ impl GaussianSplat {
 			let rot_dst = math::pack_quaternion_smallest_three(
 				&rot_src,
 				[
-					coord_flip.flip_q[0],
-					coord_flip.flip_q[1],
-					coord_flip.flip_q[2],
+					axis_flips.rotation[0],
+					axis_flips.rotation[1],
+					axis_flips.rotation[2],
 				],
 			);
 			packed.rotations[4 * i..4 * i + 4].copy_from_slice(&rot_dst);
@@ -386,21 +389,21 @@ impl GaussianSplat {
 
 					packed.spherical_harmonics[base + j + 0] =
 						math::quantize_sh(
-							coord_flip.flip_sh[k]
+							axis_flips.spherical_harmonics[k]
 								* self.spherical_harmonics
 									[base + j + 0],
 							step,
 						);
 					packed.spherical_harmonics[base + j + 1] =
 						math::quantize_sh(
-							coord_flip.flip_sh[k]
+							axis_flips.spherical_harmonics[k]
 								* self.spherical_harmonics
 									[base + j + 1],
 							step,
 						);
 					packed.spherical_harmonics[base + j + 2] =
 						math::quantize_sh(
-							coord_flip.flip_sh[k]
+							axis_flips.spherical_harmonics[k]
 								* self.spherical_harmonics
 									[base + j + 2],
 							step,
@@ -413,21 +416,21 @@ impl GaussianSplat {
 
 					packed.spherical_harmonics[base + j + 0] =
 						math::quantize_sh(
-							coord_flip.flip_sh[k]
+							axis_flips.spherical_harmonics[k]
 								* self.spherical_harmonics
 									[base + j + 0],
 							step,
 						);
 					packed.spherical_harmonics[base + j + 1] =
 						math::quantize_sh(
-							coord_flip.flip_sh[k]
+							axis_flips.spherical_harmonics[k]
 								* self.spherical_harmonics
 									[base + j + 1],
 							step,
 						);
 					packed.spherical_harmonics[base + j + 2] =
 						math::quantize_sh(
-							coord_flip.flip_sh[k]
+							axis_flips.spherical_harmonics[k]
 								* self.spherical_harmonics
 									[base + j + 2],
 							step,
@@ -448,16 +451,16 @@ impl GaussianSplat {
 		if unlikely(self.num_points == 0) {
 			return;
 		}
-		let (x_match, y_match, z_match) = from.axes_match(to);
+		let (x_match, y_match, z_match) = from.axes_align(to);
 
 		let x = if x_match { 1.0_f32 } else { -1.0_f32 };
 		let y = if y_match { 1.0_f32 } else { -1.0_f32 };
 		let z = if z_match { 1.0_f32 } else { -1.0_f32 };
 
-		let flip = CoordinateConverter {
-			flip_p: [x, y, z],
-			flip_q: [y * z, x * z, x * y],
-			flip_sh: [
+		let flip = AxisFlips {
+			position: [x, y, z],
+			rotation: [y * z, x * z, x * y],
+			spherical_harmonics: [
 				y,         // 0
 				z,         // 1
 				x,         // 2
@@ -476,14 +479,14 @@ impl GaussianSplat {
 			],
 		};
 		for i in (0..self.positions.len()).step_by(3) {
-			self.positions[i + 0] *= flip.flip_p[0];
-			self.positions[i + 1] *= flip.flip_p[1];
-			self.positions[i + 2] *= flip.flip_p[2];
+			self.positions[i + 0] *= flip.position[0];
+			self.positions[i + 1] *= flip.position[1];
+			self.positions[i + 2] *= flip.position[2];
 		}
 		for i in (0..self.rotations.len()).step_by(4) {
-			self.rotations[i + 0] *= flip.flip_q[0];
-			self.rotations[i + 1] *= flip.flip_q[1];
-			self.rotations[i + 2] *= flip.flip_q[2];
+			self.rotations[i + 0] *= flip.rotation[0];
+			self.rotations[i + 1] *= flip.rotation[1];
+			self.rotations[i + 2] *= flip.rotation[2];
 			// rotations[i + 3] (w) unchanged
 		}
 		let total_coeffs = if self.spherical_harmonics.len() >= 3 {
@@ -501,7 +504,7 @@ impl GaussianSplat {
 
 		for _pt in 0..num_points {
 			for j in 0..coeffs_per_point {
-				let f = flip.flip_sh[j];
+				let f = flip.spherical_harmonics[j];
 
 				self.spherical_harmonics[idx + 0] *= f;
 				self.spherical_harmonics[idx + 1] *= f;
@@ -516,8 +519,8 @@ impl GaussianSplat {
 	#[inline]
 	pub fn rotate_180_deg_about_x(&mut self) {
 		self.convert_coordinates(
-			crate::coord::CoordinateSystem::RUB,
-			crate::coord::CoordinateSystem::RDF,
+			crate::coord::CoordinateSystem::RightUpBack,
+			crate::coord::CoordinateSystem::RightDownFront,
 		);
 	}
 

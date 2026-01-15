@@ -13,7 +13,7 @@ pub mod unpacked;
 pub mod prelude {
 	pub use super::*;
 
-	pub use super::coord::{CoordinateConverter, CoordinateSystem};
+	pub use super::coord::{AxisFlips, CoordinateSystem};
 	pub use super::gaussian_splat::{BoundingBox, GaussianSplat};
 	pub use super::header::PackedGaussiansHeader;
 	pub use super::packed::{PackOptions, PackedGaussian, PackedGaussians};

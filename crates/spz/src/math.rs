@@ -122,20 +122,20 @@ pub fn unpack_quaternion_smallest_three_with_flip(
 }
 
 pub fn pack_quaternion_smallest_three(rotation: &[f32; 4], flip_q: [f32; 3]) -> [u8; 4] {
-	let mut q = normalize_quaternion(rotation);
+	let mut rot_normed = normalize_quaternion(rotation);
 
-	q[0] *= flip_q[0];
-	q[1] *= flip_q[1];
-	q[2] *= flip_q[2];
+	rot_normed[0] *= flip_q[0];
+	rot_normed[1] *= flip_q[1];
+	rot_normed[2] *= flip_q[2];
 
 	let mut i_largest = 0_usize;
 
 	for i in 1..4 {
-		if q[i].abs() > q[i_largest].abs() {
+		if rot_normed[i].abs() > rot_normed[i_largest].abs() {
 			i_largest = i;
 		}
 	}
-	let negate = q[i_largest] < 0.0;
+	let negate = rot_normed[i_largest] < 0.0;
 
 	let c_mask = (1_u32 << 9) - 1;
 	let mut comp: u32 = i_largest as u32;
@@ -144,9 +144,14 @@ pub fn pack_quaternion_smallest_three(rotation: &[f32; 4], flip_q: [f32; 3]) -> 
 		if i == i_largest {
 			continue;
 		}
-		let negbit = if (q[i] < 0.0) ^ negate { 1_u32 } else { 0_u32 };
+		let negbit = if (rot_normed[i] < 0.0) ^ negate {
+			1_u32
+		} else {
+			0_u32
+		};
 
-		let mag = ((c_mask as f32) * (q[i].abs() / FRAC_1_SQRT_2) + 0.5).floor() as u32;
+		let mag = ((c_mask as f32) * (rot_normed[i].abs() / FRAC_1_SQRT_2) + 0.5).floor()
+			as u32;
 		let mag = mag.min(c_mask);
 
 		comp = (comp << 10) | (negbit << 9) | mag;

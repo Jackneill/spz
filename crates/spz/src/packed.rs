@@ -11,7 +11,7 @@ use likely_stable::unlikely;
 use serde::{Deserialize, Serialize};
 
 use crate::{consts, math};
-use crate::{coord::CoordinateConverter, unpacked::UnpackedGaussian};
+use crate::{coord::AxisFlips, unpacked::UnpackedGaussian};
 use crate::{coord::CoordinateSystem, header::PackedGaussiansHeader};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
@@ -48,7 +48,7 @@ impl Default for PackOptionsBuilder {
 	#[inline]
 	fn default() -> Self {
 		Self {
-			from: CoordinateSystem::UNSPECIFIED,
+			from: CoordinateSystem::Unspecified,
 		}
 	}
 }
@@ -77,7 +77,7 @@ impl PackedGaussian {
 		uses_float16: bool,
 		uses_quaternion_smallest_three: bool,
 		fractional_bits: i32,
-		coord_flip: &CoordinateConverter,
+		coord_flip: &AxisFlips,
 	) -> Result<UnpackedGaussian> {
 		let mut result = UnpackedGaussian::default();
 
@@ -89,7 +89,7 @@ impl PackedGaussian {
 				let half = lo | (hi << 8);
 
 				result.position[i] =
-					coord_flip.flip_p[i] * math::half_to_float(half);
+					coord_flip.position[i] * math::half_to_float(half);
 			}
 		} else {
 			let s = 1u32 << (fractional_bits as u32);
@@ -110,7 +110,7 @@ impl PackedGaussian {
 					fixed32 |= 0xff000000u32 as i32;
 				}
 				result.position[i] =
-					coord_flip.flip_p[i] * (fixed32 as f32 * scale);
+					coord_flip.position[i] * (fixed32 as f32 * scale);
 			}
 		}
 		// scales
@@ -125,7 +125,7 @@ impl PackedGaussian {
 			} else {
 				&self.rotation[..3]
 			},
-			coord_flip.flip_q,
+			coord_flip.rotation,
 		);
 		// alpha
 		result.alpha = math::inv_sigmoid(self.alpha as f32 / 255.0_f32);
@@ -137,7 +137,7 @@ impl PackedGaussian {
 		}
 		// spherical harmonics
 		for i in 0..15 {
-			let f = coord_flip.flip_sh[i];
+			let f = coord_flip.spherical_harmonics[i];
 
 			result.sh_r[i] = f * math::unquantize_sh(self.sh_r[i]);
 			result.sh_g[i] = f * math::unquantize_sh(self.sh_g[i]);
@@ -288,11 +288,7 @@ impl PackedGaussians {
 	}
 
 	#[inline]
-	pub fn unpack(
-		&self,
-		i: usize,
-		coord_flip: &CoordinateConverter,
-	) -> Result<UnpackedGaussian> {
+	pub fn unpack(&self, i: usize, coord_flip: &AxisFlips) -> Result<UnpackedGaussian> {
 		self.at(i)?.unpack(
 			self.uses_float16(),
 			self.uses_quaternion_smallest_three,

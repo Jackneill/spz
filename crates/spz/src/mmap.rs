@@ -6,7 +6,7 @@ use anyhow::Context;
 use anyhow::Result;
 use memmap2::Mmap;
 
-pub fn open<F>(file: F) -> Result<Mmap>
+pub fn mmap<F>(file: F) -> Result<Mmap>
 where
 	F: AsRef<Path>,
 {

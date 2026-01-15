@@ -5,7 +5,7 @@ cargo := "cargo"
 docker := "docker"
 
 app_name := "spz"
-container_img := "ghcr.io/Jackneill/spz"
+container_img := "ghcr.io/Jackneill/{{app_name}}"
 
 export RUST_BACKTRACE := "full"
 export DOCKER_BUILDKIT := "1"
