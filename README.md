@@ -88,8 +88,15 @@ $ spz info assets/racoonfamily.spz
 $ # or in container:
 $ podman/docker run --rm -it -v "${PWD}:/app" -w /app spz \
 $	info assets/racoonfamily.spz
-
-GaussianSplat={num_points=932560, sh_degree=3, antialiased=true, median_ellipsoid_volume=0.0000000046213082, bbox=[x=-281.779541 to 258.382568, y=-240.000000 to 240.000000, z=-240.000000 to 240.000000]}
+GaussianSplat:
+	Number of points:		932560
+	Spherical harmonics degree:	3
+	Antialiased:			true
+	Median ellipsoid volume:	0.0000000046213082
+	Bounding box:
+		x: -281.779541 to 258.382568 (size 540.162109, center -11.698486)
+		y: -240.000000 to 240.000000 (size 480.000000, center 0.000000)
+		z: -240.000000 to 240.000000 (size 480.000000, center 0.000000)
 ```
 
 ## Development
@@ -136,7 +143,7 @@ fn main() -> Result<()> {
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
-				.to_coord_system(CoordinateSystem::UNSPECIFIED)
+				.to_coord_system(CoordinateSystem::Unspecified)
 				.build(),
 		)
 		.load()
@@ -157,7 +164,7 @@ where
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
-				.to_coord_system(CoordinateSystem::UNSPECIFIED)
+				.to_coord_system(CoordinateSystem::Unspecified)
 				.build(),
 		)
 		.load_async()
@@ -472,6 +479,7 @@ dependencies = [
 ## Examples
 
 ```py
+import numpy as np
 import spz
 
 # Load from file
@@ -494,25 +502,25 @@ print(f"{splat.num_points:,} points")
 print(f"center: {splat.bbox.center}")
 print(f"size: {splat.bbox.size}")
 
-# Access data (flat arrays, list[float])
-positions = splat.positions  # [x1, y1, z1, x2, y2, z2, ...]
-scales = splat.scales
-rotations = splat.rotations
-alphas = splat.alphas
-colors = splat.colors
-sh = splat.spherical_harmonics
+# Access data as numpy arrays
+positions = splat.positions  # shape: (num_points, 3)
+scales = splat.scales  # shape: (num_points, 3)
+rotations = splat.rotations  # shape: (num_points, 4)
+alphas = splat.alphas  # shape: (num_points,)
+colors = splat.colors  # shape: (num_points, 3)
+sh = splat.spherical_harmonics  # shape: (num_points, sh_dim * 3)
 
 # Serialize
 data = splat.to_bytes()  # -> bytes
 splat2 = spz.GaussianSplat.from_bytes(data)  # -> GaussianSplat
 
-# Create from data
+# Create from numpy arrays
 new_splat = spz.GaussianSplat(
-    positions=[0.0, 0.0, 0.0, 1.0, 2.0, 3.0],  # flat array
-    scales=[-5.0] * 6,
-    rotations=[1.0, 0.0, 0.0, 0.0] * 2,
-    alphas=[0.5, 0.8],
-    colors=[255.0, 0.0, 0.0, 0.0, 255.0, 0.0],
+    positions=np.zeros((2, 3), dtype=np.float32),
+    scales=np.full((2, 3), -5.0, dtype=np.float32),
+    rotations=np.tile([1.0, 0.0, 0.0, 0.0], (2, 1)).astype(np.float32),
+    alphas=np.array([0.5, 0.8], dtype=np.float32),
+    colors=np.array([[255.0, 0.0, 0.0], [0.0, 255.0, 0.0]], dtype=np.float32),
 )  # -> GaussianSplat
 
 # Save to file
@@ -521,8 +529,9 @@ new_splat.save("output.spz")
 with spz.SplatWriter("output2.spz") as writer:
     writer.splat = splat2
 
-with spz.modified_splat("scene.spz", "scene_rotated.spz") as splat:
-    splat.rotate_180_deg_about_x()
+# Coordinate conversion
+with spz.modified_splat("scene.spz", "scene_converted.spz") as splat:
+    splat.convert_coordinates(spz.CoordinateSystem.RUB, spz.CoordinateSystem.RDF)
 ```
 
 ## Documentation
