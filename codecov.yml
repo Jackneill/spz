@@ -13,3 +13,5 @@ coverage:
     - "docs"
     - "flatpak"
     - "target"
+    - "crates/spz/src/lib.rs"
+    - "crates/spz-pywrapper/src/lib.rs"
