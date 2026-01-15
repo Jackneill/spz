@@ -1,0 +1,14 @@
+name: Check License Headers
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  check:
+    name: Check License Headers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check License Header
+        uses: apache/skywalking-eyes/header@v0.8.0
