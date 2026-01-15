@@ -1,4 +1,4 @@
-# SPZ (v3) File Format Specification
+# SPZ File Format (v3) Specification
 
 **Creator:** [Niantic Labs](https://github.com/nianticlabs) //
 **License:** [MIT](../LICENSE-MIT)
