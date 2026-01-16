@@ -142,12 +142,16 @@ docker-run *args:
 	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{container_img}} {{args}}
 
 py:
-	. crates/spz-pywrapper/.venv/bin/activate && exec "${SHELL}"
-	uvx -p crates/spz-pywrapper/.venv \
+	#!/usr/bin/env sh
+
+	pyenv="crates/spz-pywrapper/.venv"
+
+	. crates/spz-pywrapper/.venv/bin/activate
+	uvx -p "${pyenv}" \
 		maturin develop --uv \
-		--manifest-path crates/spz-pywrapper/Cargo.toml \
-		--compression-method zstd
-	uvx -p crates/spz-pywrapper/.venv python
+		--manifest-path crates/spz-pywrapper/Cargo.toml
+		#--compression-method zstd
+	uvx -p "${pyenv}" python -i crates/spz-pywrapper/dev/prefill_shell.py
 
 py-test:
 	uv run crates/spz-pywrapper/.venv/bin/python -m pytest
