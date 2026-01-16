@@ -141,8 +141,13 @@ docker-build-image-multi-arch:
 docker-run *args:
 	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{container_img}} {{args}}
 
-py-dev:
-	uvx maturin develop --manifest-path crates/spz-pywrapper/Cargo.toml
+py:
+	. crates/spz-pywrapper/.venv/bin/activate && exec "${SHELL}"
+	uvx -p crates/spz-pywrapper/.venv \
+		maturin develop --uv \
+		--manifest-path crates/spz-pywrapper/Cargo.toml \
+		--compression-method zstd
+	uvx -p crates/spz-pywrapper/.venv python
 
 py-test:
 	uv run crates/spz-pywrapper/.venv/bin/python -m pytest
