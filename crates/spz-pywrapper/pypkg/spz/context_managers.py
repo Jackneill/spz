@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
+
 """Extra Python utilities for the spz library.
 
 This module provides Pythonic conveniences like context managers
@@ -13,7 +14,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from spz import CoordinateSystem, GaussianSplat
+from .spz import CoordinateSystem, GaussianSplat
 
 __all__ = [
     "SplatReader",
@@ -24,37 +25,6 @@ __all__ = [
 
 
 PathLike = str | Path | os.PathLike
-
-
-@contextmanager
-def open_spz(
-    path: PathLike,
-    coordinate_system=CoordinateSystem.UNSPECIFIED,
-) -> Iterator[GaussianSplat]:
-    """Context manager for loading an SPZ file.
-
-    This provides a clean way to work with SPZ files using the
-    `with` statement, ensuring proper resource handling.
-
-    Args:
-        path: Path to the SPZ file.
-        coordinate_system: Target coordinate system for the loaded data.
-
-    Yields:
-        The loaded GaussianSplat object.
-
-    Example:
-        >>> with open_spz("scene.spz") as splat:
-        ...     print(f"Loaded {len(splat)} gaussians")
-        ...     # Work with splat...
-    """
-    from spz import GaussianSplat
-
-    splat = GaussianSplat.load(str(path), coordinate_system)
-    try:
-        yield splat
-    finally:
-        pass
 
 
 class SplatReader:
@@ -112,17 +82,19 @@ class SplatWriter:
         path: Path where the SPZ file will be saved.
         from_coordinate_system: Source coordinate system when saving.
 
-    Example:
-        >>> with SplatWriter("output.spz") as ctx:
-        ...     ctx.splat = spz.GaussianSplat(
-        ...         positions=[0.0, 0.0, 0.0],
-        ...         scales=[-5.0, -5.0, -5.0],
-        ...         rotations=[1.0, 0.0, 0.0, 0.0],
-        ...         alphas=[0.5],
-        ...         colors=[255.0, 0.0, 0.0],
-        ...     )
-        ...     # Modify ctx.splat as needed...
-        ... # Automatically saved on exit
+    Example::
+
+        import numpy as np
+        with SplatWriter("output.spz") as ctx:
+            ctx.splat = spz.GaussianSplat(
+                positions=np.array([[0.0, 0.0, 0.0]], dtype=np.float32),
+                scales=np.array([[-5.0, -5.0, -5.0]], dtype=np.float32),
+                rotations=np.array([[1.0, 0.0, 0.0, 0.0]], dtype=np.float32),
+                alphas=np.array([0.5], dtype=np.float32),
+                colors=np.array([[255.0, 0.0, 0.0]], dtype=np.float32),
+            )
+            # Modify ctx.splat as needed...
+        # Automatically saved on exit
     """
 
     def __init__(
@@ -213,13 +185,14 @@ def modified_splat(
     Yields:
         The loaded GaussianSplat for modification.
 
-    Example:
-        >>> with modified_splat("scene.spz", "scene_rotated.spz") as splat:
-        ...     splat.rotate_180_deg_about_x()
-        ... # Automatically saved to scene_rotated.spz
-    """
-    from spz import GaussianSplat
+    Example::
 
+        with modified_splat("scene.spz", "scene_converted.spz") as splat:
+            splat.convert_coordinates(
+                spz.CoordinateSystem.RUB, spz.CoordinateSystem.RDF
+            )
+        # Automatically saved to scene_converted.spz
+    """
     splat = GaussianSplat.load(str(path), from_coordinate_system)
 
     try:

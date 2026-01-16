@@ -1,17 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
+
 """SPZ - Gaussian Splat file format handling.
 
 Python implementation (in Rust) of the .SPZ file format.
 """
+
+import numpy as np
+import numpy.typing as npt
 
 class CoordinateSystem:
     """Coordinate system enumeration.
 
     Each coordinate system is defined by three axes:
         - L/R: Left/Right for X axis
-        - U/D: Up/Down for Y axislibrary
+        - U/D: Up/Down for Y axis
         - F/B: Front/Back for Z axis
-
 
     Common systems:
         - RUB: Three.js coordinate system (Right, Up, Back)
@@ -47,14 +50,6 @@ class CoordinateSystem:
     UNSPECIFIED: CoordinateSystem
     """Unspecified coordinate system (no conversion)."""
 
-    def __init__(self, name: str = "UNSPECIFIED") -> None:
-        """Create a coordinate system from its name.
-
-        Args:
-            name: Name of the coordinate system (e.g., "RUB", "RDF").
-        """
-        ...
-
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
     def __eq__(self, other: object) -> bool: ...
@@ -63,24 +58,22 @@ class CoordinateSystem:
 class BoundingBox:
     """Bounding box of a Gaussian splat.
 
-    This class cannot be instantiated directly. It is returned by
-    the ``bbox`` property of ``GaussianSplat``.
-
-    Attributes:
-        min_x: Minimum X coordinate.
-        max_x: Maximum X coordinate.
-        min_y: Minimum Y coordinate.
-        max_y: Maximum Y coordinate.
-        min_z: Minimum Z coordinate.
-        max_z: Maximum Z coordinate.
+    This class cannot be instantiated directly.
+    It is returned by the ``bbox`` property of ``GaussianSplat``.
     """
 
     min_x: float
+    """Minimum X coordinate."""
     max_x: float
+    """Maximum X coordinate."""
     min_y: float
+    """Minimum Y coordinate."""
     max_y: float
+    """Maximum Y coordinate."""
     min_z: float
+    """Minimum Z coordinate."""
     max_z: float
+    """Maximum Z coordinate."""
 
     @property
     def size(self) -> tuple[float, float, float]:
@@ -110,50 +103,51 @@ class GaussianSplat:
     rotation, scale, color, alpha (opacity), and spherical harmonics
     coefficients for view-dependent appearance.
 
+    All array data is returned as numpy arrays for efficient processing.
+
     Example:
         Load from file::
 
             splat = spz.GaussianSplat.load("scene.spz")
             print(f"Loaded {splat.num_points} gaussians")
+            positions = splat.positions  # shape: (num_points, 3)
 
-        Create from data::
+        Create from numpy arrays::
+
+            import numpy as np
 
             splat = spz.GaussianSplat(
-                positions=[0.0, 0.0, 0.0, 1.0, 0.0, 0.0],  # 2 points
-                scales=[-5.0] * 6,
-                rotations=[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
-                alphas=[0.0, 0.0],
-                colors=[0.0] * 6,
-                sh_degree=0
+                positions=np.zeros((100, 3), dtype=np.float32),
+                scales=np.full((100, 3), -5.0, dtype=np.float32),
+                rotations=np.tile([1, 0, 0, 0], (100, 1)).astype(np.float32),
+                alphas=np.zeros(100, dtype=np.float32),
+                colors=np.zeros((100, 3), dtype=np.float32),
             )
     """
 
     def __init__(
         self,
-        positions: list[float],
-        scales: list[float],
-        rotations: list[float],
-        alphas: list[float],
-        colors: list[float],
+        /,
+        positions: npt.NDArray[np.float32],
+        scales: npt.NDArray[np.float32],
+        rotations: npt.NDArray[np.float32],
+        alphas: npt.NDArray[np.float32],
+        colors: npt.NDArray[np.float32],
         sh_degree: int = 0,
-        spherical_harmonics: list[float] | None = None,
+        spherical_harmonics: npt.NDArray[np.float32] | None = None,
         antialiased: bool = False,
     ) -> None:
-        """Create a new GaussianSplat from arrays.
+        """Create a new GaussianSplat from numpy arrays.
 
         Args:
-            positions: Flattened (x, y, z) positions. Length must be
-                num_points * 3.
-            scales: Flattened (x, y, z) log-scale values. Length must be
-                num_points * 3.
-            rotations: Flattened (x, y, z, w) quaternion rotations. Length
-                must be num_points * 4.
-            alphas: Inverse-sigmoid opacity values. Length must be num_points.
-            colors: Flattened (r, g, b) SH0 color values. Length must be
-                num_points * 3.
+            positions: (N, 3) array of (x, y, z) positions.
+            scales: (N, 3) array of (x, y, z) log-scale values.
+            rotations: (N, 4) array of (w, x, y, z) quaternion rotations.
+            alphas: (N,) array of inverse-sigmoid opacity values.
+            colors: (N, 3) array of (r, g, b) SH0 color values.
             sh_degree: Spherical harmonics degree (0-3). Defaults to 0.
-            spherical_harmonics: Flattened SH coefficients. Length depends
-                on sh_degree. Defaults to None.
+            spherical_harmonics: (N, sh_dim, 3) array of SH coefficients.
+                Defaults to None.
             antialiased: Whether the splat was trained with antialiasing.
                 Defaults to False.
         """
@@ -235,10 +229,6 @@ class GaussianSplat:
         """
         ...
 
-    def rotate_180_deg_about_x(self) -> None:
-        """Rotate 180 degrees about the X axis (RUB <-> RDF conversion)."""
-        ...
-
     @property
     def num_points(self) -> int:
         """The number of Gaussian points."""
@@ -255,33 +245,38 @@ class GaussianSplat:
         ...
 
     @property
-    def positions(self) -> list[float]:
-        """Flattened (x, y, z) positions. Length is num_points * 3."""
+    def positions(self) -> npt.NDArray[np.float32]:
+        """(N, 3) array of (x, y, z) positions."""
         ...
 
     @property
-    def scales(self) -> list[float]:
-        """Flattened (x, y, z) log-scale values. Length is num_points * 3."""
+    def scales(self) -> npt.NDArray[np.float32]:
+        """(N, 3) array of (x, y, z) log-scale values."""
         ...
 
     @property
-    def rotations(self) -> list[float]:
-        """Flattened (x, y, z, w) quaternion rotations. Length is num_points * 4."""
+    def rotations(self) -> npt.NDArray[np.float32]:
+        """(N, 4) array of (w, x, y, z) quaternion rotations."""
         ...
 
     @property
-    def alphas(self) -> list[float]:
-        """Inverse-sigmoid opacity values. Length is num_points."""
+    def alphas(self) -> npt.NDArray[np.float32]:
+        """(N,) array of inverse-sigmoid opacity values."""
         ...
 
     @property
-    def colors(self) -> list[float]:
-        """Flattened (r, g, b) SH0 color values. Length is num_points * 3."""
+    def colors(self) -> npt.NDArray[np.float32]:
+        """(N, 3) array of (r, g, b) SH0 color values."""
         ...
 
     @property
-    def spherical_harmonics(self) -> list[float]:
-        """Flattened spherical harmonics coefficients."""
+    def spherical_harmonics(self) -> npt.NDArray[np.float32]:
+        """(N, sh_dim * 3) array of spherical harmonics coefficients.
+
+        The sh_dim depends on sh_degree: 0→0, 1→3, 2→8, 3→15.
+
+        Returns an empty (N, 0) array if sh_degree is 0.
+        """
         ...
 
     @property

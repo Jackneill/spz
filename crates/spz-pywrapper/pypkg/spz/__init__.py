@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
+
 """SPZ - Gaussian Splat file format library.
 
 A fast, efficient library for reading and writing SPZ files,
