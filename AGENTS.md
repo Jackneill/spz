@@ -22,7 +22,7 @@ For the `.SPZ` file format specification and details see `./docs/SPZ.md`.
 - Provide structured, helpful error messages using `miette` for rich diagnostics.
 - Make progress reporting responsive and informative.
 - Maintain consistency across platforms even when underlying OS capabilities differ.
-	Use OS-native logic rather than trying to emulate Unix on Windows or vice versa.
+ 	- Use OS-native logic rather than trying to emulate Unix on Windows or vice versa.
 - Write user-facing messages in clear, present tense: "spz now supports..." not "spz now supported..."
 
 ### Pragmatic incrementalism
@@ -41,16 +41,25 @@ For the `.SPZ` file format specification and details see `./docs/SPZ.md`.
 
 - Use inline comments to explain "why," not just "what".
 - Module-level documentation should explain purpose and responsibilities.
+- For rust docstrings, instead of `# Arguments` use `# Args`.
 
 ## Code style
 
 ### File headers
 
-Every Rust source file must start with:
+- Every Rust source file must start with:
 
 ```rust
 // SPDX-License-Identifier: MIT OR Apache-2.0
 ```
+
+- Every Python source file must start with:
+
+```python
+# SPDX-License-Identifier: MIT OR Apache-2.0
+```
+
+- Always have an empty line after the license line.
 
 ### Rust edition and formatting
 
@@ -182,6 +191,7 @@ Examples:
 ## Crates
 
 - `spz` - spz file format handling for rust and cli tools.
+- `spz-pywrapper` - python wrapper library for the spz crate.
 
 ## Dependencies
 
@@ -205,6 +215,10 @@ Examples:
 ### Commands
 
 ```bash
+# to interact with python or pip, ALWAYS use uv or uvx
+uvx -p crates/spz-pywrapper/.venv python
+uvx -p crates/spz-pywrapper/.venv pip
+
 # Run tests (ALWAYS use nextest for unit/integration tests)
 just test
 
