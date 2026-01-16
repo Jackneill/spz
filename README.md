@@ -139,17 +139,16 @@ fn main() -> Result<()> {
 	sample_spz.push("../../assets/racoonfamily.spz");
 
 	let _gs1 = GaussianSplat::builder()
-		.filepath(&sample_spz)
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
 				.to_coord_system(CoordinateSystem::Unspecified)
 				.build(),
 		)
-		.load()
+		.load(&sample_spz)
 		.with_context(|| format!("unable to load file: {:?}", sample_spz))?;
 
-	let _gs0 = GaussianSplat::builder().filepath(&sample_spz).load()?;
+	let _gs0 = GaussianSplat::builder().load(&sample_spz)?;
 
 	Ok(())
 }
@@ -160,14 +159,13 @@ where
 	P: AsRef<Path>,
 {
 	GaussianSplat::builder()
-		.filepath(spz_file.as_ref())
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
 				.to_coord_system(CoordinateSystem::Unspecified)
 				.build(),
 		)
-		.load_async()
+		.load_async(spz_file.as_ref())
 		.await
 		.with_context(|| format!("unable to load file: {:?}", spz_file.as_ref()))
 }
@@ -185,11 +183,10 @@ where
 pub struct GaussianSplatBuilder { /* ... */ }
 
 impl GaussianSplatBuilder {
-	pub fn filepath<F: AsRef<Path>>(self, filepath: F) -> Self;
 	pub fn packed(self, packed: bool) -> Result<Self>;
 	pub fn unpack_options(self, opts: UnpackOptions) -> Self;
-	pub fn load(self) -> Result<GaussianSplat>;
-	pub async fn load_async(self) -> Result<GaussianSplat>;
+	pub fn load<P: AsRef<Path>>(self, filepath: P) -> Result<GaussianSplat>;
+	pub async fn load_async<P: AsRef<Path>>(self, filepath: P) -> Result<GaussianSplat>;
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]

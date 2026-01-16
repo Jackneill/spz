@@ -107,6 +107,7 @@ docs/_build/
 # Pyenv
 .python-version
 
+Cargo.lock
 
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md
