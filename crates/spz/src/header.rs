@@ -86,10 +86,6 @@ impl PackedGaussiansHeader {
 	/// Consumes exactly [`HEADER_SIZE`] (16) bytes from the reader and
 	/// interprets them as a header. Does not validate the magic number
 	/// or version—use separate validation if needed.
-	///
-	/// # Errors
-	///
-	/// Returns an error if the reader cannot provide 16 bytes.
 	#[inline]
 	pub fn read_from<R>(reader: &mut R) -> Result<Self>
 	where

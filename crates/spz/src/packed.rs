@@ -202,16 +202,16 @@ impl PackedGaussian {
 /// Each attribute (positions, rotations, etc.) is stored contiguously across
 /// all splats rather than per-splat.
 ///
-/// # Data Sizes per Splat
+/// # Data Sizes per Gaussian Splat
 ///
-/// | Attribute | Bytes | Encoding |
-/// |-----------|-------|----------|
+/// | Attribute | Bytes  | Encoding |
+/// |-----------|--------|----------|
 /// | position  | 6 or 9 | float16 or fixed24 |
-/// | scale     | 3 | quantized log-scale |
+/// | scale     | 3 	 | quantized log-scale |
 /// | rotation  | 3 or 4 | packed quaternion |
-/// | alpha     | 1 | quantized sigmoid |
-/// | color     | 3 | quantized RGB |
-/// | SH        | 0-45 | quantized, per degree |
+/// | alpha     | 1 	 | quantized sigmoid |
+/// | color     | 3 	 | quantized RGB |
+/// | SH        | 0-45 	 | quantized, per degree |
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct PackedGaussians {
 	/// Total number of Gaussian splats.
@@ -378,17 +378,17 @@ impl PackedGaussians {
 	/// Returns `true` if sizes match the expected layout for the given
 	/// number of points and SH dimension.
 	pub fn check_sizes(&self, num_points: usize, sh_dim: u8, uses_float16: bool) -> bool {
-		let np = num_points;
-		let pos_expected = np * 3 * if uses_float16 { 2 } else { 3 };
-		let scales_expected = np * 3;
-		let rot_expected = np * if self.uses_quaternion_smallest_three {
-			4
-		} else {
-			3
-		};
-		let alphas_expected = np;
-		let colors_expected = np * 3;
-		let sh_expected = np * (sh_dim as usize) * 3;
+		let pos_expected = num_points * 3 * if uses_float16 { 2 } else { 3 };
+		let scales_expected = num_points * 3;
+		let rot_expected = num_points
+			* if self.uses_quaternion_smallest_three {
+				4
+			} else {
+				3
+			};
+		let alphas_expected = num_points;
+		let colors_expected = num_points * 3;
+		let sh_expected = num_points * (sh_dim as usize) * 3;
 
 		if self.positions.len() != pos_expected
 			|| self.scales.len() != scales_expected

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use std::fmt::Write;
 use std::{path::Path, path::PathBuf};
 
 use anyhow::{Context, Result, bail};
@@ -622,6 +623,44 @@ impl GaussianSplat {
 			min_z,
 			max_z,
 		}
+	}
+
+	pub fn pretty_print(&self) -> String {
+		let bbox = self.bbox();
+		let (size_x, size_y, size_z) = bbox.size();
+		let (center_x, center_y, center_z) = bbox.center();
+
+		let mut ret = String::new();
+
+		let _ = write!(ret, "GaussianSplat:\n");
+		let _ = write!(ret, "\tNumber of points:\t\t{}\n", self.num_points);
+		let _ = write!(
+			ret,
+			"\tSpherical harmonics degree:\t{}\n",
+			self.spherical_harmonics_degree
+		);
+		let _ = write!(ret, "\tAntialiased:\t\t\t{}\n", self.antialiased);
+		let _ = write!(
+			ret,
+			"\tMedian ellipsoid volume:\t{:.6}\n",
+			self.median_volume()
+		);
+		let _ = write!(
+			ret,
+			"\tBounding box:\n\t\tx: {:.6} to {:.6} (size {:.6}, center {:.6})\n",
+			bbox.min_x, bbox.max_x, size_x, center_x
+		);
+		let _ = write!(
+			ret,
+			"\t\ty: {:.6} to {:.6} (size {:.6}, center {:.6})\n",
+			bbox.min_y, bbox.max_y, size_y, center_y
+		);
+		let _ = write!(
+			ret,
+			"\t\tz: {:.6} to {:.6} (size {:.6}, center {:.6})\n",
+			bbox.min_z, bbox.max_z, size_z, center_z
+		);
+		ret
 	}
 }
 
