@@ -151,7 +151,7 @@ py:
 		maturin develop --uv \
 		--manifest-path crates/spz-pywrapper/Cargo.toml
 		#--compression-method zstd
-	uvx -p "${pyenv}" python -i crates/spz-pywrapper/dev/prefill_shell.py
+	uvx -p "${pyenv}" python -i crates/spz-pywrapper/dev/shell_prefill.py
 
 py-test:
 	uv run crates/spz-pywrapper/.venv/bin/python -m pytest
