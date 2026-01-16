@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use std::fmt::Write;
-use std::{path::Path, path::PathBuf};
+use std::path::Path;
 
 use anyhow::{Context, Result, bail};
 use arbitrary::Arbitrary;
@@ -727,7 +727,6 @@ impl BoundingBox {
 
 #[derive(Clone, Debug, Arbitrary)]
 pub struct GaussianSplatBuilder {
-	filepath: Option<PathBuf>,
 	unpack_opts: UnpackOptions,
 	packed: bool,
 }
@@ -736,7 +735,6 @@ impl Default for GaussianSplatBuilder {
 	#[inline]
 	fn default() -> Self {
 		GaussianSplatBuilder {
-			filepath: None,
 			unpack_opts: UnpackOptions::default(),
 			packed: true,
 		}
@@ -744,14 +742,6 @@ impl Default for GaussianSplatBuilder {
 }
 
 impl GaussianSplatBuilder {
-	pub fn filepath<F>(mut self, filepath: F) -> Self
-	where
-		F: AsRef<Path>,
-	{
-		self.filepath = Some(filepath.as_ref().to_path_buf());
-		self
-	}
-
 	pub fn packed(mut self, packed: bool) -> Result<Self> {
 		if unlikely(!packed) {
 			bail!("only packed format loading is supported currently");
@@ -766,19 +756,18 @@ impl GaussianSplatBuilder {
 		self
 	}
 
-	pub fn load(self) -> Result<GaussianSplat> {
-		GaussianSplat::load_packed_from_file(
-			self.filepath.as_ref().unwrap(),
-			&self.unpack_opts,
-		)
+	pub fn load<P>(self, filepath: P) -> Result<GaussianSplat>
+	where
+		P: AsRef<Path>,
+	{
+		GaussianSplat::load_packed_from_file(filepath, &self.unpack_opts)
 	}
 
-	pub async fn load_async(self) -> Result<GaussianSplat> {
-		GaussianSplat::load_packed_from_file_async(
-			self.filepath.as_ref().unwrap(),
-			&self.unpack_opts,
-		)
-		.await
+	pub async fn load_async<P>(self, filepath: P) -> Result<GaussianSplat>
+	where
+		P: AsRef<Path>,
+	{
+		GaussianSplat::load_packed_from_file_async(filepath, &self.unpack_opts).await
 	}
 }
 

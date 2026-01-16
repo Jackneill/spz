@@ -10,14 +10,13 @@ fn main() -> Result<()> {
 	sample_spz.push("assets/racoonfamily.spz");
 
 	let _gs = GaussianSplat::builder()
-		.filepath(sample_spz)
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
 				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
-		.load()?;
+		.load(sample_spz)?;
 
 	Ok(())
 }
@@ -28,13 +27,12 @@ where
 	P: AsRef<Path>,
 {
 	GaussianSplat::builder()
-		.filepath(spz_file)
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
 				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
-		.load_async()
+		.load_async(spz_file)
 		.await
 }

@@ -44,25 +44,23 @@ pub fn create_splat(num_points: i32) -> GaussianSplat {
 
 pub fn load_packed_from_file() -> Result<GaussianSplat> {
 	GaussianSplat::builder()
-		.filepath("../../assets/racoonfamily.spz")
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
 				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
-		.load()
+		.load("../../assets/racoonfamily.spz")
 }
 
 pub async fn load_packed_from_file_async() -> Result<GaussianSplat> {
 	GaussianSplat::builder()
-		.filepath("../../assets/racoonfamily.spz")
 		.packed(true)?
 		.unpack_options(
 			UnpackOptions::builder()
 				.to_coord_system(CoordinateSystem::default())
 				.build(),
 		)
-		.load_async()
+		.load_async("../../assets/racoonfamily.spz")
 		.await
 }
