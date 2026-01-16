@@ -185,6 +185,7 @@ pub struct GaussianSplatBuilder { /* ... */ }
 impl GaussianSplatBuilder {
 	pub fn packed(self, packed: bool) -> Result<Self>;
 	pub fn unpack_options(self, opts: UnpackOptions) -> Self;
+
 	pub fn load<P: AsRef<Path>>(self, filepath: P) -> Result<GaussianSplat>;
 	pub async fn load_async<P: AsRef<Path>>(self, filepath: P) -> Result<GaussianSplat>;
 }
