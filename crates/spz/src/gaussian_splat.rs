@@ -19,6 +19,7 @@ use crate::{
 	unpacked::UnpackOptions,
 };
 
+/// A set of Gaussian splats representing a 3D scene.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct GaussianSplat {
 	/// The number of gaussians.

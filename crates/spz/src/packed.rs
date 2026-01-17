@@ -42,6 +42,8 @@ use crate::{coord::CoordinateSystem, header::PackedGaussiansHeader};
 ///
 /// Specifies the source coordinate system so axis flips can be applied during
 /// compression to convert to the SPZ internal format (RightUpBack).
+///
+/// For more information see [`CoordinateSystem`](crate::coord::CoordinateSystem).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
 pub struct PackOptions {
 	/// The coordinate system of the source data.
@@ -201,17 +203,6 @@ impl PackedGaussian {
 /// Stores all splat data in non-interleaved arrays for efficient compression.
 /// Each attribute (positions, rotations, etc.) is stored contiguously across
 /// all splats rather than per-splat.
-///
-/// # Data Sizes per Gaussian Splat
-///
-/// | Attribute | Bytes  | Encoding |
-/// |-----------|--------|----------|
-/// | position  | 6 or 9 | float16 or fixed24 |
-/// | scale     | 3 	 | quantized log-scale |
-/// | rotation  | 3 or 4 | packed quaternion |
-/// | alpha     | 1 	 | quantized sigmoid |
-/// | color     | 3 	 | quantized RGB |
-/// | SH        | 0-45 	 | quantized, per degree |
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct PackedGaussians {
 	/// Total number of Gaussian splats.

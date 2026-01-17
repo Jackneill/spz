@@ -45,18 +45,6 @@ pub const HEADER_SIZE: usize = std::mem::size_of::<PackedGaussiansHeader>();
 /// This header appears at the start of every SPZ file and contains metadata
 /// needed to decode the compressed Gaussian splat data that follows. The
 /// struct uses repr C for direct memory-mapped reading/writing.
-///
-/// # Binary Layout
-///
-/// | Offset | Size | Field                       |
-/// |--------|------|-----------------------------|
-/// | 0      | 4    | `magic` (0x5053474e "NGSP") |
-/// | 4      | 4    | `version`                   |
-/// | 8      | 4    | `num_points`                |
-/// | 12     | 1    | `spherical_harmonics_degree`|
-/// | 13     | 1    | `fractional_bits`           |
-/// | 14     | 1    | `flags`                     |
-/// | 15     | 1    | `reserved` (must be `0`)    |
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
 #[repr(C)]
 pub struct PackedGaussiansHeader {

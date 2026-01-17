@@ -34,6 +34,7 @@ impl Default for UnpackOptionsBuilder {
 	}
 }
 
+/// For more information see [`CoordinateSystem`](crate::coord::CoordinateSystem).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
 pub struct UnpackOptions {
 	pub to_coord_sys: CoordinateSystem,

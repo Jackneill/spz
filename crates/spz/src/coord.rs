@@ -5,6 +5,15 @@ use std::str::FromStr;
 use arbitrary::Arbitrary;
 use serde::{Deserialize, Serialize};
 
+/// Supported 3D coordinate systems for Gaussian splat data.
+///
+/// To aid with coordinate system conversions, callers should specify the
+/// coordinate system their Gaussian Splat data is represented in when saving
+/// and what coordinate system their rendering system uses when loading.
+///
+/// These are specified in the [`PackOptions`] and [`UnpackOptions`] respectively.
+/// If the coordinate system is `Unspecified`, data will be saved and loaded
+/// without conversion, which may harm interoperability.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
 pub enum CoordinateSystem {
 	#[default]
