@@ -551,8 +551,10 @@ pub fn load(path: &str, coordinate_system: CoordinateSystem) -> PyResult<Gaussia
 ///
 /// ```python
 /// import spz
+///
 /// splat = spz.load("scene.spz")
 /// print(f"Loaded {len(splat)} gaussians")
+///
 /// positions = splat.positions  # numpy array (N, 3)
 /// splat.save("output.spz")
 /// ```
