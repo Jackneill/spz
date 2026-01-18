@@ -45,7 +45,7 @@ fuzz:
 mutants:
 	{{cargo}} mutants -d crates/spz
 
-lint:
+lint: uv-install
 	{{cargo}} fmt --check
 	{{cargo}} clippy
 	uvx reuse lint
@@ -55,7 +55,7 @@ lint-ci:
 	go install github.com/rhysd/actionlint/cmd/actionlint@latest
 	actionlint
 
-lint-py:
+lint-py: uv-install
 	uvx ruff check crates/spz-pywrapper
 
 bench: assets
