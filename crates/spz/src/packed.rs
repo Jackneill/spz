@@ -20,7 +20,7 @@ use std::io::Write;
 use anyhow::bail;
 use anyhow::{Context, Result};
 use arbitrary::Arbitrary;
-use likely_stable::unlikely;
+use likely_stable::{if_unlikely, unlikely};
 use serde::{Deserialize, Serialize};
 
 use crate::header::PackedGaussiansHeader;
@@ -357,7 +357,7 @@ impl TryFrom<&[u8]> for PackedGaussians {
 		if unlikely(header.version < 1 || header.version > 3) {
 			bail!("unsupported version: {}", header.version);
 		}
-		if header.spherical_harmonics_degree > 3 {
+		if unlikely(header.spherical_harmonics_degree > 3) {
 			bail!(
 				"unsupported spherical harmonics degree: {}",
 				header.spherical_harmonics_degree
@@ -392,24 +392,24 @@ impl TryFrom<&[u8]> for PackedGaussians {
 						as usize * 3
 			],
 		};
-		if let Err(err) = from_reader.read_exact(&mut result.positions) {
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.positions) => {
 			bail!("read error (positions): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.alphas) {
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.alphas) => {
 			bail!("read error (alphas): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.colors) {
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.colors) => {
 			bail!("read error (colors): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.scales) {
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.scales) => {
 			bail!("read error (scales): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.rotations) {
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.rotations) => {
 			bail!("read error (rotations): {}", err);
-		}
-		if let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) {
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) => {
 			bail!("read error (sh): {}", err);
-		}
+		}};
 		Ok(result)
 	}
 }

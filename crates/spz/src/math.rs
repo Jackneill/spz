@@ -98,21 +98,20 @@ pub fn unpack_quaternion_smallest_three_with_flip(
 	let mut sum_squares: f32 = 0.0;
 
 	for i in (0..4).rev() {
-		if i != i_largest {
-			let mag = comp & C_MASK;
-			let negbit = (comp >> 9) & 0x1;
-
-			comp >>= 10;
-
-			let mut val =
-				std::f32::consts::FRAC_1_SQRT_2 * (mag as f32) / (C_MASK as f32);
-
-			if negbit == 1 {
-				val = -val;
-			}
-			rotation[i] = val;
-			sum_squares += val * val;
+		if i == i_largest {
+			continue;
 		}
+		let mag = comp & C_MASK;
+		let negbit = (comp >> 9) & 0x1;
+
+		comp >>= 10;
+
+		let mut val = std::f32::consts::FRAC_1_SQRT_2 * (mag as f32) / (C_MASK as f32);
+
+		val = if negbit == 1 { -val } else { val };
+
+		rotation[i] = val;
+		sum_squares += val * val;
 	}
 	rotation[i_largest] = (1.0_f32 - sum_squares).max(0.0_f32).sqrt();
 
