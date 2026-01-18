@@ -11,17 +11,6 @@
 //! - byte-quantized values for colors
 //! - byte-quantized values for spherical harmonics,
 //! achieving significant size reduction compared to raw floats.
-//!
-//! # Key Types
-//!
-//! - [`PackedGaussians`] — Collection of all packed splat data (non-interleaved)
-//! - [`PackedGaussian`] — Single packed splat (65 bytes)
-//! - [`PackOptions`] — Settings for packing (source coordinate system)
-//!
-//! # Data Layout
-//!
-//! SPZ files store data in non-interleaved format for better compression:
-//! `[header][positions][alphas][colors][scales][rotations][spherical_harmonics]`
 //! ```
 
 use std::io::BufReader;

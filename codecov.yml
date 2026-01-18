@@ -31,3 +31,5 @@ coverage:
     - "crates/spz-pywrapper/tests"
     - "crates/spz-pywrapper/benches/**"
     - "crates/spz-pywrapper/pypkg/tests/**"
+
+    - "crates/spz-capi/**"
