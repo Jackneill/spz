@@ -4,9 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use rand::{Rng, SeedableRng, rngs::StdRng};
-use spz::{
-	coord::CoordinateSystem, gaussian_splat::GaussianSplat, gaussian_splat::LoadOptions, math,
-};
+use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, math};
 
 pub fn create_splat(num_points: i32) -> GaussianSplat {
 	let sh_degree = 2_i32;
@@ -49,22 +47,14 @@ pub fn create_splat(num_points: i32) -> GaussianSplat {
 pub fn load_packed_from_file() -> Result<GaussianSplat> {
 	GaussianSplat::builder()
 		.packed(true)?
-		.unpack_options(
-			LoadOptions::builder()
-				.coord_sys(CoordinateSystem::default())
-				.build(),
-		)
+		.coord_sys(CoordinateSystem::default())
 		.load("../../assets/racoonfamily.spz")
 }
 
 pub async fn load_packed_from_file_async() -> Result<GaussianSplat> {
 	GaussianSplat::builder()
 		.packed(true)?
-		.unpack_options(
-			LoadOptions::builder()
-				.coord_sys(CoordinateSystem::default())
-				.build(),
-		)
+		.coord_sys(CoordinateSystem::default())
 		.load_async("../../assets/racoonfamily.spz")
 		.await
 }

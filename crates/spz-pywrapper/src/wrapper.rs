@@ -307,10 +307,9 @@ impl GaussianSplat {
 		let opts = spz_rs::gaussian_splat::LoadOptions {
 			coord_sys: coordinate_system.inner,
 		};
-		let packed =
-			spz_rs::gaussian_splat::GaussianSplat::load_packed(data).map_err(|e| {
-				PyValueError::new_err(format!("Failed to parse SPZ data: {}", e))
-			})?;
+		let packed = spz_rs::packed::PackedGaussians::from_bytes(data).map_err(|e| {
+			PyValueError::new_err(format!("Failed to parse SPZ data: {}", e))
+		})?;
 		let inner = spz_rs::gaussian_splat::GaussianSplat::new_from_packed_gaussians(
 			&packed, &opts,
 		)

@@ -99,7 +99,10 @@ impl GaussianSplat {
 
 		infile.read_to_end(contents).await?;
 
-		return Self::new_from_packed_gaussians(&Self::load_packed(&contents)?, opts);
+		return Self::new_from_packed_gaussians(
+			&PackedGaussians::from_bytes(&contents)?,
+			opts,
+		);
 	}
 
 	/// Loads Gaussian splat from a file in packed format, async.
@@ -127,36 +130,16 @@ impl GaussianSplat {
 		if cfg!(target_os = "macos") {
 			let infile = std::fs::read(filepath)?;
 
-			return Self::new_from_packed_gaussians(&Self::load_packed(&infile)?, opts);
+			return Self::new_from_packed_gaussians(
+				&PackedGaussians::from_bytes(&infile)?,
+				opts,
+			);
 		}
 		let mmap = mmap::mmap(filepath)?;
-		let packed = Self::load_packed(mmap.as_ref())
+		let packed = PackedGaussians::from_bytes(mmap.as_ref())
 			.with_context(|| "unable to load packed file")?;
 
 		Self::new_from_packed_gaussians(&packed, opts)
-	}
-
-	/// Loads Gaussian splat from a slice of bytes in packed format.
-	///
-	/// `data` - gzip compressed, packed gaussian data.
-	pub fn load_packed<D>(data: D) -> Result<PackedGaussians>
-	where
-		D: AsRef<[u8]>,
-	{
-		if unlikely(data.as_ref().is_empty()) {
-			// we cannot return an empty struct as there is no header
-			bail!("data is empty");
-		}
-		let mut decompressed = Vec::<u8>::new();
-
-		crate::compression::gzip_to_bytes(data, &mut decompressed)
-			.with_context(|| "unable to decompress gzip data")?;
-
-		let packed: PackedGaussians = decompressed
-			.try_into()
-			.with_context(|| "unable to parse packed gaussian data")?;
-
-		Ok(packed)
 	}
 
 	/// Saves Gaussian splat to a file in packed format.
@@ -688,18 +671,8 @@ impl std::fmt::Display for GaussianSplat {
 
 #[derive(Clone, Debug, Arbitrary)]
 pub struct GaussianSplatBuilder {
-	unpack_opts: LoadOptions,
+	coord_sys: CoordinateSystem,
 	packed: bool,
-}
-
-impl Default for GaussianSplatBuilder {
-	#[inline]
-	fn default() -> Self {
-		GaussianSplatBuilder {
-			unpack_opts: LoadOptions::default(),
-			packed: true,
-		}
-	}
 }
 
 impl GaussianSplatBuilder {
@@ -712,8 +685,8 @@ impl GaussianSplatBuilder {
 		Ok(self)
 	}
 
-	pub fn unpack_options(mut self, opts: LoadOptions) -> Self {
-		self.unpack_opts = opts;
+	pub fn coord_sys(mut self, coord_sys: CoordinateSystem) -> Self {
+		self.coord_sys = coord_sys;
 		self
 	}
 
@@ -721,32 +694,51 @@ impl GaussianSplatBuilder {
 	where
 		P: AsRef<Path>,
 	{
-		GaussianSplat::load_packed_from_file(filepath, &self.unpack_opts)
+		GaussianSplat::load_packed_from_file(
+			filepath,
+			&LoadOptions::builder().coord_sys(self.coord_sys).build(),
+		)
 	}
 
 	pub async fn load_async<P>(self, filepath: P) -> Result<GaussianSplat>
 	where
 		P: AsRef<Path>,
 	{
-		GaussianSplat::load_packed_from_file_async(filepath, &self.unpack_opts).await
+		GaussianSplat::load_packed_from_file_async(
+			filepath,
+			&LoadOptions::builder().coord_sys(self.coord_sys).build(),
+		)
+		.await
+	}
+}
+
+impl Default for GaussianSplatBuilder {
+	#[inline]
+	fn default() -> Self {
+		GaussianSplatBuilder {
+			coord_sys: CoordinateSystem::Unspecified,
+			packed: true,
+		}
 	}
 }
 
 #[derive(Clone, Debug, Arbitrary)]
 pub struct LoadOptionsBuilder {
-	to: CoordinateSystem,
+	coord_sys: CoordinateSystem,
 }
 
 impl LoadOptionsBuilder {
 	#[inline]
 	pub fn coord_sys(mut self, coord_sys: CoordinateSystem) -> Self {
-		self.to = coord_sys;
+		self.coord_sys = coord_sys;
 		self
 	}
 
 	#[inline]
 	pub fn build(self) -> LoadOptions {
-		LoadOptions { coord_sys: self.to }
+		LoadOptions {
+			coord_sys: self.coord_sys,
+		}
 	}
 }
 
@@ -754,7 +746,7 @@ impl Default for LoadOptionsBuilder {
 	#[inline]
 	fn default() -> Self {
 		Self {
-			to: CoordinateSystem::Unspecified,
+			coord_sys: CoordinateSystem::Unspecified,
 		}
 	}
 }

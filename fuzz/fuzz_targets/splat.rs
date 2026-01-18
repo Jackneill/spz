@@ -9,7 +9,10 @@
 
 use arbitrary::Arbitrary;
 use libfuzzer_sys::fuzz_target;
-use spz::prelude::{GaussianSplat, LoadOptions, SaveOptions};
+use spz::{
+	packed::PackedGaussians,
+	prelude::{GaussianSplat, LoadOptions, SaveOptions},
+};
 
 #[derive(Debug, Arbitrary)]
 struct Input {
@@ -20,7 +23,7 @@ struct Input {
 
 fuzz_target!(|input: Input| {
 	if let Ok(bytes) = input.gs.serialize_as_packed_bytes(&input.save_opts) {
-		if let Ok(packed_bytes) = GaussianSplat::load_packed(&bytes) {
+		if let Ok(packed_bytes) = PackedGaussians::from_bytes(&bytes) {
 			let _ = GaussianSplat::new_from_packed_gaussians(
 				&packed_bytes,
 				&input.load_opts,

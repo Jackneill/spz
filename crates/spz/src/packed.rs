@@ -171,6 +171,29 @@ pub struct PackedGaussians {
 }
 
 impl PackedGaussians {
+	/// Deserializes packed Gaussian data from gzip-compressed bytes.
+	///
+	/// `bytes` - gzip compressed, packed gaussian data.
+	pub fn from_bytes<B>(bytes: B) -> Result<Self>
+	where
+		B: AsRef<[u8]>,
+	{
+		if unlikely(bytes.as_ref().is_empty()) {
+			// we cannot return an empty struct as there is no header
+			bail!("data is empty");
+		}
+		let mut decompressed = Vec::<u8>::new();
+
+		crate::compression::gzip_to_bytes(bytes, &mut decompressed)
+			.with_context(|| "unable to decompress gzip data")?;
+
+		let packed: Self = decompressed
+			.try_into()
+			.with_context(|| "unable to parse packed gaussian data")?;
+
+		Ok(packed)
+	}
+
 	/// Constructs an SPZ header from this packed data's metadata.
 	#[inline]
 	pub fn construct_header(&self) -> PackedGaussiansHeader {

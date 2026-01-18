@@ -11,11 +11,11 @@ use std::ffi::{CStr, c_char, c_int};
 use std::ptr;
 use std::slice;
 
-use spz::coord::CoordinateSystem as RustCoordinateSystem;
 use spz::gaussian_splat::{
 	BoundingBox as RustBoundingBox, GaussianSplat as RustGaussianSplat, LoadOptions,
 	SaveOptions,
 };
+use spz::{coord::CoordinateSystem as RustCoordinateSystem, packed::PackedGaussians};
 
 // Thread-local storage for the last error message.
 thread_local! {
@@ -207,8 +207,7 @@ pub unsafe extern "C" fn spz_gaussian_splat_load_from_bytes(
 	let opts = LoadOptions {
 		coord_sys: coord_sys.into(),
 	};
-
-	match RustGaussianSplat::load_packed(bytes) {
+	match PackedGaussians::from_bytes(bytes) {
 		Ok(packed) => match RustGaussianSplat::new_from_packed_gaussians(&packed, &opts) {
 			Ok(gs) => Box::into_raw(Box::new(SpzGaussianSplat { inner: gs })),
 			Err(e) => {

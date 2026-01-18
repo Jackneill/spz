@@ -6,6 +6,7 @@ use rstest::rstest;
 use spz::{
 	coord::CoordinateSystem,
 	gaussian_splat::{self, GaussianSplat},
+	packed::PackedGaussians,
 	prelude::{LoadOptions, SaveOptions},
 };
 
@@ -45,7 +46,7 @@ fn test_empty_gaussian_splat() {
 	assert!(packed_gs.colors.is_empty());
 	assert!(packed_gs.spherical_harmonics.is_empty());
 
-	assert!(GaussianSplat::load_packed(&[]).is_err());
+	assert!(PackedGaussians::from_bytes(&[]).is_err());
 }
 
 #[rstest]
@@ -55,7 +56,7 @@ fn test_load_packed_bytes(#[case] filename: &str) {
 	let spz_path = util::assets_dir().join(filename);
 	let spz_infile = std::fs::read(&spz_path).expect("failed to read file");
 
-	let pg = GaussianSplat::load_packed(&spz_infile).expect("failed to load packed");
+	let pg = PackedGaussians::from_bytes(&spz_infile).expect("failed to load packed");
 
 	assert!(pg.num_points > 0);
 	assert!(!pg.positions.is_empty());
@@ -85,7 +86,7 @@ fn test_roundtrip_pack_unpack(#[case] filename: &str) {
 
 	// reload from bytes
 	let reloaded_fs_from_packed =
-		GaussianSplat::load_packed(&packed_bytes).expect("failed to reload packed");
+		PackedGaussians::from_bytes(&packed_bytes).expect("failed to reload packed");
 	let reloaded =
 		GaussianSplat::new_from_packed_gaussians(&reloaded_fs_from_packed, &unpack_opts)
 			.expect("failed to unpack");
