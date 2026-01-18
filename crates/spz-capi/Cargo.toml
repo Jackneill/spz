@@ -15,7 +15,7 @@ categories = [
 	"rendering",
 	"rendering::data-formats",
 ]
-publish = true
+publish = false
 
 [lib]
 crate-type = ["cdylib", "staticlib"]
