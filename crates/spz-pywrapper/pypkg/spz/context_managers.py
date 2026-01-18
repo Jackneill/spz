@@ -35,7 +35,7 @@ class SplatReader:
 
     Args:
         path: Path to the SPZ file.
-        from_coordinate_system: Source coordinate system when reading.
+        coordinate_system: The coordinate system to convert to when loading.
 
     Example:
         >>> with SplatReader("input.spz") as ctx:
@@ -80,7 +80,7 @@ class SplatWriter:
 
     Args:
         path: Path where the SPZ file will be saved.
-        from_coordinate_system: Source coordinate system when saving.
+        coordinate_system: The coordinate system to convert from when saving.
 
     Example::
 
@@ -100,16 +100,16 @@ class SplatWriter:
     def __init__(
         self,
         path: PathLike,
-        from_coordinate_system=CoordinateSystem.UNSPECIFIED,
+        coordinate_system=CoordinateSystem.UNSPECIFIED,
     ) -> None:
         """Initialize the SplatWriter.
 
         Args:
             path: Path where the SPZ file will be saved.
-            from_coordinate_system: Source coordinate system when saving.
+            coordinate_system: The coordinate system to convert from when saving.
         """
         self.path = Path(path)
-        self.from_coordinate_system = from_coordinate_system
+        self.coordinate_system = coordinate_system
         self.splat: GaussianSplat | None = None
 
         self._save_on_exit = True
@@ -121,7 +121,7 @@ class SplatWriter:
     def __exit__(self, exc_type, _exc_val, _exc_tb) -> None:  # noqa: ANN001
         """Exit the context and save the splat if no exception occurred."""
         if exc_type is None and self._save_on_exit and self.splat is not None:
-            self.splat.save(str(self.path), self.from_coordinate_system)
+            self.splat.save(str(self.path), self.coordinate_system)
 
     def cancel(self) -> None:
         """Cancel the automatic save on exit."""
@@ -131,7 +131,7 @@ class SplatWriter:
 @contextmanager
 def temp_save(
     gaussian_splat: GaussianSplat,
-    from_coordinate_system=CoordinateSystem.UNSPECIFIED,
+    coordinate_system=CoordinateSystem.UNSPECIFIED,
     suffix: str = ".spz",
 ) -> Iterator[Path]:
     """Context manager that saves a GaussianSplat to a temporary file.
@@ -141,7 +141,7 @@ def temp_save(
 
     Args:
         gaussian_splat: The GaussianSplat to save.
-        from_coordinate_system: Source coordinate system when saving.
+        coordinate_system: The coordinate system to convert to when saving.
         suffix: File suffix for the temporary file.
 
     Yields:
@@ -157,7 +157,7 @@ def temp_save(
         temp_path = Path(f.name)
 
     try:
-        gaussian_splat.save(str(temp_path), from_coordinate_system)
+        gaussian_splat.save(str(temp_path), coordinate_system)
 
         yield temp_path
     finally:
@@ -168,8 +168,8 @@ def temp_save(
 def modified_splat(
     path: PathLike,
     output_path: PathLike | None = None,
-    from_coordinate_system=CoordinateSystem.UNSPECIFIED,
-    to_coordinate_system=CoordinateSystem.UNSPECIFIED,
+    coordinate_system_after_load=CoordinateSystem.UNSPECIFIED,
+    coordinate_system_for_save=CoordinateSystem.UNSPECIFIED,
 ) -> Iterator[GaussianSplat]:
     """Context manager for loading, modifying, and saving an SPZ file.
 
@@ -179,8 +179,8 @@ def modified_splat(
     Args:
         path: Path to the input SPZ file.
         output_path: Path to save the modified file. If None, overwrites input.
-        from_coordinate_system: Coordinate system for loading.
-        to_coordinate_system: Coordinate system for saving.
+        coordinate_system_after_load: The coordinate system to convert to when loading.
+        coordinate_system_for_save: The coordinate system to convert to when saving.
 
     Yields:
         The loaded GaussianSplat for modification.
@@ -193,10 +193,10 @@ def modified_splat(
             )
         # Automatically saved to scene_converted.spz
     """
-    splat = GaussianSplat.load(str(path), from_coordinate_system)
+    splat = GaussianSplat.load(str(path), coordinate_system_after_load)
 
     try:
         yield splat
     finally:
         save_path = output_path if output_path is not None else path
-        splat.save(str(save_path), to_coordinate_system)
+        splat.save(str(save_path), coordinate_system_for_save)

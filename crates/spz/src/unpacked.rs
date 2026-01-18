@@ -3,54 +3,11 @@
 use arbitrary::Arbitrary;
 use serde::{Deserialize, Serialize};
 
-use crate::coord::CoordinateSystem;
-
-#[derive(Clone, Debug, Arbitrary)]
-pub struct UnpackOptionsBuilder {
-	to_coord_sys: CoordinateSystem,
-}
-
-impl UnpackOptionsBuilder {
-	#[inline]
-	pub fn to_coord_system(mut self, coord_sys: CoordinateSystem) -> Self {
-		self.to_coord_sys = coord_sys;
-		self
-	}
-
-	#[inline]
-	pub fn build(self) -> UnpackOptions {
-		UnpackOptions {
-			to_coord_sys: self.to_coord_sys,
-		}
-	}
-}
-
-impl Default for UnpackOptionsBuilder {
-	#[inline]
-	fn default() -> Self {
-		Self {
-			to_coord_sys: CoordinateSystem::Unspecified,
-		}
-	}
-}
-
-/// For more information see [`CoordinateSystem`](crate::coord::CoordinateSystem).
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
-pub struct UnpackOptions {
-	pub to_coord_sys: CoordinateSystem,
-}
-
-impl UnpackOptions {
-	#[inline]
-	pub fn builder() -> UnpackOptionsBuilder {
-		UnpackOptionsBuilder::default()
-	}
-}
-
 static_assertions::const_assert_eq!(std::mem::size_of::<UnpackedGaussian>(), 236);
 
-/// Represents a single inflated gaussian.
+/// Intermediate representation. Represents a single inflated gaussian.
 ///
+/// Coordinate system conversions are already applied at this stage.
 /// Each gaussian has 236 bytes.
 /// Although the data is easier to intepret in this format,
 /// it is not more precise than the packed format, since it was inflated.

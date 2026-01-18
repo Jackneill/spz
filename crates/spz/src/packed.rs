@@ -34,64 +34,15 @@ use arbitrary::Arbitrary;
 use likely_stable::unlikely;
 use serde::{Deserialize, Serialize};
 
+use crate::header::PackedGaussiansHeader;
 use crate::{consts, math};
 use crate::{coord::AxisFlips, unpacked::UnpackedGaussian};
-use crate::{coord::CoordinateSystem, header::PackedGaussiansHeader};
-
-/// Options for packing [`GaussianSplat`](crate::gaussian_splat::GaussianSplat) data.
-///
-/// Specifies the source coordinate system so axis flips can be applied during
-/// compression to convert to the SPZ internal format (RightUpBack).
-///
-/// For more information see [`CoordinateSystem`](crate::coord::CoordinateSystem).
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
-pub struct PackOptions {
-	/// The coordinate system of the source data.
-	pub from: CoordinateSystem,
-}
-
-impl PackOptions {
-	/// Creates a new [`PackOptionsBuilder`].
-	#[inline]
-	pub fn builder() -> PackOptionsBuilder {
-		PackOptionsBuilder::default()
-	}
-}
-
-/// Builder for [`PackOptions`].
-#[derive(Clone, Debug, Arbitrary)]
-pub struct PackOptionsBuilder {
-	from: CoordinateSystem,
-}
-
-impl PackOptionsBuilder {
-	/// Sets the source coordinate system.
-	#[inline]
-	pub fn from(mut self, from: CoordinateSystem) -> Self {
-		self.from = from;
-		self
-	}
-
-	/// Builds the [`PackOptions`].
-	#[inline]
-	pub fn build(self) -> PackOptions {
-		PackOptions { from: self.from }
-	}
-}
-
-impl Default for PackOptionsBuilder {
-	#[inline]
-	fn default() -> Self {
-		Self {
-			from: CoordinateSystem::Unspecified,
-		}
-	}
-}
 
 static_assertions::const_assert_eq!(std::mem::size_of::<PackedGaussian>(), 65);
 
-/// Represents a single low precision gaussian.
+/// Intermediate representation. Represents a single low precision gaussian.
 ///
+/// Coordinate system conversions are already applied at this stage.
 /// Each gaussian has exactly 65 bytes, even if it does not have full spherical
 /// harmonics.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -113,7 +64,7 @@ impl PackedGaussian {
 	/// Decodes quantized position, rotation, scale, color, alpha, and spherical
 	/// harmonics back to `f32` values, applying coordinate axis flips as specified.
 	///
-	/// # Arguments
+	/// # Args
 	///
 	/// * `uses_float16` — If `true`, positions are float16 (6 bytes); otherwise fixed24 (9 bytes)
 	/// * `uses_quaternion_smallest_three` — If `true`, rotations use 4-byte smallest-three encoding

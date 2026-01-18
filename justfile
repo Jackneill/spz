@@ -50,6 +50,7 @@ lint:
 	uvx reuse lint
 
 lint-ci:
+	curl --data-binary @codecov.yml https://codecov.io/validate
 	go install github.com/rhysd/actionlint/cmd/actionlint@latest
 	actionlint
 

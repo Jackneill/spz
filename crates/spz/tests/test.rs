@@ -4,8 +4,9 @@ use approx::assert_relative_eq;
 use rand::{Rng, SeedableRng, rngs::StdRng};
 use rstest::rstest;
 use spz::{
-	coord::CoordinateSystem, gaussian_splat, gaussian_splat::GaussianSplat,
-	packed::PackOptions, unpacked::UnpackOptions,
+	coord::CoordinateSystem,
+	gaussian_splat::{self, GaussianSplat},
+	prelude::{LoadOptions, SaveOptions},
 };
 
 use crate::util::mktmp;
@@ -17,7 +18,7 @@ mod util;
 #[case("racoonfamily.spz")]
 fn test_load_packed_from_file_no_err(#[case] filename: &str) {
 	let spz_path = util::assets_dir().join(filename);
-	let unpack_opts = UnpackOptions::default();
+	let unpack_opts = LoadOptions::default();
 
 	let _gs = GaussianSplat::load_packed_from_file(&spz_path, &unpack_opts)
 		.expect("failed to load splat");
@@ -35,7 +36,7 @@ fn test_empty_gaussian_splat() {
 	assert!(gs.colors.is_empty());
 	assert!(gs.spherical_harmonics.is_empty());
 
-	let packed_gs = gs.to_packed_gaussians(&PackOptions::default()).unwrap();
+	let packed_gs = gs.to_packed_gaussians(&SaveOptions::default()).unwrap();
 
 	assert!(packed_gs.positions.is_empty());
 	assert!(packed_gs.scales.is_empty());
@@ -70,8 +71,8 @@ fn test_load_packed_bytes(#[case] filename: &str) {
 #[case("racoonfamily.spz")]
 fn test_roundtrip_pack_unpack(#[case] filename: &str) {
 	let original_spz = util::assets_dir().join(filename);
-	let unpack_opts = UnpackOptions::default();
-	let pack_opts = PackOptions::default();
+	let unpack_opts = LoadOptions::default();
+	let pack_opts = SaveOptions::default();
 
 	// original
 	let original_gs = GaussianSplat::load_packed_from_file(&original_spz, &unpack_opts)
@@ -190,8 +191,8 @@ fn test_save_load_packed_format_large_splat(#[case] num_points: i32) {
 	let temp_dir = mktmp();
 
 	let filename = temp_dir.join("large_splat.spz");
-	let pack_opts = PackOptions::default();
-	let unpack_opts = UnpackOptions::default();
+	let pack_opts = SaveOptions::default();
+	let unpack_opts = LoadOptions::default();
 
 	gs.save_as_packed(&filename, &pack_opts)
 		.expect("failed to save splat");
@@ -240,16 +241,16 @@ fn test_save_load_packed_format_large_splat(#[case] num_points: i32) {
 		colors: vec![0.0, 0.0, 0.0],
 		spherical_harmonics: vec![-0.01, 0.0, 0.01, -1.0, -0.99, -0.95, 0.95, 0.99, 1.0],
 	},
-	PackOptions::default(),
-	UnpackOptions::default(),
+	SaveOptions::default(),
+	LoadOptions::default(),
 	[
 		-0.0625, 0.0, 0.0, -1.0, -1.0, -1.0, 0.9375, 0.9375, 0.9921875,
 	],
 )]
 fn test_sh_encoding_for_zeros_and_edges(
 	#[case] gs: GaussianSplat,
-	#[case] pack_opts: PackOptions,
-	#[case] unpack_opts: UnpackOptions,
+	#[case] pack_opts: SaveOptions,
+	#[case] unpack_opts: LoadOptions,
 	#[case] expected_sh: [f32; 9],
 ) {
 	let temp_dir = mktmp();
@@ -287,25 +288,25 @@ fn sample_sh_coefficients() -> Vec<f32> {
 		colors: vec![0.1, 0.2, 0.3],
 		spherical_harmonics: sample_sh_coefficients(), // Set up test data with non-zero SH coefficients
 	},
-	PackOptions { // Save as RUB and load as RDF (180 degree rotation about X)
-		from: CoordinateSystem::RightUpBack,
+	SaveOptions { // Save as RUB and load as RDF (180 degree rotation about X)
+		coord_sys: CoordinateSystem::RightUpBack,
 	},
-	UnpackOptions {
-		to_coord_sys: CoordinateSystem::RightDownFront,
+	LoadOptions {
+		coord_sys: CoordinateSystem::RightDownFront,
 	},
-	PackOptions {
-		from: CoordinateSystem::RightDownFront,
+	SaveOptions {
+		coord_sys: CoordinateSystem::RightDownFront,
 	},
-	UnpackOptions {
-		to_coord_sys: CoordinateSystem::RightDownFront,
+	LoadOptions {
+		coord_sys: CoordinateSystem::RightDownFront,
 	}
 )]
 fn test_spherical_harmonics_coordinate_transformation(
 	#[case] gs: GaussianSplat,
-	#[case] pack_opts: PackOptions,
-	#[case] unpack_opts: UnpackOptions,
-	#[case] pack_opts2: PackOptions,
-	#[case] unpack_opts2: UnpackOptions,
+	#[case] pack_opts: SaveOptions,
+	#[case] unpack_opts: LoadOptions,
+	#[case] pack_opts2: SaveOptions,
+	#[case] unpack_opts2: LoadOptions,
 ) {
 	let temp_dir = mktmp();
 	let filename = temp_dir.join("sh_coord_test.spz");
@@ -372,10 +373,10 @@ fn test_quaternion_normalization_during_packing(#[case] gs: GaussianSplat) {
 	let temp_dir = mktmp();
 	let filename = temp_dir.join("quat_normalization_test.spz");
 
-	gs.save_as_packed(&filename, &PackOptions::default())
+	gs.save_as_packed(&filename, &SaveOptions::default())
 		.expect("failed to save splat");
 
-	let loaded = GaussianSplat::load_packed_from_file(&filename, &UnpackOptions::default())
+	let loaded = GaussianSplat::load_packed_from_file(&filename, &LoadOptions::default())
 		.expect("failed to load splat");
 
 	// Verify that the quaternions are now normalized
@@ -486,10 +487,10 @@ fn test_compression_precision_validation(#[case] gs: GaussianSplat) {
 	let temp_dir = mktmp();
 	let filename = temp_dir.join("compression_precision_test.spz");
 
-	gs.save_as_packed(&filename, &PackOptions::default())
+	gs.save_as_packed(&filename, &SaveOptions::default())
 		.expect("failed to save splat");
 
-	let loaded = GaussianSplat::load_packed_from_file(&filename, &UnpackOptions::default())
+	let loaded = GaussianSplat::load_packed_from_file(&filename, &LoadOptions::default())
 		.expect("failed to load splat");
 
 	// Verify precision according to implementation

@@ -11,6 +11,16 @@ import numpy.typing as npt
 class CoordinateSystem:
     """Coordinate system enumeration.
 
+    Supported 3D coordinate systems for Gaussian splat (``GaussianSplat``) data.
+
+    To aid with coordinate system conversions, callers should specify the
+    coordinate system their Gaussian Splat data is represented in when saving
+    and what coordinate system their rendering system uses when loading.
+    These are specified in the ``LoadOptions`` and ``SaveOptions`` respectively.
+
+    If the coordinate system is `UNSPECIFIED`, data will be saved and loaded
+    without conversion, which may harm interoperability.
+
     Each coordinate system is defined by three axes:
         - L/R: Left/Right for X axis
         - U/D: Up/Down for Y axis
@@ -161,7 +171,8 @@ class GaussianSplat:
 
         Args:
             path: Path to the SPZ file.
-            coordinate_system: Target coordinate system for the loaded data.
+            coordinate_system: Target coordinate system to convert to when
+                loading the data.
                 Defaults to UNSPECIFIED (no conversion).
 
         Returns:
@@ -181,7 +192,8 @@ class GaussianSplat:
 
         Args:
             data: The SPZ file contents as bytes.
-            coordinate_system: Target coordinate system for the loaded data.
+            coordinate_system: The coordinate system to convert to when loading
+                the data.
                 Defaults to UNSPECIFIED (no conversion).
 
         Returns:
@@ -192,25 +204,27 @@ class GaussianSplat:
     def save(
         self,
         path: str,
-        from_coordinate_system=CoordinateSystem.UNSPECIFIED,
+        coordinate_system=CoordinateSystem.UNSPECIFIED,
     ) -> None:
         """Save the GaussianSplat to an SPZ file.
 
         Args:
             path: Path to save the SPZ file.
-            from_coordinate_system: Source coordinate system of the data.
+            coordinate_system: The coordinate system to convert to when saving
+                the data.
                 Defaults to UNSPECIFIED (no conversion).
         """
         ...
 
     def to_bytes(
         self,
-        from_coordinate_system=CoordinateSystem.UNSPECIFIED,
+        coordinate_system=CoordinateSystem.UNSPECIFIED,
     ) -> bytes:
         """Serialize the GaussianSplat to bytes.
 
         Args:
-            from_coordinate_system: Source coordinate system of the data.
+            coordinate_system: The coordinate system to convert to when
+                serializing the data.
                 Defaults to UNSPECIFIED (no conversion).
 
         Returns:
@@ -219,13 +233,13 @@ class GaussianSplat:
         ...
 
     def convert_coordinates(
-        self, from_system: CoordinateSystem, to_system: CoordinateSystem
+        self, source: CoordinateSystem, target: CoordinateSystem
     ) -> None:
         """Convert coordinates to a different coordinate system.
 
         Args:
-            from_system: The current coordinate system of the data.
-            to_system: The target coordinate system.
+            source: The current coordinate system of the data.
+            target: The target coordinate system to convert to.
         """
         ...
 
@@ -301,13 +315,15 @@ def load(
     path: str,
     coordinate_system=CoordinateSystem.UNSPECIFIED,
 ) -> GaussianSplat:
-    """Load a GaussianSplat from an SPZ file.
+    """Loads a GaussianSplat from an SPZ file.
 
     This is a convenience function equivalent to ``GaussianSplat.load()``.
 
     Args:
         path: Path to the SPZ file.
-        coordinate_system: Target coordinate system for the loaded data.
+        coordinate_system: The coordinate system to convert to when loading
+            the data.
+            Defaults to UNSPECIFIED (no conversion).
 
     Returns:
         The loaded Gaussian splat.

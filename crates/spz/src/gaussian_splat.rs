@@ -14,9 +14,7 @@ use crate::{
 	coord::{AxisFlips, CoordinateSystem},
 	math::{self, dim_for_degree, half_to_float},
 	mmap,
-	packed::PackOptions,
 	packed::PackedGaussians,
-	unpacked::UnpackOptions,
 };
 
 /// A set of Gaussian splats representing a 3D scene.
@@ -88,9 +86,10 @@ impl GaussianSplat {
 	/// Loads Gaussian splat from a file in packed format, async.
 	///
 	/// `filepath` - gzip compressed, packed gaussian data file.
+	/// `opts` - options for loading the splat.
 	pub async fn load_packed_from_file_into_buf_async<F>(
 		filepath: F,
-		unpack_opts: &UnpackOptions,
+		opts: &LoadOptions,
 		contents: &mut Vec<u8>,
 	) -> Result<Self>
 	where
@@ -100,32 +99,27 @@ impl GaussianSplat {
 
 		infile.read_to_end(contents).await?;
 
-		return Self::new_from_packed_gaussians(
-			&Self::load_packed(&contents)?,
-			unpack_opts,
-		);
+		return Self::new_from_packed_gaussians(&Self::load_packed(&contents)?, opts);
 	}
 
 	/// Loads Gaussian splat from a file in packed format, async.
 	///
 	/// `filepath` - gzip compressed, packed gaussian data file.
-	pub async fn load_packed_from_file_async<F>(
-		filepath: F,
-		unpack_opts: &UnpackOptions,
-	) -> Result<Self>
+	/// `opts` - options for loading the splat.
+	pub async fn load_packed_from_file_async<F>(filepath: F, opts: &LoadOptions) -> Result<Self>
 	where
 		F: AsRef<Path>,
 	{
 		let mut contents = Vec::new();
 
-		Self::load_packed_from_file_into_buf_async(filepath, unpack_opts, &mut contents)
-			.await
+		Self::load_packed_from_file_into_buf_async(filepath, opts, &mut contents).await
 	}
 
 	/// Loads Gaussian splat from a file in packed format.
 	///
 	/// `filepath` - gzip compressed, packed gaussian data file.
-	pub fn load_packed_from_file<F>(filepath: F, unpack_opts: &UnpackOptions) -> Result<Self>
+	/// `opts` - options for loading the splat.
+	pub fn load_packed_from_file<F>(filepath: F, opts: &LoadOptions) -> Result<Self>
 	where
 		F: AsRef<Path>,
 	{
@@ -133,16 +127,13 @@ impl GaussianSplat {
 		if cfg!(target_os = "macos") {
 			let infile = std::fs::read(filepath)?;
 
-			return Self::new_from_packed_gaussians(
-				&Self::load_packed(&infile)?,
-				unpack_opts,
-			);
+			return Self::new_from_packed_gaussians(&Self::load_packed(&infile)?, opts);
 		}
 		let mmap = mmap::mmap(filepath)?;
 		let packed = Self::load_packed(mmap.as_ref())
 			.with_context(|| "unable to load packed file")?;
 
-		Self::new_from_packed_gaussians(&packed, unpack_opts)
+		Self::new_from_packed_gaussians(&packed, opts)
 	}
 
 	/// Loads Gaussian splat from a slice of bytes in packed format.
@@ -168,16 +159,16 @@ impl GaussianSplat {
 		Ok(packed)
 	}
 
+	/// Saves Gaussian splat to a file in packed format.
+	///
+	/// `filepath` - file path to save the gzip compressed, packed gaussian data.
+	/// `opts` - options for saving the splat.
 	#[inline]
-	pub async fn save_as_packed_async<F>(
-		&self,
-		filepath: F,
-		pack_opts: &PackOptions,
-	) -> Result<()>
+	pub async fn save_as_packed_async<F>(&self, filepath: F, opts: &SaveOptions) -> Result<()>
 	where
 		F: AsRef<Path>,
 	{
-		let compressed = self.serialize_as_packed_bytes(pack_opts)?;
+		let compressed = self.serialize_as_packed_bytes(opts)?;
 
 		tokio::fs::create_dir_all(
 			filepath.as_ref()
@@ -191,12 +182,16 @@ impl GaussianSplat {
 			.with_context(|| "unable to write to file")
 	}
 
+	/// Saves Gaussian splat to a file in packed format.
+	///
+	/// `filepath` - file path to save the gzip compressed, packed gaussian data.
+	/// `opts` - options for saving the splat.
 	#[inline]
-	pub fn save_as_packed<F>(&self, filepath: F, pack_opts: &PackOptions) -> Result<()>
+	pub fn save_as_packed<F>(&self, filepath: F, opts: &SaveOptions) -> Result<()>
 	where
 		F: AsRef<Path>,
 	{
-		let compressed = self.serialize_as_packed_bytes(pack_opts)?;
+		let compressed = self.serialize_as_packed_bytes(opts)?;
 
 		std::fs::create_dir_all(
 			filepath.as_ref()
@@ -206,8 +201,8 @@ impl GaussianSplat {
 		std::fs::write(filepath, compressed).with_context(|| "unable to write to file")
 	}
 
-	pub fn serialize_as_packed_bytes(&self, pack_opts: &PackOptions) -> Result<Vec<u8>> {
-		let packed = self.to_packed_gaussians(pack_opts)?;
+	pub fn serialize_as_packed_bytes(&self, opts: &SaveOptions) -> Result<Vec<u8>> {
+		let packed = self.to_packed_gaussians(opts)?;
 
 		let uncompressed = packed.as_bytes_vec()?;
 		let mut compressed = Vec::new();
@@ -219,7 +214,7 @@ impl GaussianSplat {
 
 	pub fn new_from_packed_gaussians(
 		packed: &PackedGaussians,
-		unpack_opts: &UnpackOptions,
+		opts: &LoadOptions,
 	) -> Result<Self> {
 		let num_points = packed.num_points as usize;
 		let sh_dim = dim_for_degree(packed.sh_degree as u8);
@@ -301,21 +296,18 @@ impl GaussianSplat {
 			result.spherical_harmonics[i] =
 				math::unquantize_sh(packed.spherical_harmonics[i]) as f32;
 		}
-		result.convert_coordinates(
-			CoordinateSystem::RightUpBack,
-			unpack_opts.to_coord_sys.clone(),
-		);
+		result.convert_coordinates(CoordinateSystem::RightUpBack, opts.coord_sys.clone());
 
 		Ok(result)
 	}
 
-	pub fn to_packed_gaussians(&self, pack_opts: &PackOptions) -> Result<PackedGaussians> {
+	pub fn to_packed_gaussians(&self, opts: &SaveOptions) -> Result<PackedGaussians> {
 		if unlikely(!self.check_sizes()) {
 			bail!("inconsistent sizes");
 		}
 		let num_points = self.num_points as usize;
 		let sh_dim = math::dim_for_degree(self.spherical_harmonics_degree as u8) as usize;
-		let axis_flips = pack_opts.from.axis_flips_to(CoordinateSystem::RightUpBack);
+		let axis_flips = opts.coord_sys.axis_flips_to(CoordinateSystem::RightUpBack);
 		let fractional_bits: i32 = 12;
 		let scale = (1_i32 << fractional_bits) as f32;
 
@@ -447,13 +439,13 @@ impl GaussianSplat {
 
 	pub fn convert_coordinates(
 		&mut self,
-		from: crate::coord::CoordinateSystem,
-		to: crate::coord::CoordinateSystem,
+		source_cs: crate::coord::CoordinateSystem,
+		target_cs: crate::coord::CoordinateSystem,
 	) {
 		if unlikely(self.num_points == 0) {
 			return;
 		}
-		let (x_match, y_match, z_match) = from.axes_align(to);
+		let (x_match, y_match, z_match) = source_cs.axes_align(target_cs);
 
 		let x = if x_match { 1.0_f32 } else { -1.0_f32 };
 		let y = if y_match { 1.0_f32 } else { -1.0_f32 };
@@ -694,6 +686,148 @@ impl std::fmt::Display for GaussianSplat {
 	}
 }
 
+#[derive(Clone, Debug, Arbitrary)]
+pub struct GaussianSplatBuilder {
+	unpack_opts: LoadOptions,
+	packed: bool,
+}
+
+impl Default for GaussianSplatBuilder {
+	#[inline]
+	fn default() -> Self {
+		GaussianSplatBuilder {
+			unpack_opts: LoadOptions::default(),
+			packed: true,
+		}
+	}
+}
+
+impl GaussianSplatBuilder {
+	pub fn packed(mut self, packed: bool) -> Result<Self> {
+		if unlikely(!packed) {
+			bail!("only packed format loading is supported currently");
+		}
+		self.packed = packed;
+
+		Ok(self)
+	}
+
+	pub fn unpack_options(mut self, opts: LoadOptions) -> Self {
+		self.unpack_opts = opts;
+		self
+	}
+
+	pub fn load<P>(self, filepath: P) -> Result<GaussianSplat>
+	where
+		P: AsRef<Path>,
+	{
+		GaussianSplat::load_packed_from_file(filepath, &self.unpack_opts)
+	}
+
+	pub async fn load_async<P>(self, filepath: P) -> Result<GaussianSplat>
+	where
+		P: AsRef<Path>,
+	{
+		GaussianSplat::load_packed_from_file_async(filepath, &self.unpack_opts).await
+	}
+}
+
+#[derive(Clone, Debug, Arbitrary)]
+pub struct LoadOptionsBuilder {
+	to: CoordinateSystem,
+}
+
+impl LoadOptionsBuilder {
+	#[inline]
+	pub fn coord_sys(mut self, coord_sys: CoordinateSystem) -> Self {
+		self.to = coord_sys;
+		self
+	}
+
+	#[inline]
+	pub fn build(self) -> LoadOptions {
+		LoadOptions { coord_sys: self.to }
+	}
+}
+
+impl Default for LoadOptionsBuilder {
+	#[inline]
+	fn default() -> Self {
+		Self {
+			to: CoordinateSystem::Unspecified,
+		}
+	}
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
+pub struct LoadOptions {
+	/// Specifies the coordinate system to convert to when loading from
+	/// the one the data is stored in the SPZ file.
+	///
+	/// For more information see [`CoordinateSystem`](crate::coord::CoordinateSystem).
+	pub coord_sys: CoordinateSystem,
+}
+
+impl LoadOptions {
+	#[inline]
+	pub fn builder() -> LoadOptionsBuilder {
+		LoadOptionsBuilder::default()
+	}
+}
+
+/// Options for saving the [`GaussianSplat`](crate::gaussian_splat::GaussianSplat) data.
+///
+/// Specifies the source coordinate system so axis flips can be applied during
+/// compression to convert to the SPZ internal format (RightUpBack|RUB).
+///
+/// For more information see [`CoordinateSystem`](crate::coord::CoordinateSystem).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
+pub struct SaveOptions {
+	/// Specifies the coordinate system to convert to when saving the
+	/// Gaussian Splat data into the SPZ file.
+	pub coord_sys: CoordinateSystem,
+}
+
+impl SaveOptions {
+	/// Creates a new [`SaveOptionsBuilder`].
+	#[inline]
+	pub fn builder() -> SaveOptionsBuilder {
+		SaveOptionsBuilder::default()
+	}
+}
+
+/// Builder for [`SaveOptions`].
+#[derive(Clone, Debug, Arbitrary)]
+pub struct SaveOptionsBuilder {
+	coord_sys: CoordinateSystem,
+}
+
+impl SaveOptionsBuilder {
+	/// Sets the source coordinate system.
+	#[inline]
+	pub fn coord_sys(mut self, coord_sys: CoordinateSystem) -> Self {
+		self.coord_sys = coord_sys;
+		self
+	}
+
+	/// Builds the [`SaveOptions`].
+	#[inline]
+	pub fn build(self) -> SaveOptions {
+		SaveOptions {
+			coord_sys: self.coord_sys,
+		}
+	}
+}
+
+impl Default for SaveOptionsBuilder {
+	#[inline]
+	fn default() -> Self {
+		Self {
+			coord_sys: CoordinateSystem::Unspecified,
+		}
+	}
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct BoundingBox {
 	pub min_x: f32,
@@ -723,52 +857,6 @@ impl BoundingBox {
 			(self.min_y + self.max_y) / 2.0,
 			(self.min_z + self.max_z) / 2.0,
 		)
-	}
-}
-
-#[derive(Clone, Debug, Arbitrary)]
-pub struct GaussianSplatBuilder {
-	unpack_opts: UnpackOptions,
-	packed: bool,
-}
-
-impl Default for GaussianSplatBuilder {
-	#[inline]
-	fn default() -> Self {
-		GaussianSplatBuilder {
-			unpack_opts: UnpackOptions::default(),
-			packed: true,
-		}
-	}
-}
-
-impl GaussianSplatBuilder {
-	pub fn packed(mut self, packed: bool) -> Result<Self> {
-		if unlikely(!packed) {
-			bail!("only packed format loading is supported currently");
-		}
-		self.packed = packed;
-
-		Ok(self)
-	}
-
-	pub fn unpack_options(mut self, opts: UnpackOptions) -> Self {
-		self.unpack_opts = opts;
-		self
-	}
-
-	pub fn load<P>(self, filepath: P) -> Result<GaussianSplat>
-	where
-		P: AsRef<Path>,
-	{
-		GaussianSplat::load_packed_from_file(filepath, &self.unpack_opts)
-	}
-
-	pub async fn load_async<P>(self, filepath: P) -> Result<GaussianSplat>
-	where
-		P: AsRef<Path>,
-	{
-		GaussianSplat::load_packed_from_file_async(filepath, &self.unpack_opts).await
 	}
 }
 

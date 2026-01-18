@@ -12,7 +12,6 @@ use numpy::{
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
-use spz_rs::packed::PackOptions;
 
 use crate::spz_rs;
 
@@ -264,7 +263,8 @@ impl GaussianSplat {
 	/// # Args
 	///
 	/// * `path` - Path to the SPZ file.
-	/// * `coordinate_system` - Target coordinate system for the loaded data.
+	/// * `coordinate_system` - The coordinate system to convert the data to
+	/// 	from the one it is stored.
 	/// 	Defaults to `UNSPECIFIED` (no conversion).
 	///
 	/// # Returns
@@ -277,14 +277,14 @@ impl GaussianSplat {
 	#[staticmethod]
 	#[pyo3(signature = (path, coordinate_system=CoordinateSystem::UNSPECIFIED()))]
 	pub fn load(path: &str, coordinate_system: CoordinateSystem) -> PyResult<Self> {
-		let unpack_opts = spz_rs::unpacked::UnpackOptions {
-			to_coord_sys: coordinate_system.inner,
+		let opts = spz_rs::gaussian_splat::LoadOptions {
+			coord_sys: coordinate_system.inner,
 		};
-		let inner = spz_rs::gaussian_splat::GaussianSplat::load_packed_from_file(
-			path,
-			&unpack_opts,
-		)
-		.map_err(|e| PyValueError::new_err(format!("Failed to load SPZ file: {}", e)))?;
+		let inner =
+			spz_rs::gaussian_splat::GaussianSplat::load_packed_from_file(path, &opts)
+				.map_err(|e| {
+				PyValueError::new_err(format!("Failed to load SPZ file: {}", e))
+			})?;
 
 		Ok(Self { inner })
 	}
@@ -294,7 +294,8 @@ impl GaussianSplat {
 	/// # Args
 	///
 	/// * `data` - The SPZ file contents as bytes.
-	/// * `coordinate_system` - Target coordinate system for the loaded data.
+	/// * `coordinate_system` - The coordinate system to convert the data to
+	/// 	from the one it is stored.
 	/// 	Defaults to `UNSPECIFIED` (no conversion).
 	///
 	/// # Returns
@@ -303,16 +304,15 @@ impl GaussianSplat {
 	#[staticmethod]
 	#[pyo3(signature = (data, coordinate_system=CoordinateSystem::UNSPECIFIED()))]
 	pub fn from_bytes(data: &[u8], coordinate_system: CoordinateSystem) -> PyResult<Self> {
-		let unpack_opts = spz_rs::unpacked::UnpackOptions {
-			to_coord_sys: coordinate_system.inner,
+		let opts = spz_rs::gaussian_splat::LoadOptions {
+			coord_sys: coordinate_system.inner,
 		};
 		let packed =
 			spz_rs::gaussian_splat::GaussianSplat::load_packed(data).map_err(|e| {
 				PyValueError::new_err(format!("Failed to parse SPZ data: {}", e))
 			})?;
 		let inner = spz_rs::gaussian_splat::GaussianSplat::new_from_packed_gaussians(
-			&packed,
-			&unpack_opts,
+			&packed, &opts,
 		)
 		.map_err(|e| PyValueError::new_err(format!("Failed to unpack SPZ data: {}", e)))?;
 
@@ -324,12 +324,12 @@ impl GaussianSplat {
 	/// # Args
 	///
 	/// * `path` - Path to save the SPZ file.
-	/// * `from_coordinate_system` - Source coordinate system of the data.
+	/// * `coordinate_system` - The coordinate system to save the data in.
 	/// 	Defaults to `UNSPECIFIED` (no conversion).
-	#[pyo3(signature = (path, from_coordinate_system=CoordinateSystem::UNSPECIFIED()))]
-	pub fn save(&self, path: &str, from_coordinate_system: CoordinateSystem) -> PyResult<()> {
-		let pack_opts = PackOptions {
-			from: from_coordinate_system.inner,
+	#[pyo3(signature = (path, coordinate_system=CoordinateSystem::UNSPECIFIED()))]
+	pub fn save(&self, path: &str, coordinate_system: CoordinateSystem) -> PyResult<()> {
+		let pack_opts = spz_rs::gaussian_splat::SaveOptions {
+			coord_sys: coordinate_system.inner,
 		};
 		self.inner.save_as_packed(path, &pack_opts).map_err(|e| {
 			PyValueError::new_err(format!("Failed to save SPZ file: {}", e))
@@ -340,20 +340,20 @@ impl GaussianSplat {
 	///
 	/// # Args
 	///
-	/// * `from_coordinate_system` - Source coordinate system of the data.
+	/// * `coordinate_system` - The coordinate system to serialize the data in.
 	/// 	Defaults to `UNSPECIFIED` (no conversion).
 	///
 	/// # Returns
 	///
 	/// The SPZ file contents as bytes.
-	#[pyo3(signature = (from_coordinate_system=CoordinateSystem::UNSPECIFIED()))]
+	#[pyo3(signature = (coordinate_system=CoordinateSystem::UNSPECIFIED()))]
 	pub fn to_bytes<'py>(
 		&self,
 		py: Python<'py>,
-		from_coordinate_system: CoordinateSystem,
+		coordinate_system: CoordinateSystem,
 	) -> PyResult<Bound<'py, PyBytes>> {
-		let pack_opts = PackOptions {
-			from: from_coordinate_system.inner,
+		let pack_opts = spz_rs::gaussian_splat::SaveOptions {
+			coord_sys: coordinate_system.inner,
 		};
 		let bytes = self
 			.inner
@@ -369,16 +369,11 @@ impl GaussianSplat {
 	///
 	/// # Args
 	///
-	/// * `from_system` - The current coordinate system of the data.
-	/// * `to_system` - The target coordinate system.
+	/// * `source` - The current coordinate system of the data.
+	/// * `target` - The target coordinate system.
 	#[inline]
-	pub fn convert_coordinates(
-		&mut self,
-		from_system: CoordinateSystem,
-		to_system: CoordinateSystem,
-	) {
-		self.inner
-			.convert_coordinates(from_system.inner, to_system.inner);
+	pub fn convert_coordinates(&mut self, source: CoordinateSystem, target: CoordinateSystem) {
+		self.inner.convert_coordinates(source.inner, target.inner);
 	}
 
 	/// Returns the number of Gaussian points.

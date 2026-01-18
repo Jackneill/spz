@@ -3,7 +3,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
-use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, unpacked::UnpackOptions};
+use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, gaussian_splat::LoadOptions};
 
 fn main() -> Result<()> {
 	let mut sample_spz = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -12,8 +12,8 @@ fn main() -> Result<()> {
 	let _gs = GaussianSplat::builder()
 		.packed(true)?
 		.unpack_options(
-			UnpackOptions::builder()
-				.to_coord_system(CoordinateSystem::default())
+			LoadOptions::builder()
+				.coord_sys(CoordinateSystem::default())
 				.build(),
 		)
 		.load(sample_spz)?;
@@ -29,8 +29,8 @@ where
 	GaussianSplat::builder()
 		.packed(true)?
 		.unpack_options(
-			UnpackOptions::builder()
-				.to_coord_system(CoordinateSystem::default())
+			LoadOptions::builder()
+				.coord_sys(CoordinateSystem::default())
 				.build(),
 		)
 		.load_async(spz_file)

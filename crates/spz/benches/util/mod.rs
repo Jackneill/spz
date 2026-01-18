@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use std::path::PathBuf;
+
 use anyhow::Result;
 use rand::{Rng, SeedableRng, rngs::StdRng};
-use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, math, unpacked::UnpackOptions};
+use spz::{
+	coord::CoordinateSystem, gaussian_splat::GaussianSplat, gaussian_splat::LoadOptions, math,
+};
 
 pub fn create_splat(num_points: i32) -> GaussianSplat {
 	let sh_degree = 2_i32;
@@ -46,8 +50,8 @@ pub fn load_packed_from_file() -> Result<GaussianSplat> {
 	GaussianSplat::builder()
 		.packed(true)?
 		.unpack_options(
-			UnpackOptions::builder()
-				.to_coord_system(CoordinateSystem::default())
+			LoadOptions::builder()
+				.coord_sys(CoordinateSystem::default())
 				.build(),
 		)
 		.load("../../assets/racoonfamily.spz")
@@ -57,10 +61,21 @@ pub async fn load_packed_from_file_async() -> Result<GaussianSplat> {
 	GaussianSplat::builder()
 		.packed(true)?
 		.unpack_options(
-			UnpackOptions::builder()
-				.to_coord_system(CoordinateSystem::default())
+			LoadOptions::builder()
+				.coord_sys(CoordinateSystem::default())
 				.build(),
 		)
 		.load_async("../../assets/racoonfamily.spz")
 		.await
+}
+
+pub fn tmpdir() -> Result<PathBuf> {
+	let rand: u64 = rand::random();
+
+	let mut temp_dir = std::env::temp_dir();
+	temp_dir.push(format!("{}", rand));
+
+	std::fs::create_dir_all(&temp_dir)?;
+
+	Ok(temp_dir)
 }

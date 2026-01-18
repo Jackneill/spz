@@ -305,7 +305,7 @@ class TestGaussianSplatSerialization:
             filepath = Path(tmpdir) / "test.spz"
 
             # Save with coordinate system conversion
-            splat.save(str(filepath), from_coordinate_system=spz.CoordinateSystem.RUB)
+            splat.save(str(filepath), spz.CoordinateSystem.RUB)
 
             assert filepath.exists()
 
@@ -481,7 +481,7 @@ class TestContextManagers:
             filepath = Path(tmpdir) / "output.spz"
 
             with spz.SplatWriter(
-                str(filepath), from_coordinate_system=spz.CoordinateSystem.RUB
+                str(filepath), coordinate_system=spz.CoordinateSystem.RUB
             ) as ctx:
                 ctx.splat = util.create_test_splat(10)
 
@@ -507,7 +507,7 @@ class TestContextManagers:
         splat = util.create_test_splat(10)
 
         with spz.temp_save(
-            splat, from_coordinate_system=spz.CoordinateSystem.LUF
+            splat, coordinate_system=spz.CoordinateSystem.LUF
         ) as temp_path:
             assert temp_path.exists()
 
@@ -669,7 +669,7 @@ class TestSerializationWithCoordinateSystems:
         """to_bytes should accept coordinate system parameter."""
         splat = util.create_test_splat(20)
 
-        data = splat.to_bytes(from_coordinate_system=spz.CoordinateSystem.RUB)
+        data = splat.to_bytes(spz.CoordinateSystem.RUB)
 
         assert isinstance(data, bytes)
         assert len(data) > 0

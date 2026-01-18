@@ -8,12 +8,12 @@
 
 use libfuzzer_sys::fuzz_target;
 use spz::{
+	gaussian_splat::{GaussianSplat, LoadOptions},
 	packed::PackedGaussians,
-	prelude::{GaussianSplat, UnpackOptions},
 };
 
-fuzz_target!(|input: (PackedGaussians, UnpackOptions)| {
-	let (pg, unpack_opts) = input;
+fuzz_target!(|input: (PackedGaussians, LoadOptions)| {
+	let (pg, load_opts) = input;
 
-	let _ = GaussianSplat::new_from_packed_gaussians(&pg.clone(), &unpack_opts);
+	let _ = GaussianSplat::new_from_packed_gaussians(&pg.clone(), &load_opts);
 });
