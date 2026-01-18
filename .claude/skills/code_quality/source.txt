@@ -1,0 +1,1 @@
+https://claude-plugins.dev/skills/@oehm-smith/linux-env/code_quality

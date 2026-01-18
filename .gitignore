@@ -39,6 +39,7 @@ coverage
 flatpak/repo
 flatpak/build
 
+/crates/spz-capi/target
 /crates/target
 /crates/spz/target
 /target

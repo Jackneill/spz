@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+language = "C"
+header = "// SPDX-License-Identifier: Apache-2.0 OR MIT"
+include_guard = "SPZ_H"
+tab_width = 8
+style = "both"
+cpp_compat = true
+documentation = true
+documentation_style = "doxy"
+
+[defines]
+
+[export]
+include = ["SpzCoordinateSystem", "SpzBoundingBox", "SpzGaussianSplat"]
+
+[export.rename]
+
+[fn]
+prefix = ""
+postfix = ""
+
+[struct]
+rename_fields = "None"
+
+[enum]
+rename_variants = "None"
+prefix_with_name = true
+
+[parse]
+parse_deps = false
+include = []
+extra_bindings = []

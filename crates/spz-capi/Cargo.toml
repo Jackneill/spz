@@ -1,0 +1,90 @@
+[package]
+name = "spz-capi"
+version = "0.0.1"
+edition = "2024"
+authors = ["See AUTHORS.md"]
+description = """SPZ file format handling for C (in Rust)."""
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/Jackneill/spz"
+repository = "https://github.com/Jackneill/spz"
+readme = "../../README.md"
+keywords = ["gaussian-splatting", "point-cloud", "3d", "graphics", "rendering"]
+categories = [
+	"graphics",
+	"game-development",
+	"rendering",
+	"rendering::data-formats",
+]
+publish = true
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[features]
+default = []
+
+#[package.metadata.capi.header]
+#name = "spz"
+# Install the header into a subdirectory with the name of the crate. This
+# is enabled by default, pass `false` or "" to disable it.
+#subdirectory = "include"
+# Generate the header file with `cbindgen`, or copy a pre-generated header
+# from the `assets` subdirectory. By default a header is generated.
+#generation = true
+# Can be use to disable header generation completely.
+# This can be used when generating dynamic modules instead of an actual library.
+#enabled = true
+# Whether to emit library version constants (e.g. `FOO_MAJOR`, `FOO_MINOR` and
+# `FOO_PATCH`) at the top of the header file. Enabled by default.
+#emit_version_constants = true
+
+#[package.metadata.capi.pkg_config]
+# Used as the package name in the pkg-config file and defaults to the crate name.
+#name = "libspz"
+# Used as the pkg-config file name and defaults to the crate name.
+#filename = "libspz"
+# Used as the package description in the pkg-config file and defaults to the crate description.
+#description = ""
+# Used as the package version in the pkg-config file and defaults to the crate version.
+#version = "1.2.3"
+# Used as the Requires field in the pkg-config file, if defined
+#requires = "gstreamer-1.0, gstreamer-base-1.0"
+# Used as the Requires.private field in the pkg-config file, if defined
+#requires_private = "gobject-2.0, glib-2.0 >= 2.56.0, gmodule-2.0"
+# Strip the include search path from the last n components, useful to support installing in a
+# subdirectory but then include with the path. By default it is 0.
+#strip_include_path_components = 1
+
+#[package.metadata.capi.library]
+#name = "libspz"
+# Used as library version and defaults to the crate version. How this is used
+# depends on the target platform.
+#version = "1.2.3"
+# Used to install the library to a subdirectory of `libdir`.
+#install_subdir = "gstreamer-1.0"
+# Used to disable versioning links when installing the dynamic library
+#versioning = false
+# Instead of using semver, select a fixed number of version components for your SONAME version suffix:
+# Setting this to 1 with a version of 0.0.0 allows a suffix of `.so.0`
+# Setting this to 3 always includes the full version in the SONAME (indicate any update is ABI breaking)
+#version_suffix_components = 2
+# Add `-Cpanic=abort` to the RUSTFLAGS automatically, it may be useful in case
+# something might panic in the crates used by the library.
+#rustflags = "-Cpanic=abort"
+# Used to disable the generation of additional import library file in platforms
+# that have the concept such as Windows
+#import_library = false
+
+#[package.metadata.capi.library.target.'cfg(target_os = "linux")']
+# Add target-specific rustflags, they are folded with the main rustflags above
+# Note that multiple --version-script support is heavily linker dependent.
+#rustflags = "-Clink-arg=-Wl"
+
+[dependencies]
+spz = { path = "../spz", default-features = false, features = [] }
+
+[dev-dependencies]
+
+[build-dependencies]
+anyhow = { version = "1.0", default-features = false, features = [] }
+cbindgen = { version = "0.29", default-features = true, features = [] }

@@ -184,7 +184,7 @@ pub struct GaussianSplatBuilder { /* ... */ }
 
 impl GaussianSplatBuilder {
 	pub fn packed(self, packed: bool) -> Result<Self>;
-	pub fn unpack_options(self, opts: UnpackOptions) -> Self;
+	pub fn load_options(self, opts: LoadOptions) -> Self;
 
 	pub fn load<P: AsRef<Path>>(self, filepath: P) -> Result<GaussianSplat>;
 	pub async fn load_async<P: AsRef<Path>>(self, filepath: P) -> Result<GaussianSplat>;
@@ -224,6 +224,40 @@ impl GaussianSplat {
 	pub fn median_volume(&self) -> f32;
 	/// Validates that all internal arrays have consistent sizes.
 	pub fn check_sizes(&self) -> bool;
+}
+
+pub struct LoadOptions {
+	pub coord_sys: CoordinateSystem,
+}
+
+impl LoadOptions {
+	pub fn builder() -> LoadOptionsBuilder;
+}
+
+pub struct LoadOptionsBuilder {
+	coord_sys: CoordinateSystem,
+}
+
+impl LoadOptionsBuilder {
+	pub fn coord_sys(mut self, coord_sys: CoordinateSystem) -> Self;
+	pub fn build(self) -> LoadOptions;
+}
+
+pub struct SaveOptions {
+	pub coord_sys: CoordinateSystem,
+}
+
+impl SaveOptions {
+	pub fn builder() -> SaveOptionsBuilder;
+}
+
+pub struct SaveOptionsBuilder {
+	coord_sys: CoordinateSystem,
+}
+
+impl SaveOptionsBuilder {
+	pub fn coord_sys(mut self, coord_sys: CoordinateSystem) -> Self;
+	pub fn build(self) -> SaveOptions;
 }
 
 pub struct BoundingBox {
@@ -341,23 +375,6 @@ impl PackedGaussian {
 	) -> Result<UnpackedGaussian>;
 }
 
-pub struct PackOptions {
-	pub from: CoordinateSystem,
-}
-
-impl PackOptions {
-	pub fn builder() -> PackOptionsBuilder;
-}
-
-pub struct PackOptionsBuilder {
-	from: CoordinateSystem,
-}
-
-impl PackOptionsBuilder {
-	pub fn from(mut self, from: CoordinateSystem) -> Self;
-	pub fn build(self) -> PackOptions;
-}
-
 // mod unpacked ────────────────────────────────────────────────────────────────
 
 /// Represents a single inflated gaussian.
@@ -370,23 +387,6 @@ pub struct UnpackedGaussian {
 	pub sh_r: [f32; 15],
 	pub sh_g: [f32; 15],
 	pub sh_b: [f32; 15],
-}
-
-pub struct UnpackOptions {
-	pub to_coord_system: CoordinateSystem,
-}
-
-impl UnpackOptions {
-	pub fn builder() -> UnpackOptionsBuilder;
-}
-
-pub struct UnpackOptionsBuilder {
-	to_coord_sys: CoordinateSystem,
-}
-
-impl UnpackOptionsBuilder {
-	pub fn to_coord_system(mut self, coord_sys: CoordinateSystem) -> Self;
-	pub fn build(self) -> UnpackOptions;
 }
 
 // mod header ──────────────────────────────────────────────────────────────────
@@ -531,6 +531,10 @@ with spz.SplatWriter("output2.spz") as writer:
 with spz.modified_splat("scene.spz", "scene_converted.spz") as splat:
     splat.convert_coordinates(spz.CoordinateSystem.RUB, spz.CoordinateSystem.RDF)
 ```
+
+## C Bindings
+
+* Documentation for the C bindings can be found in [`./crates/spz-capi/README.md`](./crates/spz-capi/README.md).
 
 ## Documentation
 

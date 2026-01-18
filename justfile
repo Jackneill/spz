@@ -5,6 +5,7 @@ cargo := "cargo"
 docker := "docker"
 
 app_name := "spz"
+c_crate_name := "spz-capi"
 container_img := "ghcr.io/Jackneill/{{app_name}}"
 
 export RUST_BACKTRACE := "full"
@@ -88,6 +89,25 @@ build:
 build-native:
 	RUSTFLAGS='-C target-cpu=native' {{cargo}} build
 
+cinstall:
+	{{cargo}} cinstall \
+		--path crates/{{c_crate_name}} \
+		--destdir=./target/lib{{app_name}} \
+		--prefix=/usr \
+		--libdir=/usr/lib64
+
+cbuild:
+	{{cargo}} build -p {{c_crate_name}}
+	{{cargo}} cbuild --destdir=./target/lib{{app_name}} \
+		--prefix=/usr \
+		--libdir=/usr/lib64
+
+cbuild-release:
+	{{cargo}} cbuild --destdir=./target/lib{{app_name}} \
+		--prefix=/usr \
+		--release \
+		--libdir=/usr/lib64
+
 run *args:
 	{{cargo}} run --bin spz {{args}}
 
@@ -143,7 +163,8 @@ docker-run *args:
 	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{container_img}} {{args}}
 
 py:
-	#!/usr/bin/env sh
+	#!/usr/bin/env bash
+	set -euxo pipefail
 
 	pyenv="crates/spz-pywrapper/.venv"
 
