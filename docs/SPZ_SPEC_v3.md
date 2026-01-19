@@ -243,7 +243,7 @@ struct scale {
 			<td>
 <pre><code>
 struct rotation {
-	unsigned char index : 2;
+	uint8_t index : 2;
 	int16_t x : 10;
 	int16_t y : 10;
 	int16_t z : 10;
