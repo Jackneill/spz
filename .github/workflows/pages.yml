@@ -1,0 +1,47 @@
+name: Github Pages
+
+on:
+  push:
+    branches:
+      - main
+      - "releases/**"
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  pages:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: ./rust_ci.yml
+      - uses: ./python_ci.yml
+      - uses: ./license.yml
+
+      - name: Install `mdbook`
+        run: cargo install --locked mdbook@0.4.52
+
+      - name: Install `mdbook-linkcheck`
+        run: cargo install --locked mdbook-linkcheck@0.7.7
+
+      - name: Build book
+        run: mdbook build -d book/dist book
+
+      - name: Deploy Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: book/dist

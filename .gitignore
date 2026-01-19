@@ -12,6 +12,8 @@ flatpak/cargo-sources.json
 crates/spz-pywrapper/uv.lock
 fuzz/crash-*
 
+/book/book
+
 mutants.out
 mutants.out.old
 
