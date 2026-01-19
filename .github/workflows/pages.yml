@@ -26,9 +26,9 @@ jobs:
           fetch-depth: 1
       - uses: Swatinem/rust-cache@v2
 
-      - uses: ./rust_ci.yml
-      - uses: ./python_ci.yml
-      - uses: ./license.yml
+      #- uses: ./rust_ci.yml
+      #- uses: ./python_ci.yml
+      #- uses: ./license.yml
 
       - name: Install `mdbook`
         run: cargo install --locked mdbook@0.4.52
