@@ -2,3 +2,22 @@
 title = "SPZ File Format (v3)"
 authors = ["Márk Bartos <r2ygm3d9f@mozmail.com>"]
 language = "en"
+
+[output.html]
+theme = "my-theme"
+default-theme = "ayu"
+preferred-dark-theme = "ayu"
+smart-punctuation = true
+definition-lists = true
+admonitions = true
+mathjax-support = false
+#additional-css = ["custom.css", "custom2.css"]
+#additional-js = ["custom.js"]
+no-section-label = false
+git-repository-url = "https://github.com/Jackneill/spz"
+git-repository-icon = "fab-github"
+edit-url-template = "https://github.com/Jackneill/spz/edit/main/book/{path}"
+site-url = "/spz/"
+#cname = "spz.rs"
+#input-404 = "not-found.md"
+sidebar-header-nav = true
