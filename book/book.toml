@@ -4,7 +4,7 @@ authors = ["Márk Bartos <r2ygm3d9f@mozmail.com>"]
 language = "en"
 
 [output.html]
-theme = "my-theme"
+theme = "ayu"
 default-theme = "ayu"
 preferred-dark-theme = "ayu"
 smart-punctuation = true
