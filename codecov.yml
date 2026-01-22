@@ -24,12 +24,12 @@ ignore:
   - "Dockerfile"
 
   - "crates/spz/src/lib.rs"
-  - "crates/spz/tests/**/*"
-  - "crates/spz/benches/**/*"
+  - "crates/spz/tests"
+  - "crates/spz/benches"
 
   - "crates/spz-pywrapper/src/lib.rs"
   - "crates/spz-pywrapper/tests"
-  - "crates/spz-pywrapper/benches/**/*"
-  - "crates/spz-pywrapper/pypkg/tests/**/*"
+  - "crates/spz-pywrapper/benches"
+  - "crates/spz-pywrapper/pypkg/tests"
 
-  - "crates/spz-capi/**/*"
+  - "crates/spz-capi"

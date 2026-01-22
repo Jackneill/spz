@@ -6,6 +6,7 @@ permissions:
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -24,13 +25,6 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
-
-      #- name: Install cargo deny
-      #  run: |
-      #    cargo install cargo-deny
-
-      #- name: Lint
-      #  run: just lint
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
