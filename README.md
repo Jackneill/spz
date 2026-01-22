@@ -1,3 +1,7 @@
+<p align="center">
+	<img alt="banner" src="./assets/images/banner.png" />
+</p>
+
 <h1 align="center">SPZ<span></span></h1>
 
 <div align="center"><b>Rust</b> and <b>Python</b> implementation of the <b>.SPZ</b> file format (v3) and <b>CLI</b> tools.</div>
