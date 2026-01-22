@@ -440,6 +440,41 @@ with spz.modified_splat("scene.spz", "scene_converted.spz") as splat:
 
 Further documentation is available under `./docs`.
 
+### Overview
+
+An `SPZ` file consists of:
+
+1. **Outer compression**:
+	The entire payload is gzip-compressed.
+2. **Inner binary data**:
+	A header followed by non-interleaved arrays of gaussian attributes.
+
+#### File Structure
+
+```
+┌─────────────────────────────────────────┐
+│           GZIP Compressed Data          │
+│  ┌───────────────────────────────────┐  │
+│  │         Header (16 bytes)         │  │
+│  ├───────────────────────────────────┤  │
+│  │         Positions Array           │  │
+│  ├───────────────────────────────────┤  │
+│  │          Alphas Array             │  │
+│  ├───────────────────────────────────┤  │
+│  │          Colors Array             │  │
+│  ├───────────────────────────────────┤  │
+│  │          Scales Array             │  │
+│  ├───────────────────────────────────┤  │
+│  │         Rotations Array           │  │
+│  ├───────────────────────────────────┤  │
+│  │    Spherical Harmonics Array      │  │
+│  └───────────────────────────────────┘  │
+└─────────────────────────────────────────┘
+```
+
+* The data is organized by attribute (Structure of Arrays),
+ 	* rather than by gaussian (Array of Structures) for better compression ratios.
+
 ## License
 
 Licensed under either of
