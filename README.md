@@ -210,13 +210,13 @@ impl GaussianSplat {
 	pub async fn save_async<F: AsRef<Path>>(&self, filepath: F, opts: &SaveOptions) -> Result<()>;
 	pub fn save<F: AsRef<Path>>(&self, filepath: F, opts: &SaveOptions) -> Result<()>;
 
-	pub fn new_from_packed_gaussians(packed: &PackedGaussians, opts: &UnpackOptions) -> Result<Self>;
+	pub fn new_from_packed_gaussians(pg: &PackedGaussians, opts: &UnpackOptions) -> Result<Self>;
 
 	pub fn serialize_as_packed_bytes(&self, opts: &PackOptions) -> Result<Vec<u8>>;
 	pub fn to_packed_gaussians(&self, opts: &PackOptions) -> Result<PackedGaussians>;
 
 	// Transforms
-	pub fn convert_coordinates(&mut self, from: CoordinateSystem, to: CoordinateSystem);
+	pub fn convert_coordinates(&mut self, src: CoordinateSystem, target: CoordinateSystem);
 
 	// Introspection
 	pub fn bbox(&self) -> BoundingBox;
