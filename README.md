@@ -438,7 +438,8 @@ with spz.modified_splat("scene.spz", "scene_converted.spz") as splat:
 
 ## Documentation
 
-Further documentation is available under `./docs`.
+* Further documentation is available under `./docs`.
+* Spec: [SPZ_SPEC_v3.md](./docs/SPZ_SPEC_v3.md)
 
 ### Overview
 
