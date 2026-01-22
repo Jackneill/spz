@@ -162,6 +162,8 @@ fn main() -> Result<()> {
 * This outline is _non-exhaustive_.
 
 ```rust
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 // mod gaussian_splat ──────────────────────────────────────────────────────────
 
 pub struct GaussianSplatBuilder { /* ... */ }
