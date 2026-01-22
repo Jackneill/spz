@@ -341,16 +341,16 @@ pub unsafe extern "C" fn spz_gaussian_splat_num_points(splat: *const SpzGaussian
 	if splat.is_null() {
 		return 0;
 	}
-	unsafe { &*splat }.inner.num_points
+	unsafe { &*splat }.inner.header.num_points
 }
 
 /// Returns the spherical harmonics degree (0-3).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn spz_gaussian_splat_sh_degree(splat: *const SpzGaussianSplat) -> i32 {
+pub unsafe extern "C" fn spz_gaussian_splat_sh_degree(splat: *const SpzGaussianSplat) -> u8 {
 	if splat.is_null() {
 		return 0;
 	}
-	unsafe { &*splat }.inner.spherical_harmonics_degree
+	unsafe { &*splat }.inner.header.spherical_harmonics_degree
 }
 
 /// Returns whether the splat was trained with antialiasing.
@@ -359,7 +359,7 @@ pub unsafe extern "C" fn spz_gaussian_splat_antialiased(splat: *const SpzGaussia
 	if splat.is_null() {
 		return false;
 	}
-	unsafe { &*splat }.inner.antialiased
+	unsafe { &*splat }.inner.header.flags.is_antialiased()
 }
 
 /// Returns the bounding box of the splat.

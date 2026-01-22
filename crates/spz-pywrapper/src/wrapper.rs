@@ -14,6 +14,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 
 use crate::spz_rs;
+use crate::spz_rs::header::Header;
 
 #[pyclass(eq, frozen)]
 #[derive(Clone, PartialEq)]
@@ -245,9 +246,16 @@ impl GaussianSplat {
 		};
 		Ok(Self {
 			inner: spz_rs::gaussian_splat::GaussianSplat {
-				num_points: num_points as i32,
-				spherical_harmonics_degree: sh_degree as i32,
-				antialiased,
+				header: Header {
+					num_points: num_points as i32,
+					spherical_harmonics_degree: sh_degree,
+					flags: if antialiased {
+						spz_rs::header::Flags::ANTIALIASED
+					} else {
+						spz_rs::header::Flags::none()
+					},
+					..Default::default()
+				},
 				positions: positions_vec,
 				scales: scales_vec,
 				rotations: rotations_vec,
@@ -378,28 +386,28 @@ impl GaussianSplat {
 	#[inline]
 	#[getter]
 	pub fn num_points(&self) -> i32 {
-		self.inner.num_points
+		self.inner.header.num_points
 	}
 
 	/// Returns the spherical harmonics degree (0-3).
 	#[inline]
 	#[getter]
-	pub fn sh_degree(&self) -> i32 {
-		self.inner.spherical_harmonics_degree
+	pub fn sh_degree(&self) -> u8 {
+		self.inner.header.spherical_harmonics_degree
 	}
 
 	/// Returns whether the splat was trained with antialiasing.
 	#[inline]
 	#[getter]
 	pub fn antialiased(&self) -> bool {
-		self.inner.antialiased
+		self.inner.header.flags.is_antialiased()
 	}
 
 	/// Returns an `(N, 3)` array of `(x, y, z)` positions.
 	#[inline]
 	#[getter]
 	pub fn positions<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<f32>>> {
-		let n = self.inner.num_points as usize;
+		let n = self.inner.header.num_points as usize;
 		let arr = PyArray1::from_slice(py, &self.inner.positions);
 		let reshaped = arr.reshape([n, 3])?;
 
@@ -409,7 +417,7 @@ impl GaussianSplat {
 	/// Returns an `(N, 3)` array of `(x, y, z)` log-scale values.
 	#[getter]
 	pub fn scales<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<f32>>> {
-		let n = self.inner.num_points as usize;
+		let n = self.inner.header.num_points as usize;
 		let arr = PyArray1::from_slice(py, &self.inner.scales);
 		let reshaped = arr.reshape([n, 3])?;
 
@@ -419,7 +427,7 @@ impl GaussianSplat {
 	/// Returns an `(N, 4)` array of `(w, x, y, z)` quaternion rotations.
 	#[getter]
 	pub fn rotations<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<f32>>> {
-		let n = self.inner.num_points as usize;
+		let n = self.inner.header.num_points as usize;
 		let arr = PyArray1::from_slice(py, &self.inner.rotations);
 		let reshaped = arr.reshape([n, 4])?;
 
@@ -435,7 +443,7 @@ impl GaussianSplat {
 	/// Returns an `(N, 3)` array of `(r, g, b)` SH0 color values.
 	#[getter]
 	pub fn colors<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<f32>>> {
-		let n = self.inner.num_points as usize;
+		let n = self.inner.header.num_points as usize;
 		let arr = PyArray1::from_slice(py, &self.inner.colors);
 		let reshaped = arr.reshape([n, 3])?;
 
@@ -452,11 +460,10 @@ impl GaussianSplat {
 		&self,
 		py: Python<'py>,
 	) -> PyResult<Bound<'py, PyArray2<f32>>> {
-		let n = self.inner.num_points as usize;
+		let n = self.inner.header.num_points as usize;
 
-		let sh_dim = spz_rs::math::dim_for_degree(
-			self.inner.spherical_harmonics_degree.try_into()?,
-		);
+		let sh_dim =
+			spz_rs::math::dim_for_degree(self.inner.header.spherical_harmonics_degree);
 		if sh_dim == 0 {
 			// Return empty (N, 0) array
 			let arr = PyArray1::<f32>::from_slice(py, &[]);
@@ -492,9 +499,9 @@ impl GaussianSplat {
 	pub fn __repr__(&self) -> String {
 		format!(
 			"GaussianSplat(num_points={}, sh_degree={}, antialiased={}, ..)",
-			self.inner.num_points,
-			self.inner.spherical_harmonics_degree,
-			self.inner.antialiased
+			self.inner.header.num_points,
+			self.inner.header.spherical_harmonics_degree,
+			self.inner.header.flags.is_antialiased()
 		)
 	}
 
@@ -503,7 +510,7 @@ impl GaussianSplat {
 	}
 
 	pub fn __len__(&self) -> usize {
-		self.inner.num_points as usize
+		self.inner.header.num_points as usize
 	}
 }
 
