@@ -13,12 +13,11 @@ pub fn bench_cloud_load_n(c: &mut Criterion) {
 	let mut spz_path = util::tmpdir().unwrap();
 	spz_path.push("large_cloud_performance.spz");
 
-	gs.save_as_packed(&spz_path, &SaveOptions::default())
-		.unwrap();
+	gs.save(&spz_path, &SaveOptions::default()).unwrap();
 
 	c.bench_function("splat_load_50_000_pts", |b| {
 		b.iter(|| {
-			GaussianSplat::load_packed_from_file(&spz_path, &LoadOptions::default())
+			GaussianSplat::load_with(&spz_path, &LoadOptions::default())
 				.expect("failed to load");
 		});
 	});

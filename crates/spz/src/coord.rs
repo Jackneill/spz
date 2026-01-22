@@ -11,7 +11,8 @@ use serde::{Deserialize, Serialize};
 /// coordinate system their Gaussian Splat data is represented in when saving
 /// and what coordinate system their rendering system uses when loading.
 ///
-/// These are specified in the [`PackOptions`] and [`UnpackOptions`] respectively.
+/// These are specified in the [`LoadOptions`](crate::gaussian_splat::LoadOptions)
+/// and [`SaveOptions`](crate::gaussian_splat::SaveOptions) respectively.
 /// If the coordinate system is `Unspecified`, data will be saved and loaded
 /// without conversion, which may harm interoperability.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
@@ -19,14 +20,22 @@ pub enum CoordinateSystem {
 	#[default]
 	Unspecified = 0,
 
+	/// LDB.
 	LeftDownBack = 1,
+	/// RDB.
 	RightDownBack = 2,
+	/// LUB.
 	LeftUpBack = 3,
-	RightUpBack = 4, // Three.js coordinate system
+	/// RUB. SPZ Internal, OpenGL, Three.js.
+	RightUpBack = 4,
+	/// LDF.
 	LeftDownFront = 5,
-	RightDownFront = 6, // PLY coordinate system
-	LeftUpFront = 7,    // GLB coordinate system
-	RightUpFront = 8,   // Unity coordinate system
+	/// RDF. PLY coordinate system.
+	RightDownFront = 6,
+	/// LUF. GLB coordinate system.
+	LeftUpFront = 7,
+	/// RUF. Unity coordinate system.
+	RightUpFront = 8,
 }
 
 impl std::fmt::Display for CoordinateSystem {
@@ -244,14 +253,6 @@ impl CoordinateSystem {
 /// to be flipped (negated) to account for differences in handedness or axis orientation.
 /// This struct holds the sign values (`1.0` or `-1.0`) to multiply against the respective
 /// components.
-///
-/// # Fields
-///
-/// - `position`: Sign multipliers for XYZ position coordinates.
-/// - `rotation`: Sign multipliers for quaternion components (excluding W).
-///   Derived from axis flip combinations to maintain valid rotations.
-/// - `spherical_harmonics`: Sign multipliers for the 15 spherical harmonic coefficients
-///   (degrees 1-3). These follow specific symmetry rules based on axis flips.
 ///
 /// # Example
 ///

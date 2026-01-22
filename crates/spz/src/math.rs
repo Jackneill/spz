@@ -148,7 +148,6 @@ pub fn pack_quaternion_smallest_three(rotation: &[f32; 4], flip_q: [f32; 3]) -> 
 		} else {
 			0_u32
 		};
-
 		let mag = ((c_mask as f32) * (rot_normed[i].abs() / FRAC_1_SQRT_2) + 0.5).floor()
 			as u32;
 		let mag = mag.min(c_mask);

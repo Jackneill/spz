@@ -280,11 +280,9 @@ impl GaussianSplat {
 		let opts = spz_rs::gaussian_splat::LoadOptions {
 			coord_sys: coordinate_system.inner,
 		};
-		let inner =
-			spz_rs::gaussian_splat::GaussianSplat::load_packed_from_file(path, &opts)
-				.map_err(|e| {
-				PyValueError::new_err(format!("Failed to load SPZ file: {}", e))
-			})?;
+		let inner = spz_rs::gaussian_splat::GaussianSplat::load_with(path, &opts).map_err(
+			|e| PyValueError::new_err(format!("Failed to load SPZ file: {}", e)),
+		)?;
 
 		Ok(Self { inner })
 	}
@@ -307,9 +305,10 @@ impl GaussianSplat {
 		let opts = spz_rs::gaussian_splat::LoadOptions {
 			coord_sys: coordinate_system.inner,
 		};
-		let packed = spz_rs::packed::PackedGaussians::from_bytes(data).map_err(|e| {
-			PyValueError::new_err(format!("Failed to parse SPZ data: {}", e))
-		})?;
+		let packed =
+			spz_rs::packed::PackedGaussianSplat::from_bytes(data).map_err(|e| {
+				PyValueError::new_err(format!("Failed to parse SPZ data: {}", e))
+			})?;
 		let inner = spz_rs::gaussian_splat::GaussianSplat::new_from_packed_gaussians(
 			&packed, &opts,
 		)
@@ -330,7 +329,7 @@ impl GaussianSplat {
 		let pack_opts = spz_rs::gaussian_splat::SaveOptions {
 			coord_sys: coordinate_system.inner,
 		};
-		self.inner.save_as_packed(path, &pack_opts).map_err(|e| {
+		self.inner.save(path, &pack_opts).map_err(|e| {
 			PyValueError::new_err(format!("Failed to save SPZ file: {}", e))
 		})
 	}
@@ -356,7 +355,7 @@ impl GaussianSplat {
 		};
 		let bytes = self
 			.inner
-			.serialize_as_packed_bytes(&pack_opts)
+			.serialize_to_packed_bytes(&pack_opts)
 			.map_err(|e| {
 				PyValueError::new_err(format!("Failed to serialize SPZ: {}", e))
 			})?;

@@ -12,8 +12,7 @@ pub fn bench_cloud_save_n(c: &mut Criterion) {
 
 	c.bench_function("splat_save_50_000_pts", |b| {
 		b.iter(|| {
-			gs.save_as_packed(&spz_path, &SaveOptions::default())
-				.unwrap();
+			gs.save(&spz_path, &SaveOptions::default()).unwrap();
 		});
 	});
 	let _ = std::fs::remove_file(&spz_path);

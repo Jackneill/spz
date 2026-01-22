@@ -11,5 +11,5 @@ use spz::compression;
 
 fuzz_target!(|data: &[u8]| {
 	let mut output = Vec::new();
-	let _ = compression::gzip_to_bytes(data, &mut output);
+	let _ = compression::gzip::decompress_bytes(data, &mut output);
 });

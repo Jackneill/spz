@@ -136,26 +136,20 @@ use spz::{
 	coord::CoordinateSystem,
 	gaussian_splat::GaussianSplat,
 	gaussian_splat::{LoadOptions, SaveOptions},
-	packed::PackedGaussians,
+	packed::PackedSpz,
 };
 
 fn main() -> Result<()> {
 	let mut sample_spz = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 	sample_spz.push("assets/racoonfamily.spz");
 
-	let gs = GaussianSplat::builder().load(sample_spz)?;
+	let gs = GaussianSplat::load(sample_spz.clone())?;
 
-	let pg = gs.to_packed_gaussians(
-		&SaveOptions::builder()
-			.coord_sys(CoordinateSystem::RightUpBack) // packed will be in RUB (OpenGL)
-			.build(),
-	)?;
-	let bytes = pg.as_bytes_vec()?;
-	let pg2 = PackedGaussians::from_bytes(bytes.as_slice())?;
-	let _gs2 = GaussianSplat::new_from_packed_gaussians(
-		&pg2,
+	let gs_cs = GaussianSplat::load_with(
+		sample_spz,
 		&LoadOptions::builder()
-			.coord_sys(CoordinateSystem::LeftUpFront) // _gs2 will be in LUF (glTF)
+			//
+			.coord_sys(CoordinateSystem::LeftUpFront)
 			.build(),
 	)?;
 	Ok(())
@@ -183,9 +177,8 @@ impl GaussianSplatBuilder {
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct GaussianSplat {
-	pub num_points: i32,
-	pub spherical_harmonics_degree: i32, // 0-3
-	pub antialiased: bool,
+	pub header: Header,
+
 	pub positions: Vec<f32>,	// flattened: [x0, y0, z0, x1, y1, z1, ...]
 	pub scales: Vec<f32>,		// flattened: [x0, y0, z0, x1, y1, z1, ...], log-scale
 	pub rotations: Vec<f32>,	// flattened: [x0, y0, z0, w0, x1, y1, z1, w1, ...]
@@ -278,127 +271,38 @@ pub enum CoordinateSystem {
 }
 
 impl CoordinateSystem {
-	/// Computes the axis flip multipliers needed to convert from `self` to `target`.
-	pub fn axis_flips_to(self, target: CoordinateSystem) -> AxisFlips;
-	/// Compares axis orientations between two coordinate systems.
-	pub fn axes_align(self, other: CoordinateSystem) -> (bool, bool, bool);
 	/// Returns a short 3-letter abbreviation for the coordinate system.
 	pub fn as_short_str(&self) -> &'static str;
 	/// Returns an iterator over all coordinate system variants.
 	pub fn iter() -> impl Iterator<Item = CoordinateSystem>;
 }
 
-/// Sign multipliers (+1.0 or -1.0) for transforming Gaussian splat data between
-/// coordinate systems.
-pub struct AxisFlips {
-	/// Sign multipliers for XYZ position coordinates.
-	pub position: [f32; 3],
-	/// Sign multipliers for quaternion rotation components (X, Y, Z; W is unchanged).
-	pub rotation: [f32; 3],
-	/// Sign multipliers for spherical harmonic coefficients (15 values for degrees 1-3).
-	pub spherical_harmonics: [f32; 15],
-}
-
-// mod packed ──────────────────────────────────────────────────────────────────
-
-/// Represents a full splat with lower precision.
-pub struct PackedGaussians {
-	// Total number of points (gaussians).
-	pub num_points: i32,
-	// Degree of spherical harmonics.
-	pub sh_degree: i32,
-	// Number of bits used for fractional part of fixed-point coords.
-	pub fractional_bits: i32,
-	// Whether gaussians should be rendered with mip-splat antialiasing.
-	pub antialiased: bool,
-	// Whether gaussians use the smallest three method to store quaternions.
-	pub uses_quaternion_smallest_three: bool,
-
-	pub positions: Vec<u8>,
-	pub scales: Vec<u8>,
-	pub rotations: Vec<u8>,
-	pub alphas: Vec<u8>,
-	pub colors: Vec<u8>,
-	pub spherical_harmonics: Vec<u8>,
-}
-
-impl PackedGaussians {
-	/// Constructs an SPZ header from this packed data's metadata.
-	pub fn construct_header(&self) -> PackedGaussiansHeader;
-	/// Serializes to a complete SPZ file as a byte vector.
-	pub fn as_bytes_vec(&self) -> Result<Vec<u8>>;
-	/// Writes this packed data to a writer in SPZ format.
-	pub fn write_self_to<W>(&self, stream: &mut W) -> Result<()>;
-	/// Returns `true` if positions are stored as float16.
-	pub fn uses_float16(&self) -> bool;
-	/// Returns the packed data for a single splat at index `i`.
-	pub fn at(&self, i: usize) -> Result<PackedGaussian>;
-	/// Unpacks a single splat at index `i` with coordinate transformation.
-	pub fn unpack(&self, i: usize, coord_flip: &AxisFlips) -> Result<UnpackedGaussian>;
-	/// Validates that all internal arrays have the expected sizes.
-	pub fn check_sizes(&self, num_points: usize, sh_dim: u8, uses_float16: bool) -> bool;
-}
-
-impl TryFrom<Vec<u8>> for PackedGaussians;
-impl TryFrom<&[u8]> for PackedGaussians;
-
-/// Represents a single low precision gaussian.
-pub struct PackedGaussian {
-	pub position: [u8; 9],
-	pub rotation: [u8; 4],
-	pub scale: [u8; 3],
-	pub color: [u8; 3],
-	pub alpha: u8,
-	pub sh_r: [u8; 15],
-	pub sh_g: [u8; 15],
-	pub sh_b: [u8; 15],
-}
-
-impl PackedGaussian {
-	/// Decompresses this packed Gaussian into full-precision values,
-	/// [`UnpackedGaussian`].
-	pub fn unpack(
-		&self,
-		uses_float16: bool,
-		uses_quaternion_smallest_three: bool,
-		fractional_bits: i32,
-		coord_flip: &AxisFlips,
-	) -> Result<UnpackedGaussian>;
-}
-
-// mod unpacked ────────────────────────────────────────────────────────────────
-
-/// Represents a single inflated gaussian.
-pub struct UnpackedGaussian {
-	pub position: [f32; 3], // x, y, z
-	pub rotation: [f32; 4], // x, y, z, w
-	pub scale: [f32; 3],	// std::log(scale)
-	pub color: [f32; 3],	// rgb sh0 encoding
-	pub alpha: f32,		// inverse logistic
-	pub sh_r: [f32; 15],
-	pub sh_g: [f32; 15],
-	pub sh_b: [f32; 15],
-}
-
 // mod header ──────────────────────────────────────────────────────────────────
 
 /// Fixed-size 16-byte header for SPZ (packed Gaussian splat) files.
 #[repr(C)]
-pub struct PackedGaussiansHeader {
+pub struct Header {
 	pub magic: i32,				// 0x5053474e "NGSP"
 	pub version: i32,			// 3 (this lib only supports spz v3)
 	pub num_points: i32,
 	pub spherical_harmonics_degree: u8,	// 0-3
 	pub fractional_bits: u8,
-	pub flags: u8,				// 0x1 = antialiased
-	pub reserved: u8,
+	// Currently there is only 1 flag: 0x1 = antialiased
+	pub flags: u8,
+	pub reserved: u8,			// Must be `0`.
 }
 
-impl PackedGaussiansHeader {
+impl Header {
+	/// DOES NOT validate whether the read header is a valid SPZ header,
+	/// simply reads the bytes and interprets them as a header.
+	pub fn from_file_unchecked<P>(filepath: P) -> Result<Self>;
+	pub fn from_file<P>(filepath: P) -> Result<Self>;
 	/// Reads a header from the given reader.
 	pub fn read_from<R: Read>(reader: &mut R) -> Result<Self>;
 	/// Writes this header to the given writer.
 	pub fn serialize_to<W: Write>(&self, writer: &mut W) -> Result<()>;
+	/// Does some basic validation of this header.
+	pub fn is_valid(&self) -> bool;
 }
 ```
 

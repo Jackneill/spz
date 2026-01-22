@@ -17,7 +17,7 @@ pub mod prelude {
 
 	pub use super::coord::{AxisFlips, CoordinateSystem};
 	pub use super::gaussian_splat::{BoundingBox, GaussianSplat, LoadOptions, SaveOptions};
-	pub use super::header::PackedGaussiansHeader;
-	pub use super::packed::{PackedGaussian, PackedGaussians};
+	pub use super::header::Header;
+	pub use super::packed::{PackedGaussian, PackedGaussianSplat};
 	pub use super::unpacked::UnpackedGaussian;
 }

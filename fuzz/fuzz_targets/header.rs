@@ -7,11 +7,11 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use spz::header::PackedGaussiansHeader;
+use spz::header::Header;
 
 fuzz_target!(|data: &[u8]| {
 	let Ok(header_bytes) = <[u8; 16]>::try_from(data) else {
 		return;
 	};
-	let _ = PackedGaussiansHeader::from(header_bytes);
+	let _ = Header::from(header_bytes);
 });

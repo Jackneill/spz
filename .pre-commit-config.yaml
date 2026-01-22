@@ -6,5 +6,6 @@ repos:
       - id: check-case-conflict
       - id: check-json
       - id: check-yaml
+        exclude: .clang-format
       - id: check-symlinks
       - id: end-of-file-fixer

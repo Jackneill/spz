@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use rand::{Rng, SeedableRng, rngs::StdRng};
-use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, math};
+use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, header::Header, math};
 
 pub fn create_splat(num_points: i32) -> GaussianSplat {
 	let sh_degree = 2_i32;
@@ -32,9 +32,11 @@ pub fn create_splat(num_points: i32) -> GaussianSplat {
 		.collect();
 
 	GaussianSplat {
-		num_points,
-		spherical_harmonics_degree: sh_degree,
-		antialiased: false,
+		header: Header {
+			num_points,
+			spherical_harmonics_degree: sh_degree as u8,
+			..Default::default()
+		},
 		positions,
 		scales,
 		rotations,

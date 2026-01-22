@@ -42,6 +42,7 @@ rayon = { version = "1.11", default-features = true, features = [] }
 tokio = { version = "1.49", default-features = true, features = ["full"] }
 likely_stable = { version = "0.1", default-features = true, features = [] }
 arbitrary = { version = "1.4", default-features = true, features = ["derive"] }
+bitflags = "2.10"
 
 [dev-dependencies]
 criterion = { version = "0.8", default-features = true, features = [
@@ -55,6 +56,11 @@ codspeed-criterion-compat = { version = "4.2.1", default-features = true, featur
 rstest = { version = "0.26", default-features = true, features = [] }
 approx = { version = "0.5", default-features = true, features = [] }
 rand = { version = "0.9", default-features = true, features = [] }
+bitflags = { version = "2.10", default-features = true, features = [
+	"std",
+	"serde",
+	"arbitrary",
+] }
 
 [[bench]]
 name = "spz_bench"

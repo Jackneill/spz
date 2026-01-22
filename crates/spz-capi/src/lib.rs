@@ -15,7 +15,7 @@ use spz::gaussian_splat::{
 	BoundingBox as RustBoundingBox, GaussianSplat as RustGaussianSplat, LoadOptions,
 	SaveOptions,
 };
-use spz::{coord::CoordinateSystem as RustCoordinateSystem, packed::PackedGaussians};
+use spz::{coord::CoordinateSystem as RustCoordinateSystem, packed::PackedGaussianSplat};
 
 // Thread-local storage for the last error message.
 thread_local! {
@@ -170,7 +170,7 @@ pub unsafe extern "C" fn spz_gaussian_splat_load(
 		coord_sys: coord_sys.into(),
 	};
 
-	match RustGaussianSplat::load_packed_from_file(path, &opts) {
+	match RustGaussianSplat::load_with(path, &opts) {
 		Ok(gs) => Box::into_raw(Box::new(SpzGaussianSplat { inner: gs })),
 		Err(e) => {
 			set_last_error(format!("failed to load SPZ file: {e}"));
@@ -207,7 +207,7 @@ pub unsafe extern "C" fn spz_gaussian_splat_load_from_bytes(
 	let opts = LoadOptions {
 		coord_sys: coord_sys.into(),
 	};
-	match PackedGaussians::from_bytes(bytes) {
+	match PackedGaussianSplat::from_bytes(bytes) {
 		Ok(packed) => match RustGaussianSplat::new_from_packed_gaussians(&packed, &opts) {
 			Ok(gs) => Box::into_raw(Box::new(SpzGaussianSplat { inner: gs })),
 			Err(e) => {
@@ -262,7 +262,7 @@ pub unsafe extern "C" fn spz_gaussian_splat_save(
 		coord_sys: coord_sys.into(),
 	};
 
-	match splat.inner.save_as_packed(path, &opts) {
+	match splat.inner.save(path, &opts) {
 		Ok(()) => 0,
 		Err(e) => {
 			set_last_error(format!("failed to save SPZ file: {e}"));
@@ -301,7 +301,7 @@ pub unsafe extern "C" fn spz_gaussian_splat_to_bytes(
 		coord_sys: coord_sys.into(),
 	};
 
-	match splat.inner.serialize_as_packed_bytes(&opts) {
+	match splat.inner.serialize_to_packed_bytes(&opts) {
 		Ok(bytes) => {
 			let len = bytes.len();
 			let boxed = bytes.into_boxed_slice();

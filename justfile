@@ -27,6 +27,13 @@ test: assets
 		--workspace
 	#-- --nocapture
 
+testp project:
+	{{cargo}} nextest run \
+		-v \
+		--all-features \
+		-p {{project}} \
+		-j num-cpus
+
 fuzz:
 	#!/usr/bin/env bash
 	set -euxo pipefail

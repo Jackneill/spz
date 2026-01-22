@@ -12,22 +12,17 @@ use tokio::io::AsyncReadExt;
 use crate::{
 	compression, consts,
 	coord::{AxisFlips, CoordinateSystem},
-	math::{self, dim_for_degree, half_to_float},
+	header::{Flags, Header},
+	math::{self, dim_for_degree},
 	mmap,
-	packed::PackedGaussians,
+	packed::PackedGaussianSplat,
 };
 
-/// A set of Gaussian splats representing a 3D scene.
+/// A set of Gaussian Splats representing a 3D scene.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct GaussianSplat {
-	/// The number of gaussians.
-	pub num_points: i32,
-
-	/// The degree of spherical harmonics. This must be between 0 and 3 (inclusive).
-	pub spherical_harmonics_degree: i32,
-
-	/// Whether the splat was trained with antialiasing.
-	pub antialiased: bool,
+	/// Header data for the splat.
+	pub header: Header,
 
 	/// Positions are represented as (x, y, z) coordinates, each as a 24-bit
 	/// fixed point signed integer.
@@ -79,15 +74,17 @@ pub struct GaussianSplat {
 }
 
 impl GaussianSplat {
+	#[inline]
 	pub fn builder() -> GaussianSplatBuilder {
 		GaussianSplatBuilder::default()
 	}
 
-	/// Loads Gaussian splat from a file in packed format, async.
+	/// Loads a [`GaussianSplat`] from a file with the given options, async.
 	///
 	/// `filepath` - gzip compressed, packed gaussian data file.
 	/// `opts` - options for loading the splat.
-	pub async fn load_packed_from_file_into_buf_async<F>(
+	#[inline]
+	pub async fn load_with_into_buf_async<F>(
 		filepath: F,
 		opts: &LoadOptions,
 		contents: &mut Vec<u8>,
@@ -100,29 +97,31 @@ impl GaussianSplat {
 		infile.read_to_end(contents).await?;
 
 		return Self::new_from_packed_gaussians(
-			&PackedGaussians::from_bytes(&contents)?,
+			&PackedGaussianSplat::from_bytes(&contents)?,
 			opts,
 		);
 	}
 
-	/// Loads Gaussian splat from a file in packed format, async.
+	/// Loads a [`GaussianSplat`] from a file with the given options, async.
 	///
 	/// `filepath` - gzip compressed, packed gaussian data file.
 	/// `opts` - options for loading the splat.
-	pub async fn load_packed_from_file_async<F>(filepath: F, opts: &LoadOptions) -> Result<Self>
+	#[inline]
+	pub async fn load_with_async<F>(filepath: F, opts: &LoadOptions) -> Result<Self>
 	where
 		F: AsRef<Path>,
 	{
 		let mut contents = Vec::new();
 
-		Self::load_packed_from_file_into_buf_async(filepath, opts, &mut contents).await
+		Self::load_with_into_buf_async(filepath, opts, &mut contents).await
 	}
 
-	/// Loads Gaussian splat from a file in packed format.
+	/// Loads a [`GaussianSplat`] from a file with the given options.
 	///
 	/// `filepath` - gzip compressed, packed gaussian data file.
 	/// `opts` - options for loading the splat.
-	pub fn load_packed_from_file<F>(filepath: F, opts: &LoadOptions) -> Result<Self>
+	#[inline]
+	pub fn load_with<F>(filepath: F, opts: &LoadOptions) -> Result<Self>
 	where
 		F: AsRef<Path>,
 	{
@@ -131,27 +130,64 @@ impl GaussianSplat {
 			let infile = std::fs::read(filepath)?;
 
 			return Self::new_from_packed_gaussians(
-				&PackedGaussians::from_bytes(&infile)?,
+				&PackedGaussianSplat::from_bytes(&infile)?,
 				opts,
 			);
 		}
 		let mmap = mmap::mmap(filepath)?;
-		let packed = PackedGaussians::from_bytes(mmap.as_ref())
+		let packed = PackedGaussianSplat::from_bytes(mmap.as_ref())
 			.with_context(|| "unable to load packed file")?;
 
 		Self::new_from_packed_gaussians(&packed, opts)
 	}
 
-	/// Saves Gaussian splat to a file in packed format.
+	/// Loads a [`GaussianSplat`] from a file.
+	///
+	/// Convenience method that uses the default load options.
+	///
+	/// `filepath` - gzip compressed, packed gaussian data file.
+	#[inline]
+	pub fn load<F>(filepath: F) -> Result<Self>
+	where
+		F: AsRef<Path>,
+	{
+		Self::load_with(
+			filepath,
+			&LoadOptions::builder()
+				.coord_sys(CoordinateSystem::default())
+				.build(),
+		)
+	}
+
+	/// Loads a [`GaussianSplat`] from a file, async.
+	///
+	/// Convenience async method that uses default load options.
+	///
+	/// `filepath` - gzip compressed, packed gaussian data file.
+	#[inline]
+	pub async fn load_async<F>(filepath: F) -> Result<Self>
+	where
+		F: AsRef<Path>,
+	{
+		Self::load_with_async(
+			filepath,
+			&LoadOptions::builder()
+				.coord_sys(CoordinateSystem::default()) // default to LUF (glTF)
+				.build(),
+		)
+		.await
+	}
+
+	/// Saves a [`GaussianSplat`] to a file.
 	///
 	/// `filepath` - file path to save the gzip compressed, packed gaussian data.
 	/// `opts` - options for saving the splat.
 	#[inline]
-	pub async fn save_as_packed_async<F>(&self, filepath: F, opts: &SaveOptions) -> Result<()>
+	pub async fn save_async<F>(&self, filepath: F, opts: &SaveOptions) -> Result<()>
 	where
 		F: AsRef<Path>,
 	{
-		let compressed = self.serialize_as_packed_bytes(opts)?;
+		let compressed = self.serialize_to_packed_bytes(opts)?;
 
 		tokio::fs::create_dir_all(
 			filepath.as_ref()
@@ -165,16 +201,16 @@ impl GaussianSplat {
 			.with_context(|| "unable to write to file")
 	}
 
-	/// Saves Gaussian splat to a file in packed format.
+	/// Saves a [`GaussianSplat`] to a file.
 	///
 	/// `filepath` - file path to save the gzip compressed, packed gaussian data.
 	/// `opts` - options for saving the splat.
 	#[inline]
-	pub fn save_as_packed<F>(&self, filepath: F, opts: &SaveOptions) -> Result<()>
+	pub fn save<F>(&self, filepath: F, opts: &SaveOptions) -> Result<()>
 	where
 		F: AsRef<Path>,
 	{
-		let compressed = self.serialize_as_packed_bytes(opts)?;
+		let compressed = self.serialize_to_packed_bytes(opts)?;
 
 		std::fs::create_dir_all(
 			filepath.as_ref()
@@ -184,32 +220,39 @@ impl GaussianSplat {
 		std::fs::write(filepath, compressed).with_context(|| "unable to write to file")
 	}
 
-	pub fn serialize_as_packed_bytes(&self, opts: &SaveOptions) -> Result<Vec<u8>> {
+	pub fn serialize_to_packed_bytes(&self, opts: &SaveOptions) -> Result<Vec<u8>> {
 		let packed = self.to_packed_gaussians(opts)?;
 
-		let uncompressed = packed.as_bytes_vec()?;
+		let uncompressed = packed.to_bytes_vec()?;
 		let mut compressed = Vec::new();
 
-		compression::to_gzip_bytes(uncompressed.as_ref(), &mut compressed)?;
+		compression::gzip::compress_bytes(uncompressed.as_ref(), &mut compressed)?;
 
 		Ok(compressed)
 	}
 
 	pub fn new_from_packed_gaussians(
-		packed: &PackedGaussians,
+		packed: &PackedGaussianSplat,
 		opts: &LoadOptions,
 	) -> Result<Self> {
 		let num_points = packed.num_points as usize;
 		let sh_dim = dim_for_degree(packed.sh_degree as u8);
-		let uses_float16 = packed.uses_float16();
 
-		if unlikely(!packed.check_sizes(num_points, sh_dim, uses_float16)) {
+		if unlikely(!packed.check_sizes(num_points, sh_dim)) {
 			bail!("inconsistent sizes");
 		}
 		let mut result = Self {
-			num_points: packed.num_points,
-			spherical_harmonics_degree: packed.sh_degree,
-			antialiased: packed.antialiased,
+			header: Header {
+				num_points: packed.num_points,
+				spherical_harmonics_degree: packed.sh_degree as u8,
+				fractional_bits: packed.fractional_bits as u8,
+				flags: if packed.antialiased {
+					Flags::ANTIALIASED
+				} else {
+					Flags::none()
+				},
+				..Default::default()
+			},
 			positions: vec![0_f32; num_points * 3],
 			scales: vec![0_f32; num_points * 3],
 			rotations: vec![0_f32; num_points * 4],
@@ -217,88 +260,86 @@ impl GaussianSplat {
 			colors: vec![0_f32; num_points * 3],
 			spherical_harmonics: vec![0_f32; num_points * sh_dim as usize * 3],
 		};
-		// positions
-		if uses_float16 {
-			let half_slice: &[u16] = {
-				let bytes = &packed.positions;
+		// positions: decode 24-bit fixed point coordinates
+		let scale = 1.0_f32 / (1_u32 << (packed.fractional_bits as u32)) as f32;
 
-				unsafe {
-					std::slice::from_raw_parts(
-						bytes.as_ptr() as *const u16,
-						bytes.len() / 2,
-					)
-				}
-			};
-			for i in 0..(num_points * 3) {
-				result.positions[i] = half_to_float(half_slice[i]) as f32;
-			}
-		} else {
-			let scale = 1.0_f32 / (1_u32 << (packed.fractional_bits as u32)) as f32;
-
-			// decode 24-bit fixed point coordinates
-			for i in 0..(num_points * 3) {
-				let mut fixed32 = packed.positions[i * 3 + 0] as i32;
-				fixed32 |= (packed.positions[i * 3 + 1] as i32) << 8;
-				fixed32 |= (packed.positions[i * 3 + 2] as i32) << 16;
+		for (dst, src) in result
+			.positions
+			.chunks_exact_mut(3)
+			.zip(packed.positions.chunks_exact(9))
+		{
+			for i in 0..3 {
+				let base = i * 3;
+				let mut fixed32 = src[base] as i32
+					| ((src[base + 1] as i32) << 8) | ((src[base + 2]
+					as i32) << 16);
 
 				if (fixed32 & 0x800000) != 0 {
 					fixed32 |= 0xff000000_u32 as i32;
 				}
-				result.positions[i] = fixed32 as f32 * scale;
+				dst[i] = fixed32 as f32 * scale;
 			}
 		}
 		// scales
-		for i in 0..(num_points * 3) {
-			result.scales[i] = (packed.scales[i] as f32 / 16.0 - 10.0) as f32;
+		for (dst, src) in result.scales.iter_mut().zip(packed.scales.iter()) {
+			*dst = (*src as f32 / 16.0 - 10.0) as f32;
 		}
 		// rotations
-		for i in 0..num_points {
-			if packed.uses_quaternion_smallest_three {
-				math::unpack_quaternion_smallest_three(
-					&mut result.rotations[4 * i..4 * i + 4],
-					&packed.rotations[4 * i..4 * i + 4],
-				);
-			} else {
-				math::unpack_quaternion_first_three(
-					&mut result.rotations[4 * i..4 * i + 4],
-					&packed.rotations[3 * i..3 * i + 3],
-				);
+		if packed.uses_quaternion_smallest_three {
+			for (dst, src) in result
+				.rotations
+				.chunks_exact_mut(4)
+				.zip(packed.rotations.chunks_exact(4))
+			{
+				math::unpack_quaternion_smallest_three(dst, src);
+			}
+		} else {
+			for (dst, src) in result
+				.rotations
+				.chunks_exact_mut(4)
+				.zip(packed.rotations.chunks_exact(3))
+			{
+				math::unpack_quaternion_first_three(dst, src);
 			}
 		}
 		// alphas
-		for i in 0..num_points {
-			result.alphas[i] = math::inv_sigmoid(packed.alphas[i] as f32 / 255.0);
+		for (dst, src) in result.alphas.iter_mut().zip(packed.alphas.iter()) {
+			*dst = math::inv_sigmoid(*src as f32 / 255.0);
 		}
 		// colors
-		for i in 0..(num_points * 3) {
-			result.colors[i] = (((packed.colors[i] as f32 / 255.0) - 0.5)
-				/ consts::COLOR_SCALE) as f32;
+		for (dst, src) in result.colors.iter_mut().zip(packed.colors.iter()) {
+			*dst = ((*src as f32 / 255.0) - 0.5) / consts::COLOR_SCALE;
 		}
 		// spherical harmonics
-		for i in 0..packed.spherical_harmonics.len() {
-			result.spherical_harmonics[i] =
-				math::unquantize_sh(packed.spherical_harmonics[i]) as f32;
+		for (dst, src) in result
+			.spherical_harmonics
+			.iter_mut()
+			.zip(packed.spherical_harmonics.iter())
+		{
+			*dst = math::unquantize_sh(*src);
 		}
-		result.convert_coordinates(CoordinateSystem::RightUpBack, opts.coord_sys.clone());
+		result.convert_coordinates(opts.coord_sys.clone(), CoordinateSystem::RightUpBack);
 
 		Ok(result)
 	}
 
-	pub fn to_packed_gaussians(&self, opts: &SaveOptions) -> Result<PackedGaussians> {
+	pub fn to_packed_gaussians(&self, opts: &SaveOptions) -> Result<PackedGaussianSplat> {
 		if unlikely(!self.check_sizes()) {
 			bail!("inconsistent sizes");
 		}
-		let num_points = self.num_points as usize;
-		let sh_dim = math::dim_for_degree(self.spherical_harmonics_degree as u8) as usize;
+		let num_points = self.header.num_points as usize;
+		let sh_dim =
+			math::dim_for_degree(self.header.spherical_harmonics_degree as u8) as usize;
 		let axis_flips = opts.coord_sys.axis_flips_to(CoordinateSystem::RightUpBack);
+		// Use 12 bits for the fractional part of coordinates (~0.25mm resolution).
 		let fractional_bits: i32 = 12;
 		let scale = (1_i32 << fractional_bits) as f32;
 
-		let mut packed = PackedGaussians {
-			num_points: self.num_points,
-			sh_degree: self.spherical_harmonics_degree,
+		let mut packed = PackedGaussianSplat {
+			num_points: self.header.num_points,
+			sh_degree: self.header.spherical_harmonics_degree as i32,
 			fractional_bits,
-			antialiased: self.antialiased,
+			antialiased: self.header.flags.is_antialiased(),
 			uses_quaternion_smallest_three: true,
 			positions: vec![0_u8; num_points * 3 * 3],
 			scales: vec![0_u8; num_points * 3],
@@ -349,7 +390,7 @@ impl GaussianSplat {
 			);
 		}
 		// Pack spherical harmonics
-		if self.spherical_harmonics_degree > 0 {
+		if self.header.spherical_harmonics_degree > 0 {
 			const SH1_BITS: i32 = 5;
 			const SH_REST_BITS: i32 = 4;
 
@@ -389,7 +430,7 @@ impl GaussianSplat {
 					k += 1;
 				}
 				while j < sh_per_point {
-					let step = 1i32 << (8 - SH_REST_BITS);
+					let step = 1_i32 << (8 - SH_REST_BITS);
 
 					packed.spherical_harmonics[base + j + 0] =
 						math::quantize_sh(
@@ -425,7 +466,7 @@ impl GaussianSplat {
 		source_cs: crate::coord::CoordinateSystem,
 		target_cs: crate::coord::CoordinateSystem,
 	) {
-		if unlikely(self.num_points == 0) {
+		if unlikely(self.header.num_points == 0) {
 			return;
 		}
 		let (x_match, y_match, z_match) = source_cs.axes_align(target_cs);
@@ -471,7 +512,7 @@ impl GaussianSplat {
 		} else {
 			0
 		};
-		let num_points = self.num_points.max(0) as usize;
+		let num_points = self.header.num_points.max(0) as usize;
 
 		if unlikely(num_points == 0 || total_coeffs == 0) {
 			return;
@@ -549,14 +590,14 @@ impl GaussianSplat {
 	///
 	/// Returns `true` if all sizes are valid, `false` otherwise.
 	pub fn check_sizes(&self) -> bool {
-		if self.num_points < 0 {
+		if unlikely(self.header.num_points < 0) {
 			return false;
 		}
-		if self.spherical_harmonics_degree < 0 || self.spherical_harmonics_degree > 3 {
+		if unlikely(self.header.spherical_harmonics_degree > 3) {
 			return false;
 		}
-		let np = self.num_points as usize;
-		let sh_dim = dim_for_degree(self.spherical_harmonics_degree as u8) as usize;
+		let np = self.header.num_points as usize;
+		let sh_dim = dim_for_degree(self.header.spherical_harmonics_degree as u8) as usize;
 
 		let expected_xyz = np.saturating_mul(3);
 		let expected_rot = np.saturating_mul(4);
@@ -609,13 +650,17 @@ impl GaussianSplat {
 		let mut ret = String::new();
 
 		let _ = write!(ret, "GaussianSplat:\n");
-		let _ = write!(ret, "\tNumber of points:\t\t{}\n", self.num_points);
+		let _ = write!(ret, "\tNumber of points:\t\t{}\n", self.header.num_points);
 		let _ = write!(
 			ret,
 			"\tSpherical harmonics degree:\t{}\n",
-			self.spherical_harmonics_degree
+			self.header.spherical_harmonics_degree
 		);
-		let _ = write!(ret, "\tAntialiased:\t\t\t{}\n", self.antialiased);
+		let _ = write!(
+			ret,
+			"\tAntialiased:\t\t\t{}\n",
+			self.header.flags.is_antialiased()
+		);
 		let _ = write!(
 			ret,
 			"\tMedian ellipsoid volume:\t{:.6}\n",
@@ -646,9 +691,9 @@ impl std::fmt::Display for GaussianSplat {
 		let _ = write!(
 			f,
 			"GaussianSplat={{num_points={}, sh_degree={}, antialiased={}, median_ellipsoid_volume={}, ",
-			self.num_points,
-			self.spherical_harmonics_degree,
-			self.antialiased,
+			self.header.num_points,
+			self.header.spherical_harmonics_degree,
+			self.header.flags.is_antialiased(),
 			self.median_volume()
 		);
 		let BoundingBox {
@@ -694,7 +739,7 @@ impl GaussianSplatBuilder {
 	where
 		P: AsRef<Path>,
 	{
-		GaussianSplat::load_packed_from_file(
+		GaussianSplat::load_with(
 			filepath,
 			&LoadOptions::builder().coord_sys(self.coord_sys).build(),
 		)
@@ -704,7 +749,7 @@ impl GaussianSplatBuilder {
 	where
 		P: AsRef<Path>,
 	{
-		GaussianSplat::load_packed_from_file_async(
+		GaussianSplat::load_with_async(
 			filepath,
 			&LoadOptions::builder().coord_sys(self.coord_sys).build(),
 		)

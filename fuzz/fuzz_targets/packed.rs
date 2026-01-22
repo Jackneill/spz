@@ -9,10 +9,10 @@
 use libfuzzer_sys::fuzz_target;
 use spz::{
 	gaussian_splat::{GaussianSplat, LoadOptions},
-	packed::PackedGaussians,
+	packed::PackedGaussianSplat,
 };
 
-fuzz_target!(|input: (PackedGaussians, LoadOptions)| {
+fuzz_target!(|input: (PackedGaussianSplat, LoadOptions)| {
 	let (pg, load_opts) = input;
 
 	let _ = GaussianSplat::new_from_packed_gaussians(&pg.clone(), &load_opts);

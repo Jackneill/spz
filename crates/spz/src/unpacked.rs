@@ -9,8 +9,8 @@ static_assertions::const_assert_eq!(std::mem::size_of::<UnpackedGaussian>(), 236
 ///
 /// Coordinate system conversions are already applied at this stage.
 /// Each gaussian has 236 bytes.
-/// Although the data is easier to intepret in this format,
-/// it is not more precise than the packed format, since it was inflated.
+/// Although the data is easier to intepret in this format, it is not more
+/// precise than the packed format, since it was inflated.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
 pub struct UnpackedGaussian {
 	pub position: [f32; 3], // x, y, z

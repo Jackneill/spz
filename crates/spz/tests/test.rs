@@ -6,7 +6,8 @@ use rstest::rstest;
 use spz::{
 	coord::CoordinateSystem,
 	gaussian_splat::{self, GaussianSplat},
-	packed::PackedGaussians,
+	header::Header,
+	packed::PackedGaussianSplat,
 	prelude::{LoadOptions, SaveOptions},
 };
 
@@ -21,15 +22,14 @@ fn test_load_packed_from_file_no_err(#[case] filename: &str) {
 	let spz_path = util::assets_dir().join(filename);
 	let unpack_opts = LoadOptions::default();
 
-	let _gs = GaussianSplat::load_packed_from_file(&spz_path, &unpack_opts)
-		.expect("failed to load splat");
+	let _gs = GaussianSplat::load_with(&spz_path, &unpack_opts).expect("failed to load splat");
 }
 
 #[test]
 fn test_empty_gaussian_splat() {
 	let gs = GaussianSplat::default();
 
-	assert_eq!(gs.num_points, 0);
+	assert_eq!(gs.header.num_points, 0);
 	assert!(gs.positions.is_empty());
 	assert!(gs.scales.is_empty());
 	assert!(gs.rotations.is_empty());
@@ -46,7 +46,7 @@ fn test_empty_gaussian_splat() {
 	assert!(packed_gs.colors.is_empty());
 	assert!(packed_gs.spherical_harmonics.is_empty());
 
-	assert!(PackedGaussians::from_bytes(&[]).is_err());
+	assert!(PackedGaussianSplat::from_bytes(&[]).is_err());
 }
 
 #[rstest]
@@ -56,7 +56,7 @@ fn test_load_packed_bytes(#[case] filename: &str) {
 	let spz_path = util::assets_dir().join(filename);
 	let spz_infile = std::fs::read(&spz_path).expect("failed to read file");
 
-	let pg = PackedGaussians::from_bytes(&spz_infile).expect("failed to load packed");
+	let pg = PackedGaussianSplat::from_bytes(&spz_infile).expect("failed to load packed");
 
 	assert!(pg.num_points > 0);
 	assert!(!pg.positions.is_empty());
@@ -76,27 +76,30 @@ fn test_roundtrip_pack_unpack(#[case] filename: &str) {
 	let pack_opts = SaveOptions::default();
 
 	// original
-	let original_gs = GaussianSplat::load_packed_from_file(&original_spz, &unpack_opts)
+	let original_gs = GaussianSplat::load_with(&original_spz, &unpack_opts)
 		.expect("failed to load splat");
 
 	// serialize to bytes
 	let packed_bytes = original_gs
-		.serialize_as_packed_bytes(&pack_opts)
+		.serialize_to_packed_bytes(&pack_opts)
 		.expect("failed to serialize");
 
 	// reload from bytes
 	let reloaded_fs_from_packed =
-		PackedGaussians::from_bytes(&packed_bytes).expect("failed to reload packed");
+		PackedGaussianSplat::from_bytes(&packed_bytes).expect("failed to reload packed");
 	let reloaded =
 		GaussianSplat::new_from_packed_gaussians(&reloaded_fs_from_packed, &unpack_opts)
 			.expect("failed to unpack");
 
-	assert_eq!(original_gs.num_points, reloaded.num_points);
+	assert_eq!(original_gs.header.num_points, reloaded.header.num_points);
 	assert_eq!(
-		original_gs.spherical_harmonics_degree,
-		reloaded.spherical_harmonics_degree
+		original_gs.header.spherical_harmonics_degree,
+		reloaded.header.spherical_harmonics_degree
 	);
-	assert_eq!(original_gs.antialiased, reloaded.antialiased);
+	assert_eq!(
+		original_gs.header.flags.is_antialiased(),
+		reloaded.header.flags.is_antialiased()
+	);
 
 	assert_eq!(original_gs.positions.len(), reloaded.positions.len());
 	assert_eq!(original_gs.scales.len(), reloaded.scales.len());
@@ -132,7 +135,7 @@ fn test_spz_values(#[case] filename: &str, #[case] spz_values: util::SpzValues) 
 		.load(spz_path)
 		.expect("failed to load gaussian splat");
 
-	assert_eq!(gs.num_points, spz_values.num_points);
+	assert_eq!(gs.header.num_points, spz_values.num_points);
 
 	let gaussian_splat::BoundingBox {
 		min_x,
@@ -179,9 +182,11 @@ fn test_save_load_packed_format_large_splat(#[case] num_points: i32) {
 		.collect();
 
 	let gs = GaussianSplat {
-		num_points,
-		spherical_harmonics_degree: sh_deg,
-		antialiased: false,
+		header: Header {
+			num_points,
+			spherical_harmonics_degree: sh_deg as u8,
+			..Default::default()
+		},
 		positions: positions.clone(),
 		scales: scales.clone(),
 		rotations: rotations.clone(),
@@ -195,16 +200,15 @@ fn test_save_load_packed_format_large_splat(#[case] num_points: i32) {
 	let pack_opts = SaveOptions::default();
 	let unpack_opts = LoadOptions::default();
 
-	gs.save_as_packed(&filename, &pack_opts)
+	gs.save(&filename, &pack_opts)
 		.expect("failed to save splat");
 
-	let dst = GaussianSplat::load_packed_from_file(&filename, &unpack_opts)
-		.expect("failed to load splat");
+	let dst = GaussianSplat::load_with(&filename, &unpack_opts).expect("failed to load splat");
 
-	assert_eq!(dst.num_points, gs.num_points);
+	assert_eq!(dst.header.num_points, gs.header.num_points);
 	assert_eq!(
-		dst.spherical_harmonics_degree,
-		gs.spherical_harmonics_degree
+		dst.header.spherical_harmonics_degree,
+		gs.header.spherical_harmonics_degree
 	);
 	for (orig, loaded) in gs.positions.iter().zip(dst.positions.iter()) {
 		assert_relative_eq!(orig, loaded, epsilon = 1.0 / 2048.0);
@@ -232,9 +236,11 @@ fn test_save_load_packed_format_large_splat(#[case] num_points: i32) {
 #[rstest]
 #[case(
 	GaussianSplat {
-		num_points: 1,
-		spherical_harmonics_degree: 1,
-		antialiased: false,
+		header: Header {
+			num_points: 1,
+			spherical_harmonics_degree: 1,
+			..Default::default()
+		},
 		positions: vec![0.0, 0.0, 0.0],
 		scales: vec![0.0, 0.0, 0.0],
 		rotations: vec![0.0, 0.0, 0.0, 1.0],
@@ -257,14 +263,13 @@ fn test_sh_encoding_for_zeros_and_edges(
 	let temp_dir = mktmp();
 	let filename = temp_dir.join("test_sh_encoding_for_zeros_and_edges.spz");
 
-	gs.save_as_packed(&filename, &pack_opts)
+	gs.save(&filename, &pack_opts)
 		.expect("failed to save splat");
 
-	let dst = GaussianSplat::load_packed_from_file(&filename, &unpack_opts)
-		.expect("failed to load splat");
+	let dst = GaussianSplat::load_with(&filename, &unpack_opts).expect("failed to load splat");
 
-	assert_eq!(dst.num_points, 1);
-	assert_eq!(dst.spherical_harmonics_degree, 1);
+	assert_eq!(dst.header.num_points, 1);
+	assert_eq!(dst.header.spherical_harmonics_degree, 1);
 
 	for (loaded, expected) in dst.spherical_harmonics.iter().zip(expected_sh.iter()) {
 		assert_relative_eq!(loaded, expected, epsilon = 2e-5);
@@ -279,9 +284,11 @@ fn sample_sh_coefficients() -> Vec<f32> {
 #[rstest]
 #[case(
 	GaussianSplat {
-		num_points: 1,
-		spherical_harmonics_degree: 1,
-		antialiased: false,
+		header: Header {
+			num_points: 1,
+			spherical_harmonics_degree: 1,
+			..Default::default()
+		},
 		positions: vec![1.0, 2.0, 3.0],
 		scales: vec![0.1, 0.2, 0.3],
 		rotations: vec![0.0, 0.0, 0.0, 1.0],
@@ -312,15 +319,15 @@ fn test_spherical_harmonics_coordinate_transformation(
 	let temp_dir = mktmp();
 	let filename = temp_dir.join("sh_coord_test.spz");
 
-	gs.save_as_packed(&filename, &pack_opts)
+	gs.save(&filename, &pack_opts)
 		.expect("failed to save splat");
 
-	let loaded = GaussianSplat::load_packed_from_file(&filename, &unpack_opts)
-		.expect("failed to load splat");
+	let loaded =
+		GaussianSplat::load_with(&filename, &unpack_opts).expect("failed to load splat");
 
 	// Verify basic properties
-	assert_eq!(loaded.num_points, 1);
-	assert_eq!(loaded.spherical_harmonics_degree, 1);
+	assert_eq!(loaded.header.num_points, 1);
+	assert_eq!(loaded.header.spherical_harmonics_degree, 1);
 	assert_eq!(loaded.spherical_harmonics.len(), 9);
 
 	// The SH coefficients should be different from the original (transformed)
@@ -330,11 +337,11 @@ fn test_spherical_harmonics_coordinate_transformation(
 	// Verify the transformation is consistent - save and load again should give same result
 	let filename2 = temp_dir.join("sh_coord_test2.spz");
 
-	loaded.save_as_packed(&filename2, &pack_opts2)
+	loaded.save(&filename2, &pack_opts2)
 		.expect("failed to save splat");
 
-	let loaded2 = GaussianSplat::load_packed_from_file(&filename2, &unpack_opts2)
-		.expect("failed to load splat");
+	let loaded2 =
+		GaussianSplat::load_with(&filename2, &unpack_opts2).expect("failed to load splat");
 
 	for (a, b) in loaded
 		.spherical_harmonics
@@ -359,9 +366,11 @@ fn sample_non_normalized_quats() -> [f32; 8] {
 #[rstest]
 #[case(
 	GaussianSplat {
-		num_points: 2,
-		spherical_harmonics_degree: 0,
-		antialiased: false,
+		header: Header {
+			num_points: 2,
+			spherical_harmonics_degree: 0,
+			..Default::default()
+		},
 		positions: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
 		scales: vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
 		rotations: sample_non_normalized_quats().to_vec(),
@@ -374,10 +383,10 @@ fn test_quaternion_normalization_during_packing(#[case] gs: GaussianSplat) {
 	let temp_dir = mktmp();
 	let filename = temp_dir.join("quat_normalization_test.spz");
 
-	gs.save_as_packed(&filename, &SaveOptions::default())
+	gs.save(&filename, &SaveOptions::default())
 		.expect("failed to save splat");
 
-	let loaded = GaussianSplat::load_packed_from_file(&filename, &LoadOptions::default())
+	let loaded = GaussianSplat::load_with(&filename, &LoadOptions::default())
 		.expect("failed to load splat");
 
 	// Verify that the quaternions are now normalized
@@ -418,9 +427,11 @@ fn test_quaternion_normalization_during_packing(#[case] gs: GaussianSplat) {
 
 #[rstest]
 #[case(GaussianSplat { // Start with RUB data
-		num_points: 1,
-		spherical_harmonics_degree: 0,
-		antialiased: false,
+		header: Header {
+			num_points: 1,
+			spherical_harmonics_degree: 0,
+			..Default::default()
+		},
 		positions: vec![1.0, 2.0, 3.0],
 		scales: vec![],
 		rotations: vec![0.1, 0.2, 0.3, 0.9], // x, y, z, w
@@ -467,9 +478,11 @@ fn test_convert_coordinates(
 #[rstest]
 #[case(
 	GaussianSplat {
-		num_points: 1,
-		spherical_harmonics_degree: 1,
-		antialiased: false,
+		header: Header {
+			num_points: 1,
+			spherical_harmonics_degree: 1,
+			..Default::default()
+		},
 		// Positions: 12-bit fractional precision (1/4096 resolution)
 		positions: vec![1.0, -1.0, 0.5],
 		// Scales: 5-bit precision (1/32 resolution)
@@ -488,10 +501,10 @@ fn test_compression_precision_validation(#[case] gs: GaussianSplat) {
 	let temp_dir = mktmp();
 	let filename = temp_dir.join("compression_precision_test.spz");
 
-	gs.save_as_packed(&filename, &SaveOptions::default())
+	gs.save(&filename, &SaveOptions::default())
 		.expect("failed to save splat");
 
-	let loaded = GaussianSplat::load_packed_from_file(&filename, &LoadOptions::default())
+	let loaded = GaussianSplat::load_with(&filename, &LoadOptions::default())
 		.expect("failed to load splat");
 
 	// Verify precision according to implementation

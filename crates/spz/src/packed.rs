@@ -23,7 +23,7 @@ use arbitrary::Arbitrary;
 use likely_stable::{if_unlikely, unlikely};
 use serde::{Deserialize, Serialize};
 
-use crate::header::PackedGaussiansHeader;
+use crate::header::Header;
 use crate::{consts, math};
 use crate::{coord::AxisFlips, unpacked::UnpackedGaussian};
 
@@ -65,7 +65,6 @@ impl PackedGaussian {
 	/// An [`UnpackedGaussian`] with all attributes decoded to `f32`.
 	pub fn unpack(
 		&self,
-		uses_float16: bool,
 		uses_quaternion_smallest_three: bool,
 		fractional_bits: i32,
 		coord_flip: &AxisFlips,
@@ -73,36 +72,24 @@ impl PackedGaussian {
 		let mut result = UnpackedGaussian::default();
 
 		// positions
-		if uses_float16 {
-			for i in 0..3 {
-				let lo = self.position[i * 2] as u16;
-				let hi = self.position[i * 2 + 1] as u16;
-				let half = lo | (hi << 8);
+		let s = 1u32 << (fractional_bits as u32);
 
-				result.position[i] =
-					coord_flip.position[i] * math::half_to_float(half);
+		if s == 0 {
+			bail!("invalid fractional bits (= 0): {}", fractional_bits);
+		}
+		let scale = 1.0_f32 / s as f32;
+
+		for i in 0..3 {
+			let b0 = self.position[i * 3 + 0] as i32;
+			let b1 = (self.position[i * 3 + 1] as i32) << 8;
+			let b2 = (self.position[i * 3 + 2] as i32) << 16;
+
+			let mut fixed32 = b0 | b1 | b2;
+
+			if (fixed32 & 0x800000) != 0 {
+				fixed32 |= 0xff000000u32 as i32;
 			}
-		} else {
-			let s = 1u32 << (fractional_bits as u32);
-
-			if s == 0 {
-				bail!("invalid fractional bits (= 0): {}", fractional_bits);
-			}
-			let scale = 1.0_f32 / s as f32;
-
-			for i in 0..3 {
-				let b0 = self.position[i * 3 + 0] as i32;
-				let b1 = (self.position[i * 3 + 1] as i32) << 8;
-				let b2 = (self.position[i * 3 + 2] as i32) << 16;
-
-				let mut fixed32 = b0 | b1 | b2;
-
-				if (fixed32 & 0x800000) != 0 {
-					fixed32 |= 0xff000000u32 as i32;
-				}
-				result.position[i] =
-					coord_flip.position[i] * (fixed32 as f32 * scale);
-			}
+			result.position[i] = coord_flip.position[i] * (fixed32 as f32 * scale);
 		}
 		// scales
 		for i in 0..3 {
@@ -138,25 +125,25 @@ impl PackedGaussian {
 	}
 }
 
-/// Compressed Gaussian splat collection in SPZ format.
+/// Represents a full splat with lower precision.
 ///
 /// Stores all splat data in non-interleaved arrays for efficient compression.
 /// Each attribute (positions, rotations, etc.) is stored contiguously across
 /// all splats rather than per-splat.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Arbitrary)]
-pub struct PackedGaussians {
-	/// Total number of Gaussian splats.
+pub struct PackedGaussianSplat {
+	/// Total number of Gaussians.
 	pub num_points: i32,
 	/// Spherical harmonics degree (0-3).
 	pub sh_degree: i32,
 	/// Bits used for fractional part of fixed-point positions.
 	pub fractional_bits: i32,
-	/// Whether splats use mip-splatting antialiasing.
+	/// Whether antialiasing is used.
 	pub antialiased: bool,
 	/// Whether rotations use smallest-three quaternion encoding.
 	pub uses_quaternion_smallest_three: bool,
 
-	/// Quantized positions (6 or 9 bytes per splat).
+	/// Quantized positions (9 bytes per splat).
 	pub positions: Vec<u8>,
 	/// Quantized log-scales (3 bytes per splat).
 	pub scales: Vec<u8>,
@@ -170,7 +157,7 @@ pub struct PackedGaussians {
 	pub spherical_harmonics: Vec<u8>,
 }
 
-impl PackedGaussians {
+impl PackedGaussianSplat {
 	/// Deserializes packed Gaussian data from gzip-compressed bytes.
 	///
 	/// `bytes` - gzip compressed, packed gaussian data.
@@ -184,7 +171,7 @@ impl PackedGaussians {
 		}
 		let mut decompressed = Vec::<u8>::new();
 
-		crate::compression::gzip_to_bytes(bytes, &mut decompressed)
+		crate::compression::gzip::decompress_bytes(bytes, &mut decompressed)
 			.with_context(|| "unable to decompress gzip data")?;
 
 		let packed: Self = decompressed
@@ -196,15 +183,15 @@ impl PackedGaussians {
 
 	/// Constructs an SPZ header from this packed data's metadata.
 	#[inline]
-	pub fn construct_header(&self) -> PackedGaussiansHeader {
-		PackedGaussiansHeader {
+	pub fn to_header(&self) -> Header {
+		Header {
 			num_points: self.num_points,
 			spherical_harmonics_degree: self.sh_degree as u8,
 			fractional_bits: self.fractional_bits as u8,
 			flags: if self.antialiased {
-				consts::flag::ANTIALIASED
+				crate::header::Flags::ANTIALIASED
 			} else {
-				0
+				crate::header::Flags(0)
 			},
 			reserved: 0,
 			..Default::default()
@@ -214,10 +201,10 @@ impl PackedGaussians {
 	/// Serializes to a complete SPZ file as a byte vector.
 	///
 	/// Returns header followed by all attribute arrays in SPZ order.
-	pub fn as_bytes_vec(&self) -> Result<Vec<u8>> {
+	pub fn to_bytes_vec(&self) -> Result<Vec<u8>> {
 		let mut ret = Vec::new();
 
-		self.construct_header().serialize_to(&mut ret)?;
+		self.to_header().serialize_to(&mut ret)?;
 
 		ret.extend_from_slice(&self.positions);
 		ret.extend_from_slice(&self.alphas);
@@ -234,7 +221,7 @@ impl PackedGaussians {
 	where
 		W: Write,
 	{
-		self.construct_header().serialize_to(stream)?;
+		self.to_header().serialize_to(stream)?;
 
 		stream.write_all(&self.positions)?;
 		stream.write_all(&self.alphas)?;
@@ -246,26 +233,21 @@ impl PackedGaussians {
 		Ok(())
 	}
 
-	/// Returns `true` if positions are stored as float16.
-	#[inline]
-	pub fn uses_float16(&self) -> bool {
-		self.positions.len() == self.num_points as usize * 3 * 2
-	}
-
 	/// Returns the packed data for a single splat at index `i`.
 	pub fn at(&self, i: usize) -> Result<PackedGaussian> {
-		if i >= self.num_points as usize {
+		if unlikely(i >= self.num_points as usize) {
 			bail!("index out of bounds: {}", i);
 		}
+		const POSITION_BYTES: usize = 9;
+
 		let idx = i as usize;
 		let mut result = PackedGaussian::default();
-		let position_bytes = if self.uses_float16() { 6 } else { 9 };
-		let p_start = idx.saturating_mul(position_bytes);
+		let p_start = idx.saturating_mul(POSITION_BYTES);
 
 		if p_start != usize::MAX
-			&& let Some(slice) = self.positions.get(p_start..p_start + position_bytes)
+			&& let Some(slice) = self.positions.get(p_start..p_start + POSITION_BYTES)
 		{
-			result.position[..position_bytes].copy_from_slice(slice);
+			result.position[..POSITION_BYTES].copy_from_slice(slice);
 		}
 		let start3 = idx.saturating_mul(3);
 
@@ -320,7 +302,6 @@ impl PackedGaussians {
 	#[inline]
 	pub fn unpack(&self, i: usize, coord_flip: &AxisFlips) -> Result<UnpackedGaussian> {
 		self.at(i)?.unpack(
-			self.uses_float16(),
 			self.uses_quaternion_smallest_three,
 			self.fractional_bits,
 			coord_flip,
@@ -330,9 +311,9 @@ impl PackedGaussians {
 	/// Validates that all internal arrays have the expected sizes.
 	///
 	/// Returns `true` if sizes match the expected layout for the given
-	/// number of points and SH dimension.
-	pub fn check_sizes(&self, num_points: usize, sh_dim: u8, uses_float16: bool) -> bool {
-		let pos_expected = num_points * 3 * if uses_float16 { 2 } else { 3 };
+	/// number of points and spherical harmonics dimension.
+	pub fn check_sizes(&self, num_points: usize, sh_dim: u8) -> bool {
+		let pos_expected = num_points * 9;
 		let scales_expected = num_points * 3;
 		let rot_expected = num_points
 			* if self.uses_quaternion_smallest_three {
@@ -357,7 +338,7 @@ impl PackedGaussians {
 	}
 }
 
-impl TryFrom<Vec<u8>> for PackedGaussians {
+impl TryFrom<Vec<u8>> for PackedGaussianSplat {
 	type Error = anyhow::Error;
 
 	fn try_from(b: Vec<u8>) -> Result<Self, Self::Error> {
@@ -365,41 +346,32 @@ impl TryFrom<Vec<u8>> for PackedGaussians {
 	}
 }
 
-impl TryFrom<&[u8]> for PackedGaussians {
+impl TryFrom<&[u8]> for PackedGaussianSplat {
 	type Error = anyhow::Error;
 
 	fn try_from(b: &[u8]) -> Result<Self, Self::Error> {
 		let mut from_reader = BufReader::new(b);
 
-		let header = PackedGaussiansHeader::read_from(&mut from_reader)
+		let header = Header::read_from(&mut from_reader)
 			.with_context(|| "unable to read packed gaussians header")?;
 
-		if unlikely(header.magic != consts::HEADER_MAGIC) {
-			bail!("invalid magic number in packed gaussians header");
-		}
-		if unlikely(header.version < 1 || header.version > 3) {
-			bail!("unsupported version: {}", header.version);
-		}
-		if unlikely(header.spherical_harmonics_degree > 3) {
-			bail!(
-				"unsupported spherical harmonics degree: {}",
-				header.spherical_harmonics_degree
-			);
+		if unlikely(!header.is_valid()) {
+			bail!("invalid header");
 		}
 		let num_points = header.num_points;
-		let uses_float16 = header.version == 1;
-		let uses_quaternion_smallest_three = header.version >= 3;
+		let uses_quaternion_smallest_three =
+			is_quaternion_smallest_three_used(header.version);
 
-		let mut result = PackedGaussians {
+		let mut result = PackedGaussianSplat {
 			num_points,
 			sh_degree: header.spherical_harmonics_degree as i32,
 			fractional_bits: header.fractional_bits as i32,
-			antialiased: (header.flags & consts::flag::ANTIALIASED) != 0,
+
+			antialiased: (header.flags.bits()
+				& crate::header::Flags::ANTIALIASED.bits())
+				!= 0,
 			uses_quaternion_smallest_three: uses_quaternion_smallest_three,
-			positions: vec![
-				0;
-				num_points as usize * 3 * if uses_float16 { 2 } else { 3 }
-			],
+			positions: vec![0; num_points as usize * 9],
 			scales: vec![0; (num_points as usize) * 3],
 			rotations: vec![
 				0;
@@ -415,24 +387,37 @@ impl TryFrom<&[u8]> for PackedGaussians {
 						as usize * 3
 			],
 		};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.positions) => {
-			bail!("read error (positions): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.alphas) => {
-			bail!("read error (alphas): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.colors) => {
-			bail!("read error (colors): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.scales) => {
-			bail!("read error (scales): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.rotations) => {
-			bail!("read error (rotations): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) => {
-			bail!("read error (sh): {}", err);
-		}};
+		// for some reason `err` is marked as unused despite being used.
+		#[allow(unused_variables)]
+		{
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.positions) => {
+				bail!("read error (positions): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.alphas) => {
+				bail!("read error (alphas): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.colors) => {
+				bail!("read error (colors): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.scales) => {
+				bail!("read error (scales): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.rotations) => {
+				bail!("read error (rotations): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) => {
+				bail!("read error (spherical harmonics): {}", err);
+			}};
+		}
 		Ok(result)
+	}
+}
+
+/// Returns `true` if _smallest-three quaternion encoding_ is used in the given version.
+#[inline]
+pub fn is_quaternion_smallest_three_used(version: crate::header::Version) -> bool {
+	match version {
+		crate::header::Version::V1 | crate::header::Version::V2 => false,
+		crate::header::Version::V3 => true,
 	}
 }
