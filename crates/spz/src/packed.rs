@@ -367,9 +367,7 @@ impl TryFrom<&[u8]> for PackedGaussianSplat {
 			sh_degree: header.spherical_harmonics_degree as i32,
 			fractional_bits: header.fractional_bits as i32,
 
-			antialiased: (header.flags.bits()
-				& crate::header::Flags::ANTIALIASED.bits())
-				!= 0,
+			antialiased: header.flags.is_antialiased(),
 			uses_quaternion_smallest_three: uses_quaternion_smallest_three,
 			positions: vec![0; num_points as usize * 9],
 			scales: vec![0; (num_points as usize) * 3],
