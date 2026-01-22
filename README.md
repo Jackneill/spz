@@ -195,12 +195,23 @@ pub struct GaussianSplat {
 impl GaussianSplat {
 	// Construction & Loading
 	pub fn builder() -> GaussianSplatBuilder;
-	pub fn load_packed_from_file<F: AsRef<Path>>(filepath: F, opts: &UnpackOptions) -> Result<Self>;
-	pub fn load_packed<D: AsRef<[u8]>>(data: D) -> Result<PackedGaussians>;
+
+	// Load
+	pub async fn load_with_into_buf_async<F: AsRef<Path>>(
+		filepath: F,
+		opts: &LoadOptions,
+		contents: &mut Vec<u8>,
+	) -> Result<Self>;
+	pub async fn load_with_async<F: AsRef<Path>>(filepath: F, opts: &LoadOptions) -> Result<Self>;
+	pub fn load_with<F: AsRef<Path>>(filepath: F, opts: &LoadOptions) -> Result<Self>;
+	pub fn load<F: AsRef<Path>>(filepath: F) -> Result<Self>;
+	pub async fn load_async<F: AsRef<Path>>(filepath: F) -> Result<Self>;
+	// Save
+	pub async fn save_async<F: AsRef<Path>>(&self, filepath: F, opts: &SaveOptions) -> Result<()>;
+	pub fn save<F: AsRef<Path>>(&self, filepath: F, opts: &SaveOptions) -> Result<()>;
+
 	pub fn new_from_packed_gaussians(packed: &PackedGaussians, opts: &UnpackOptions) -> Result<Self>;
 
-	// Serialization
-	pub fn save_as_packed<F: AsRef<Path>>(&self, filepath: F, opts: &PackOptions) -> Result<()>;
 	pub fn serialize_as_packed_bytes(&self, opts: &PackOptions) -> Result<Vec<u8>>;
 	pub fn to_packed_gaussians(&self, opts: &PackOptions) -> Result<PackedGaussians>;
 
