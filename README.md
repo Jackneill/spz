@@ -148,7 +148,6 @@ fn main() -> Result<()> {
 	let gs_cs = GaussianSplat::load_with(
 		sample_spz,
 		&LoadOptions::builder()
-			//
 			.coord_sys(CoordinateSystem::LeftUpFront)
 			.build(),
 	)?;
@@ -283,7 +282,7 @@ impl CoordinateSystem {
 #[repr(C)]
 pub struct Header {
 	pub magic: i32,				// 0x5053474e "NGSP"
-	pub version: i32,			// 3 (this lib only supports spz v3)
+	pub version: i32,			// 2 or 3
 	pub num_points: i32,
 	pub spherical_harmonics_degree: u8,	// 0-3
 	pub fractional_bits: u8,
