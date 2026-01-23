@@ -188,13 +188,13 @@ impl Header {
 			&& self.reserved == 0)
 	}
 
-	/// Reads a header from the given reader.
+	/// Reads a header from the given reader without validation.
 	///
 	/// Consumes exactly [`HEADER_SIZE`] (16 bytes) from the reader and
 	/// interprets them as a header. Does not validate the magic number
 	/// or version, for that use a separate validation if needed.
 	#[inline]
-	pub fn read_from<R>(reader: &mut R) -> Result<Self>
+	pub fn read_from_unchecked<R>(reader: &mut R) -> Result<Self>
 	where
 		R: Read,
 	{
@@ -207,6 +207,24 @@ impl Header {
 			},
 		}
 		Ok(unsafe { std::mem::transmute::<[u8; HEADER_SIZE], Self>(header_buf) })
+	}
+
+	/// Reads a header from the given reader.
+	///
+	/// Consumes exactly [`HEADER_SIZE`] (16 bytes) from the reader and
+	/// interprets them as a header. Does not validate the magic number
+	/// or version, for that use a separate validation if needed.
+	#[inline]
+	pub fn read_from<R>(reader: &mut R) -> Result<Self>
+	where
+		R: Read,
+	{
+		let ret = Self::read_from_unchecked(reader)?;
+
+		if unlikely(!ret.is_valid()) {
+			bail!("header fails validation");
+		}
+		Ok(ret)
 	}
 
 	/// Writes this header to the given writer.
@@ -236,8 +254,8 @@ impl Default for Header {
 			version: Version::V3,
 			num_points: 0,
 			spherical_harmonics_degree: 0,
-			fractional_bits: 0,
-			flags: Flags(0),
+			fractional_bits: 12,
+			flags: Flags::none(),
 			reserved: 0,
 		}
 	}

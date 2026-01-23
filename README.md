@@ -295,7 +295,7 @@ impl CoordinateSystem {
 
 // mod header ──────────────────────────────────────────────────────────────────
 
-/// Fixed-size 16-byte header for SPZ (packed Gaussian splat) files.
+/// 16-byte header.
 #[repr(C)]
 pub struct Header {
 	pub magic: i32,				// 0x5053474e "NGSP"
@@ -309,9 +309,6 @@ pub struct Header {
 }
 
 impl Header {
-	/// DOES NOT validate whether the read header is a valid SPZ header,
-	/// simply reads the bytes and interprets them as a header.
-	pub fn from_file_unchecked<P>(filepath: P) -> Result<Self>;
 	pub fn from_file<P>(filepath: P) -> Result<Self>;
 	/// Reads a header from the given reader.
 	pub fn read_from<R: Read>(reader: &mut R) -> Result<Self>;
