@@ -295,7 +295,7 @@ impl CoordinateSystem {
 
 // mod header ──────────────────────────────────────────────────────────────────
 
-/// 16-byte header.
+/// 16-bytes header.
 #[repr(C)]
 pub struct Header {
 	pub magic: i32,				// 0x5053474e "NGSP"
@@ -309,7 +309,7 @@ pub struct Header {
 }
 
 impl Header {
-	pub fn from_file<P>(filepath: P) -> Result<Self>;
+	pub fn from_file<P: AsRef<Path>>(filepath: P) -> Result<Self>;
 	/// Reads a header from the given reader.
 	pub fn read_from<R: Read>(reader: &mut R) -> Result<Self>;
 	/// Writes this header to the given writer.
