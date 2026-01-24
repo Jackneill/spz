@@ -4,7 +4,12 @@
 
 <h1 align="center">SPZ<span></span></h1>
 
-<div align="center"><b>Rust</b> and <b>Python</b> implementation of the <b>.SPZ</b> file format (v3) and <b>CLI</b> tools.</div>
+<div align="center">
+	<b>Rust</b> implementation of the <b>.SPZ</b> file format (v3) and <b>CLI</b> tools.
+</div>
+<div align="center">
+	<b>Python</b> and <b>C</b> bindings available.
+</div>
 &nbsp;
 <div align="center"><b>WIP</b></div>
 &nbsp;
