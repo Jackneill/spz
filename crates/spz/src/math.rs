@@ -26,27 +26,6 @@ pub fn dim_for_degree(degree: u8) -> u8 {
 	}
 }
 
-pub fn half_to_float(h: u16) -> f32 {
-	let sgn = ((h >> 15) & 0x1) as u32;
-	let exponent = ((h >> 10) & 0x1f) as i32;
-	let mantissa = (h & 0x3ff) as u32;
-	let sign_mul = if sgn == 1 { -1.0_f32 } else { 1.0_f32 };
-
-	if exponent == 0 {
-		return sign_mul * 2_f32.powf(-14.0) * (mantissa as f32) / 1024.0;
-	}
-	if exponent == 31 {
-		return if mantissa == 0 {
-			sign_mul * f32::INFINITY
-		} else {
-			f32::NAN
-		};
-	}
-	let exp = exponent as f32 - 15.0;
-
-	sign_mul * 2_f32.powf(exp) * (1.0 + (mantissa as f32) / 1024.0)
-}
-
 #[inline]
 pub fn unpack_quaternion_first_three(rotation: &mut [f32], r: &[u8]) {
 	unpack_quaternion_first_three_with_flip(rotation, r, [1.0_f32, 1.0_f32, 1.0_f32]);
@@ -211,3 +190,21 @@ pub fn normalize_quaternion(q: &[f32; 4]) -> [f32; 4] {
 pub fn to_u8(x: f32) -> u8 {
 	x.clamp(0.0, 255.0).round() as u8
 }
+/*
+pub fn norm_quat(quat: &ndarray::ArrayView2<f32>) -> [f32; 4] {
+	debug_assert_eq!(quat.len(), 4);
+
+	let norm_sq = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+
+	if norm_sq < f32::EPSILON {
+		return [0.0, 0.0, 0.0, 1.0];
+	}
+	let inv_norm = 1.0 / norm_sq.sqrt();
+	[
+		q[0] * inv_norm,
+		q[1] * inv_norm,
+		q[2] * inv_norm,
+		q[3] * inv_norm,
+	]
+}
+*/

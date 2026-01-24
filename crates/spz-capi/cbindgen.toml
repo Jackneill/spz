@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
 language = "C"
+# REUSE-IgnoreStart
 header = "// SPDX-License-Identifier: Apache-2.0 OR MIT"
+# REUSE-IgnoreEnd
 include_guard = "SPZ_H"
 tab_width = 8
 style = "both"

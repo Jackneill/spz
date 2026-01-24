@@ -2,6 +2,10 @@
 
 version = 3
 SPDX-PackageName = "spz"
-SPDX-PackageSupplier = "SPZ Developers (AUTHORS.md OR .mailmap)"
+SPDX-PackageSupplier = "SPZ Authors (AUTHORS.md OR .mailmap)"
 SPDX-PackageDownloadLocation = "https://github.com/Jackneill/spz"
+
+[[annotations]]
+path = ["**/*"]
+SPDX-FileCopyrightText = "SPZ Authors"
 SPDX-License-Identifier = "Apache-2.0 OR MIT"

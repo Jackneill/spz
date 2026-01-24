@@ -6,7 +6,7 @@ docker := "docker"
 
 app_name := "spz"
 c_crate_name := "spz-capi"
-container_img := "ghcr.io/Jackneill/{{app_name}}"
+container_img_name := "ghcr.io/jackneill/spz"
 
 export RUST_BACKTRACE := "full"
 export DOCKER_BUILDKIT := "1"
@@ -162,15 +162,15 @@ uv-install:
 	[ -x "$(command -v uv)" ] || curl -LsSf https://astral.sh/uv/install.sh | sh
 
 docker-build-image:
-	{{docker}} build -t {{container_img}} .
+	{{docker}} build -t {{container_img_name}} .
 
 docker-build-image-multi-arch:
 	{{docker}} buildx build \
 		--platform linux/amd64,linux/arm64,linux/arm/v6,linux/riscv64 \
-		-t {{container_img}} .
+		-t {{container_img_name}} .
 
 docker-run *args:
-	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{container_img}} {{args}}
+	{{docker}} run --rm -it -v "${PWD}:/app" -w /app {{container_img_name}} {{args}}
 
 py:
 	#!/usr/bin/env bash
@@ -204,4 +204,4 @@ clean:
 	rm -rf ./.flatpak-builder
 	rm -rf ./.ruff_cache
 	# remove image locally
-	{{docker}} rmi {{container_img}}:latest
+	{{docker}} rmi {{container_img_name}}:latest
