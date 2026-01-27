@@ -40,6 +40,7 @@ allow = [
 	"NCSA",
 	"BSD-2-Clause",
 	"CC0-1.0",
+	"ISC",
 ]
 confidence-threshold = 1.0
 exceptions = []
