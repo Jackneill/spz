@@ -1,5 +1,5 @@
 [package]
-name = "spz-capi"
+name = "spz-binding-c"
 version = "0.0.1"
 edition = "2024"
 authors = ["See AUTHORS.md"]

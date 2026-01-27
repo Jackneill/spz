@@ -1,6 +1,12 @@
 [workspace]
-members = ["crates/spz", "crates/spz-pywrapper", "crates/spz-capi", "fuzz"]
-resolver = "2"
+members = [
+	"crates/spz",
+	"crates/spz-binding-python",
+	"crates/spz-binding-c",
+	"crates/bevy_spz",
+	"fuzz",
+]
+resolver = "3"
 
 [profile.release]
 opt-level = 3

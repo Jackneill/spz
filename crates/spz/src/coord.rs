@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use arbitrary::Arbitrary;
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 
 /// Supported 3D coordinate systems for Gaussian splat data.
 ///
@@ -15,7 +16,11 @@ use serde::{Deserialize, Serialize};
 /// and [`SaveOptions`](crate::gaussian_splat::SaveOptions) respectively.
 /// If the coordinate system is `Unspecified`, data will be saved and loaded
 /// without conversion, which may harm interoperability.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
+///
+/// Enum item values follow the original Niantic C++ SPZ values.
+#[derive(
+	EnumIter, Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Arbitrary,
+)]
 pub enum CoordinateSystem {
 	#[default]
 	Unspecified = 0,
@@ -98,34 +103,6 @@ impl From<&str> for CoordinateSystem {
 }
 
 impl CoordinateSystem {
-	/// Returns an iterator over all coordinate system variants.
-	///
-	/// Useful for enumerating supported systems in UI or validation.
-	///
-	/// # Example
-	///
-	/// ```
-	/// use spz::CoordinateSystem;
-	///
-	/// for coord in CoordinateSystem::iter() {
-	///     println!("{}", coord.as_short_str());
-	/// }
-	/// ```
-	pub fn iter() -> impl Iterator<Item = CoordinateSystem> {
-		[
-			CoordinateSystem::Unspecified,
-			CoordinateSystem::LeftDownBack,
-			CoordinateSystem::RightDownBack,
-			CoordinateSystem::LeftUpBack,
-			CoordinateSystem::RightUpBack,
-			CoordinateSystem::LeftDownFront,
-			CoordinateSystem::RightDownFront,
-			CoordinateSystem::LeftUpFront,
-			CoordinateSystem::RightUpFront,
-		]
-		.into_iter()
-	}
-
 	/// Returns a short 3-letter abbreviation for the coordinate system.
 	///
 	/// The abbreviation encodes the axis directions:
@@ -143,7 +120,7 @@ impl CoordinateSystem {
 	/// assert_eq!(CoordinateSystem::RightDownFront.as_short_str(), "RDF");
 	/// assert_eq!(CoordinateSystem::LeftUpFront.as_short_str(), "LUF");
 	/// ```
-	pub fn as_short_str(&self) -> &'static str {
+	pub const fn as_short_str(&self) -> &'static str {
 		match self {
 			CoordinateSystem::LeftDownBack => "LDB",
 			CoordinateSystem::RightDownBack => "RDB",
@@ -180,7 +157,7 @@ impl CoordinateSystem {
 	///     ply_pos[2] * axis_flips.position[2],
 	/// ];
 	/// ```
-	pub fn axis_flips_to(self, target: CoordinateSystem) -> AxisFlips {
+	pub const fn axis_flips_to(self, target: CoordinateSystem) -> AxisFlips {
 		let (x_match, y_match, z_match) = self.axes_align(target);
 
 		let x = if x_match { 1.0_f32 } else { -1.0_f32 };
@@ -231,7 +208,7 @@ impl CoordinateSystem {
 	///
 	/// assert_eq!((x, y, z), (false, true, false));
 	/// ```
-	pub fn axes_align(self, other: CoordinateSystem) -> (bool, bool, bool) {
+	pub const fn axes_align(self, other: CoordinateSystem) -> (bool, bool, bool) {
 		let self_num = self as i8 - 1;
 		let other_num = other as i8 - 1;
 

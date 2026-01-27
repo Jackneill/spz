@@ -29,6 +29,9 @@ clap = { version = "4.5", default-features = true, features = [
 	"env",
 	"unicode",
 	"derive",
+	"color",
+	"error-context",
+	"suggestions",
 ] }
 memmap2 = { version = "0.9", default-features = true, features = [] }
 libc = { version = "0.2", default-features = true, features = [] }
@@ -38,12 +41,14 @@ serde_json = { version = "1.0", default-features = true, features = [
 ] }
 serde = { version = "1.0", default-features = true, features = ["derive"] }
 static_assertions = { version = "1.1", default-features = true, features = [] }
-rayon = { version = "1.11", default-features = true, features = [] }
+#rayon = { version = "1.11", default-features = true, features = [] }
 tokio = { version = "1.49", default-features = true, features = ["full"] }
 likely_stable = { version = "0.1", default-features = true, features = [] }
 arbitrary = { version = "1.4", default-features = true, features = ["derive"] }
 bitflags = { version = "2.10", default-features = true, features = [] }
-ndarray = { version = "0.17", default-features = true, features = [] }
+strum = { version = "0.27", default-features = true, features = ["derive"] }
+ndarray = { version = "0.17", default-features = false, features = [] }
+zerocopy = { version = "0.8", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 criterion = { version = "0.8", default-features = true, features = [

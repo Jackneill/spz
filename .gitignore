@@ -60,19 +60,6 @@ __pycache__/
 # Distribution / packaging
 .Python
 .venv/
-env/
-bin/
-build/
-develop-eggs/
-dist/
-eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-include/
-man/
 venv/
 *.egg-info/
 .installed.cfg
@@ -115,3 +102,5 @@ Cargo.lock
 
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md
+
+/book/dist

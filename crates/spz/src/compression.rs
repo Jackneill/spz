@@ -37,7 +37,7 @@ pub mod gzip {
 
 	/// Decompress gzip-compressed data into the given buffer.
 	#[inline]
-	pub fn decompress_bytes<C, D>(compressed: C, mut decompressed: D) -> Result<()>
+	pub fn decompress_end<C, D>(compressed: C, mut decompressed: D) -> Result<()>
 	where
 		C: AsRef<[u8]>,
 		D: AsMut<Vec<u8>>,
@@ -46,7 +46,23 @@ pub mod gzip {
 
 		gz_decoder
 			.read_to_end(decompressed.as_mut())
-			.with_context(|| "unable to decompress")?;
+			.with_context(|| "unable to decompress to end")?;
+
+		Ok(())
+	}
+
+	/// Decompress gzip-compressed data into the given buffer.
+	#[inline]
+	pub fn decompress<C, D>(compressed: C, mut decompressed: D) -> Result<()>
+	where
+		C: AsRef<[u8]>,
+		D: AsMut<[u8]>,
+	{
+		let mut gz_decoder = GzDecoder::new(compressed.as_ref());
+
+		gz_decoder
+			.read(decompressed.as_mut())
+			.with_context(|| "unable to decompress into the given buffer")?;
 
 		Ok(())
 	}

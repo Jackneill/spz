@@ -5,7 +5,7 @@
 <h1 align="center">SPZ<span></span></h1>
 
 <div align="center">
-	<b>Rust</b> implementation of the <b>.SPZ</b> file format (v3) and <b>CLI</b> tools.
+	<b>Rust</b> implementation of the <b>.SPZ</b> file format and <b>CLI</b> tools.
 </div>
 <div align="center">
 	<b>Python</b> and <b>C</b> bindings available.
@@ -79,6 +79,9 @@
 SPZ is a compressed file format for 3D Gaussian Splats, designed by Niantic.
 It provides efficient storage of Gaussian Splat data with configurable
 spherical harmonics degrees and coordinate system support.
+
+About 10x smaller than the PLY equivalent with virtually no perceptible loss in
+visual quality.
 
 See [docs/SPZ_SPEC_v3.md](docs/SPZ_SPEC_v3.md) for more information.
 

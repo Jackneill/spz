@@ -50,6 +50,33 @@ fn test_empty_gaussian_splat() {
 }
 
 #[rstest]
+#[case("hornedlizard.spz", 786233)]
+#[case("racoonfamily.spz", 932560)]
+fn test_load_header_only(#[case] filename: &str, #[case] num_points: i32) {
+	let spz_path = util::assets_dir().join(filename);
+	let spz_infile = std::fs::read(&spz_path).expect("failed to read file");
+
+	let header = Header::from_compressed_bytes(&spz_infile).expect("failed to load header");
+
+	assert!(header.is_valid());
+	assert_eq!(header.num_points, num_points);
+}
+
+#[rstest]
+#[case("hornedlizard.spz", 786233)]
+#[case("racoonfamily.spz", 932560)]
+fn test_load_header_only_unchecked(#[case] filename: &str, #[case] num_points: i32) {
+	let spz_path = util::assets_dir().join(filename);
+	let spz_infile = std::fs::read(&spz_path).expect("failed to read file");
+
+	let header = Header::from_compressed_bytes_unchecked(&spz_infile)
+		.expect("failed to load header");
+
+	assert!(header.is_valid());
+	assert_eq!(header.num_points, num_points);
+}
+
+#[rstest]
 #[case("hornedlizard.spz")]
 #[case("racoonfamily.spz")]
 fn test_load_packed_bytes(#[case] filename: &str) {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::fmt::Write;
 use std::path::Path;
+use std::{fmt::Write, io::Read};
 
 use anyhow::{Context, Result, bail};
 use arbitrary::Arbitrary;
@@ -100,6 +100,48 @@ impl GaussianSplat {
 			&PackedGaussianSplat::from_bytes(&contents)?,
 			opts,
 		);
+	}
+
+	/// Loads a [`GaussianSplat`] from a file with the given options from
+	/// the reader, async.
+	///
+	/// `from` - gzip compressed, packed gaussian data.
+	/// `opts` - options for loading the splat.
+	#[inline]
+	pub async fn read_from_async<F, R>(mut from: R, opts: &LoadOptions) -> Result<Self>
+	where
+		F: AsRef<Path>,
+		R: AsyncReadExt + Unpin,
+	{
+		let mut contents = Vec::new();
+
+		from.read_to_end(&mut contents).await?;
+
+		let packed = PackedGaussianSplat::from_bytes(&contents)
+			.with_context(|| "unable to parse splat")?;
+
+		Self::new_from_packed_gaussians(&packed, opts)
+	}
+
+	/// Loads a [`GaussianSplat`] from a file with the given options from
+	/// the reader.
+	///
+	/// `from` - gzip compressed, packed gaussian data.
+	/// `opts` - options for loading the splat.
+	#[inline]
+	pub fn read_from<F, R>(mut from: R, opts: &LoadOptions) -> Result<Self>
+	where
+		F: AsRef<Path>,
+		R: Read,
+	{
+		let mut contents = Vec::new();
+
+		from.read_to_end(&mut contents)?;
+
+		let packed = PackedGaussianSplat::from_bytes(&contents)
+			.with_context(|| "unable to parse splat")?;
+
+		Self::new_from_packed_gaussians(&packed, opts)
 	}
 
 	/// Loads a [`GaussianSplat`] from a file with the given options, async.
@@ -642,7 +684,7 @@ impl GaussianSplat {
 		}
 	}
 
-	pub fn pretty_print(&self) -> String {
+	pub fn pretty_fmt(&self) -> String {
 		let bbox = self.bbox();
 		let (size_x, size_y, size_z) = bbox.size();
 		let (center_x, center_y, center_z) = bbox.center();
@@ -663,22 +705,22 @@ impl GaussianSplat {
 		);
 		let _ = write!(
 			ret,
-			"\tMedian ellipsoid volume:\t{:.6}\n",
+			"\tMedian ellipsoid volume:\t{:}\n",
 			self.median_volume()
 		);
 		let _ = write!(
 			ret,
-			"\tBounding box:\n\t\tx: {:.6} to {:.6} (size {:.6}, center {:.6})\n",
+			"\tBounding box:\n\t\tx: {:} to {:} (size {:}, center {:})\n",
 			bbox.min_x, bbox.max_x, size_x, center_x
 		);
 		let _ = write!(
 			ret,
-			"\t\ty: {:.6} to {:.6} (size {:.6}, center {:.6})\n",
+			"\t\ty: {:} to {:} (size {:}, center {:})\n",
 			bbox.min_y, bbox.max_y, size_y, center_y
 		);
 		let _ = write!(
 			ret,
-			"\t\tz: {:.6} to {:.6} (size {:.6}, center {:.6})\n",
+			"\t\tz: {:} to {:} (size {:}, center {:})\n",
 			bbox.min_z, bbox.max_z, size_z, center_z
 		);
 		ret
@@ -690,10 +732,8 @@ impl std::fmt::Display for GaussianSplat {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		let _ = write!(
 			f,
-			"GaussianSplat={{num_points={}, sh_degree={}, antialiased={}, median_ellipsoid_volume={}, ",
-			self.header.num_points,
-			self.header.spherical_harmonics_degree,
-			self.header.flags.is_antialiased(),
+			"GaussianSplat={{{}, {}, ",
+			self.header,
 			self.median_volume()
 		);
 		let BoundingBox {

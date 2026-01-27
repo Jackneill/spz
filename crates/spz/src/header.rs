@@ -1,46 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-//! SPZ file header parsing and serialization.
-//!
-//! This module provides the [`PackedGaussiansHeader`] struct for reading and
-//! writing the 16-byte header that prefixes every SPZ file. The header contains
-//! essential metadata for decoding the compressed Gaussian splat data.
-//!
-//! # File Format
-//!
-//! SPZ files begin with a fixed 16-byte header followed by compressed splat data.
-//! The header uses little-endian (LE) byte order that can be directly memory-mapped
-//! due to its `#[repr(C)]` layout.
-//!
-//! # Example
-//!
-//! ```no_run
-//! use std::fs::File;
-//! use spz::header::{PackedGaussiansHeader, HEADER_SIZE};
-//!
-//! // Read header from file
-//! let mut file = File::open("scene.spz").unwrap();
-//! let header = PackedGaussiansHeader::read_from(&mut file).unwrap();
-//!
-//! // Create and write a new header
-//! let header = PackedGaussiansHeader::default();
-//! let mut output = File::create("output.spz").unwrap();
-//!
-//! header.serialize_to(&mut output).unwrap();
-//! ```
+use std::io::Write;
+use std::{fmt::Display, io::Read, path::Path};
 
-use std::{
-	fmt::Display,
-	io::{Read, Write},
-	path::Path,
-};
-
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Error, Result, bail};
 use arbitrary::Arbitrary;
 use bitflags::bitflags;
 use likely_stable::{likely, unlikely};
 use serde::{Deserialize, Serialize};
+use zerocopy::{FromBytes, IntoBytes, KnownLayout, TryFromBytes};
 
+use crate::compression;
 use crate::mmap::mmap_range;
 
 /// Header Magic Value. "NGSP" in little-endian (LE).
@@ -48,12 +18,26 @@ use crate::mmap::mmap_range;
 pub const MAGIC_VALUE: i32 = 0x5053474e;
 
 /// A bit field containing flags for SPZ files.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Arbitrary)]
+#[derive(
+	Debug,
+	Default,
+	Clone,
+	Copy,
+	PartialEq,
+	Eq,
+	Hash,
+	Serialize,
+	Deserialize,
+	Arbitrary,
+	FromBytes,
+	IntoBytes,
+	KnownLayout,
+)]
 pub struct Flags(pub u8);
 
 bitflags! {
 	impl Flags: u8 {
-		/// Whether the splat was trained with antialiasing.
+		/// Whether the Gaussian Splat was trained with `antialiasing`.
 		const ANTIALIASED = 0x1;
 	}
 }
@@ -61,63 +45,102 @@ bitflags! {
 impl Flags {
 	/// Returns a new Flags with no flags set.
 	#[inline]
-	pub fn none() -> Self {
+	pub const fn none() -> Self {
 		Self(0)
 	}
 
 	/// Checks if the antialiased flag is set.
 	#[inline]
-	pub fn is_antialiased(&self) -> bool {
+	pub const fn is_antialiased(&self) -> bool {
 		self.contains(Flags::ANTIALIASED)
+	}
+
+	/// Validates that only known/defined flags are set.
+	#[inline]
+	pub fn is_valid(&self) -> bool {
+		// currently, only bit 0 is defined as is_antialiased
+		(self.0 & !Flags::ANTIALIASED.bits()) == 0
 	}
 }
 
 /// SPZ versions.
 /// Currently, the only valid versions are v2 and v3.
 /// This crate currently only supports version `v3`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Arbitrary)]
+#[derive(
+	Debug,
+	Clone,
+	Default,
+	Copy,
+	PartialEq,
+	Eq,
+	Hash,
+	Serialize,
+	Deserialize,
+	Arbitrary,
+	TryFromBytes,
+	IntoBytes,
+	KnownLayout,
+)]
 #[repr(i32)]
 pub enum Version {
 	/// Version 1 of the SPZ file format. Unsupported.
 	V1 = 1,
 
-	/// Version 2 of the SPZ file format. Unsupported.
+	/// Version 2 of the SPZ file format. **Supported** by this crate.
 	V2 = 2,
 
 	/// Version 3 of the SPZ file format. **Supported** by this crate.
+	#[default]
 	V3 = 3,
 }
 
 impl Display for Version {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			Version::V1 => write!(f, "1"),
-			Version::V2 => write!(f, "2"),
-			Version::V3 => write!(f, "3"),
+			Version::V1 => write!(f, "v1"),
+			Version::V2 => write!(f, "v2"),
+			Version::V3 => write!(f, "v3"),
 		}
 	}
 }
 
-static_assertions::const_assert_eq!(HEADER_SIZE, 16);
+/// Enough bytes to decompress the first 16 bytes of the spz file, the header.
+const COMPRESSED_BLOCK_READ_SIZE: u16 = 512;
+
+// Asserts that the size of the `Header` struct is 16 bytes (by specification)
+// at compile time.
+static_assertions::const_assert_eq!(16, HEADER_SIZE);
 
 /// Size of the SPZ header in bytes (16).
 pub const HEADER_SIZE: usize = std::mem::size_of::<Header>();
 
 /// Fixed-size 16-byte header for SPZ (Gaussian Splat) files.
 ///
-/// This header appears at the start of every SPZ file and contains metadata
-/// needed to decode the compressed Gaussian Splat data that follows. The
-/// struct uses repr C for direct memory-mapped reading/writing.
+/// This header appears at the start of every SPZ file (uncompressed) and
+/// contains metadata needed to decode the Gaussian Splat data that follows.
+/// `repr C` is used for direct memory-mapped reading/writing.
 ///
 /// See also [`GaussianSplat`](crate::gaussian_splat::GaussianSplat) for the
-/// full splat data structure.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Arbitrary)]
+/// full Gaussian Splat data structure.
+#[derive(
+	Clone,
+	Copy,
+	Debug,
+	PartialEq,
+	Eq,
+	Serialize,
+	Deserialize,
+	Arbitrary,
+	TryFromBytes,
+	IntoBytes,
+	KnownLayout,
+)]
 #[repr(C)]
 pub struct Header {
 	/// Always `0x5053474e`. "NGSP" = Niantic Gaussian SPlat.
 	pub magic: i32,
 	/// Currently, the only valid versions are v2 and v3.
-	/// This crate only supports version `v3`.
+	/// This crate supports version `v2` and `v3`.
 	pub version: Version,
 	/// The number of gaussians.
 	pub num_points: i32,
@@ -135,30 +158,73 @@ pub struct Header {
 }
 
 impl Header {
+	/// Decompresses and reads a header from the given compressed bytes.
+	///
+	/// Does NOT validate whether the read header is a valid SPZ header,
+	/// simply reads the bytes and interprets them as a header.
+	#[inline]
+	pub fn from_compressed_bytes_unchecked<C>(compressed: C) -> Result<Self>
+	where
+		C: AsRef<[u8]>,
+	{
+		let mut decompressed = [0_u8; COMPRESSED_BLOCK_READ_SIZE as usize];
+
+		compression::gzip::decompress(compressed, &mut decompressed)
+			.with_context(|| "unable to decompress header bytes")?;
+
+		decompressed[..HEADER_SIZE]
+			.try_into()
+			.with_context(|| "unable to read header")
+	}
+
+	/// Decompresses and reads a header from the given compressed bytes.
+	#[inline]
+	pub fn from_compressed_bytes<C>(compressed: C) -> Result<Self>
+	where
+		C: AsRef<[u8]>,
+	{
+		let header = Self::from_compressed_bytes_unchecked(compressed)?;
+
+		if unlikely(!header.is_valid()) {
+			bail!("header fails validation");
+		}
+		Ok(header)
+	}
+
 	/// Reads a header directly from a file path using memory mapping.
 	///
-	/// Memory-maps the file and reads the 1st 16 bytes as a header.
 	/// Efficient for quickly inspecting SPZ file metadata without
 	/// reading the entire file.
 	///
-	/// DOES NOT validate whether the read header is a valid SPZ header,
+	/// Does NOT validate whether the read header is a valid SPZ header,
 	/// simply reads the bytes and interprets them as a header.
 	#[inline]
-	pub fn from_file_unchecked<P>(filepath: P) -> Result<Self>
+	pub fn from_file_unchecked<P>(spz_path: P) -> Result<Self>
 	where
 		P: AsRef<Path>,
 	{
-		let mmap = mmap_range(&filepath, 0, HEADER_SIZE)
-			.with_context(|| "unable to memory-map file header range")?;
+		if cfg!(target_os = "macos") {
+			// mmap on macos isn't great according to ripgrep code
+			let mut input = std::fs::File::open(&spz_path)?;
+			let mut buf = [0_u8; COMPRESSED_BLOCK_READ_SIZE as usize];
 
-		if unlikely(mmap.len() != HEADER_SIZE) {
-			bail!(
-				"files is of invalid length, expected {} bytes, got {}",
-				HEADER_SIZE,
-				mmap.len()
-			);
+			input.read_exact(&mut buf)?;
+
+			Self::from_compressed_bytes_unchecked(&buf)
+				.with_context(|| "unable to decompress and parse SPZ header")
+		} else {
+			let mmap = mmap_range(&spz_path, 0, COMPRESSED_BLOCK_READ_SIZE as usize)
+				.with_context(|| "unable to memory-map file header range")?;
+
+			if unlikely(mmap.as_ref().len() != COMPRESSED_BLOCK_READ_SIZE as usize) {
+				bail!(
+					"unable to mmap expected length, expected {} bytes, got {}",
+					COMPRESSED_BLOCK_READ_SIZE,
+					mmap.as_ref().len()
+				);
+			}
+			Self::from_compressed_bytes_unchecked(mmap.as_ref())
 		}
-		Ok(mmap.as_ref().into())
 	}
 
 	/// Reads a header directly from a file path using memory mapping.
@@ -167,25 +233,16 @@ impl Header {
 	/// Efficient for quickly inspecting SPZ file metadata without
 	/// reading the entire file.
 	#[inline]
-	pub fn from_file<P>(filepath: P) -> Result<Self>
+	pub fn from_file<P>(spz_path: P) -> Result<Self>
 	where
 		P: AsRef<Path>,
 	{
-		let ret = Self::from_file_unchecked(filepath)?;
+		let ret = Self::from_file_unchecked(spz_path)?;
 
 		if unlikely(!ret.is_valid()) {
 			bail!("header fails validation");
 		}
 		Ok(ret)
-	}
-
-	/// Does some basic validation of this header.
-	#[inline]
-	pub fn is_valid(&self) -> bool {
-		likely(self.magic == MAGIC_VALUE
-			&& matches!(self.version, Version::V2 | Version::V3)
-			&& (0..=3).contains(&self.spherical_harmonics_degree)
-			&& self.reserved == 0)
 	}
 
 	/// Reads a header from the given reader without validation.
@@ -198,15 +255,11 @@ impl Header {
 	where
 		R: Read,
 	{
-		let mut header_buf: [u8; HEADER_SIZE] = [0; HEADER_SIZE];
+		let mut header_buf = [0; HEADER_SIZE];
 
-		match reader.read_exact(&mut header_buf) {
-			Ok(_) => {},
-			Err(err) => {
-				bail!(err);
-			},
-		}
-		Ok(unsafe { std::mem::transmute::<[u8; HEADER_SIZE], Self>(header_buf) })
+		reader.read_exact(&mut header_buf)?;
+
+		header_buf.try_into()
 	}
 
 	/// Reads a header from the given reader.
@@ -227,7 +280,7 @@ impl Header {
 		Ok(ret)
 	}
 
-	/// Writes this header to the given writer.
+	/// Writes this header to the given `stream`.
 	///
 	/// Writes exactly [`HEADER_SIZE`] (16 bytes) in the binary format
 	/// expected by SPZ readers.
@@ -236,13 +289,58 @@ impl Header {
 	where
 		W: Write,
 	{
-		let b = unsafe { std::mem::transmute::<Self, [u8; HEADER_SIZE]>(self.clone()) };
+		let b = unsafe { &*(self as *const Self as *const [u8; HEADER_SIZE]) };
 
-		stream.write_all(b.as_slice())
-			.with_context(|| "unable to write header to stream")?;
+		let n = stream.write(b)?;
+
+		debug_assert_eq!(n, HEADER_SIZE);
 
 		stream.flush()
-			.with_context(|| "unable to flush header to stream")
+			.with_context(|| "header serialization: unable to flush stream")
+	}
+
+	/// Does some basic validation of this header.
+	#[inline]
+	pub fn is_valid(&self) -> bool {
+		likely(self.magic == MAGIC_VALUE
+			&& matches!(self.version, Version::V2 | Version::V3)
+			&& (0..=3).contains(&self.spherical_harmonics_degree)
+			&& self.num_points >= 0
+			&& self.flags.is_valid()
+			&& self.reserved == 0)
+	}
+
+	pub fn pretty_fmt(&self) -> String {
+		use std::fmt::Write;
+
+		let mut ret = String::new();
+
+		let _ = write!(ret, "GaussianSplat Header:\n");
+		let _ = write!(ret, "\tNumber of points:\t\t{}\n", self.num_points);
+		let _ = write!(
+			ret,
+			"\tSpherical harmonics degree:\t{}\n",
+			self.spherical_harmonics_degree
+		);
+		let _ = write!(ret, "\tAntialiased:\t\t\t{}\n", self.flags.is_antialiased());
+
+		ret
+	}
+}
+
+impl std::fmt::Display for Header {
+	#[inline]
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let _ = write!(
+			f,
+			"Header={{ver={}, n_pts={}, sh_deg={}, fractional_bits={}, antialiased={}}}",
+			self.version,
+			self.num_points,
+			self.spherical_harmonics_degree,
+			self.fractional_bits,
+			self.flags.is_antialiased(),
+		);
+		Ok(())
 	}
 }
 
@@ -268,25 +366,183 @@ impl From<Header> for [u8; 16] {
 	}
 }
 
-impl From<Header> for &[u8] {
+impl TryFrom<[u8; 16]> for Header {
+	type Error = Error;
+
 	#[inline]
-	fn from(from: Header) -> Self {
-		unsafe { std::mem::transmute::<Header, Self>(from) }
+	fn try_from(from: [u8; 16]) -> Result<Self> {
+		let header = unsafe { std::mem::transmute::<[u8; 16], Self>(from) };
+
+		if unlikely(!header.is_valid()) {
+			bail!("header fails validation");
+		}
+		Ok(header)
 	}
 }
 
-impl From<[u8; 16]> for Header {
+impl TryFrom<&[u8]> for Header {
+	type Error = Error;
+
+	/// Tries to convert the 1st 16 bytes of the given byte slice into a
+	/// [`Header`].
 	#[inline]
-	fn from(from: [u8; 16]) -> Self {
-		unsafe { std::mem::transmute::<[u8; 16], Self>(from) }
+	fn try_from(from: &[u8]) -> Result<Self> {
+		if unlikely(from.len() < HEADER_SIZE) {
+			bail!(
+				"invalid slice length for Header conversion: expected at least 16 bytes, got {} bytes",
+				from.len()
+			);
+		}
+		let header = unsafe {
+			std::mem::transmute::<[u8; 16], Self>(from[..HEADER_SIZE].try_into()?)
+		};
+		if unlikely(!header.is_valid()) {
+			bail!("header fails validation");
+		}
+		Ok(header)
 	}
 }
 
-impl From<&[u8]> for Header {
-	#[inline]
-	fn from(from: &[u8]) -> Self {
-		debug_assert_eq!(from.len(), HEADER_SIZE);
+#[cfg(test)]
+mod tests {
+	use rstest::rstest;
 
-		unsafe { std::mem::transmute::<&[u8], Self>(from) }
+	use super::*;
+
+	#[rstest]
+	#[case(Version::V3, 12345, 2, 12, Flags::ANTIALIASED)]
+	#[case(Version::V2, 0, 0, 0, Flags::none())]
+	#[case(Version::V3, i32::MAX, 3, 24, Flags::none())]
+	#[case(Version::V2, 1, 1, 1, Flags::ANTIALIASED)]
+	fn test_header_from_array_roundtrip(
+		#[case] version: Version,
+		#[case] num_points: i32,
+		#[case] spherical_harmonics_degree: u8,
+		#[case] fractional_bits: u8,
+		#[case] flags: Flags,
+	) {
+		let header = Header {
+			magic: MAGIC_VALUE,
+			version,
+			num_points,
+			spherical_harmonics_degree,
+			fractional_bits,
+			flags,
+			..Default::default()
+		};
+		let bytes: [u8; 16] = header.try_into().expect("should convert");
+		let recovered: Header = bytes.try_into().expect("should convert");
+
+		assert_eq!(recovered.magic, MAGIC_VALUE);
+		assert_eq!(recovered.version, version);
+		assert_eq!(recovered.num_points, num_points);
+		assert_eq!(
+			recovered.spherical_harmonics_degree,
+			spherical_harmonics_degree
+		);
+		assert_eq!(recovered.fractional_bits, fractional_bits);
+		assert_eq!(recovered.flags, flags);
+		assert_eq!(recovered.reserved, 0);
+	}
+
+	#[rstest]
+	#[case(Version::V3, 500, 1, 8)]
+	#[case(Version::V2, 1000, 2, 16)]
+	#[case(Version::V3, 0, 0, 12)]
+	fn test_header_try_from_slice_success(
+		#[case] version: Version,
+		#[case] num_points: i32,
+		#[case] spherical_harmonics_degree: u8,
+		#[case] fractional_bits: u8,
+	) {
+		let header = Header {
+			magic: MAGIC_VALUE,
+			version,
+			num_points,
+			spherical_harmonics_degree,
+			fractional_bits,
+			flags: Flags::none(),
+			..Default::default()
+		};
+		let bytes: [u8; 16] = header.try_into().expect("should convert");
+		let recovered = Header::try_from(bytes.as_slice()).expect("should parse");
+
+		assert_eq!(recovered.magic, MAGIC_VALUE);
+		assert_eq!(recovered.version, version);
+		assert_eq!(recovered.num_points, num_points);
+		assert_eq!(
+			recovered.spherical_harmonics_degree,
+			spherical_harmonics_degree
+		);
+	}
+
+	#[rstest]
+	#[case(100)]
+	#[case(1000)]
+	fn test_header_try_from_slice_with_extra_bytes(#[case] extra_bytes: usize) {
+		let header = Header {
+			magic: MAGIC_VALUE,
+			version: Version::V2,
+			num_points: 999,
+			spherical_harmonics_degree: 3,
+			fractional_bits: 16,
+			flags: Flags::none(),
+			..Default::default()
+		};
+		let bytes: [u8; 16] = header.try_into().expect("should convert");
+		let mut extended = bytes.to_vec();
+
+		extended.extend_from_slice(&vec![0xAB; extra_bytes]);
+
+		let recovered = Header::try_from(extended.as_slice()).expect("should parse");
+
+		assert_eq!(recovered.magic, MAGIC_VALUE);
+		assert_eq!(recovered.num_points, 999);
+	}
+
+	#[rstest]
+	#[case(&[0_u8; 15], "expected at least 16 bytes")] // one byte short
+	#[case(&[0_u8; 0], "expected at least 16 bytes")] // empty
+	#[case(&[0_u8; 8], "expected at least 16 bytes")] // half size
+	fn test_header_try_from_slice_errors(#[case] slice: &[u8], #[case] expected_err: &str) {
+		let result = Header::try_from(slice);
+
+		assert!(result.is_err());
+
+		let err_msg = result.unwrap_err().to_string();
+
+		assert!(
+			err_msg.contains(expected_err),
+			"expected '{}' in '{}'",
+			expected_err,
+			err_msg
+		);
+	}
+
+	#[rstest]
+	#[case(MAGIC_VALUE, Version::V3, 2, 0, true)]
+	#[case(MAGIC_VALUE, Version::V2, 0, 0, true)]
+	#[case(MAGIC_VALUE, Version::V3, 3, 0, true)]
+	#[case(0x12345678, Version::V3, 2, 0, false)] // invalid magic
+	#[case(MAGIC_VALUE, Version::V1, 2, 0, false)] // invalid version
+	#[case(MAGIC_VALUE, Version::V3, 4, 0, false)] // invalid sh degree
+	#[case(MAGIC_VALUE, Version::V3, 2, 1, false)] // invalid reserved
+	fn test_header_is_valid(
+		#[case] magic: i32,
+		#[case] version: Version,
+		#[case] sh_degree: u8,
+		#[case] reserved: u8,
+		#[case] expected_valid: bool,
+	) {
+		let header = Header {
+			magic,
+			version,
+			num_points: 100,
+			spherical_harmonics_degree: sh_degree,
+			fractional_bits: 12,
+			flags: Flags::none(),
+			reserved,
+		};
+		assert_eq!(header.is_valid(), expected_valid);
 	}
 }

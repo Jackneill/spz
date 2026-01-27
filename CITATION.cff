@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+title: SPZ
+version: 0.0.7
+message: Please cite this crate using these information.
+type: software
+date-released: 2026-01-26
+abstract: SPZ file format handling in Rust, and CLI tooling.
+authors:
+  #- alias:
+  #  family-names:
+  #  given-names:
+  - name: The SPZ Authors
+    affiliation: "See repository (AUTHORS.md) for full list of contributors"
+    #orcid:
+license:
+  - Apache-2.0
+  - MIT
+repository-artifact: https://crates.io/crates/spz
+repository-code: https://github.com/Jackneill/spz
+url: https://docs.rs/spz
+
+keywords:
+  - spz
+  - point clouds
+  - conversion
+  - processing
+  - gaussian splat
+  - efficient storage

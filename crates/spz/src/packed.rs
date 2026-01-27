@@ -171,7 +171,7 @@ impl PackedGaussianSplat {
 		}
 		let mut decompressed = Vec::<u8>::new();
 
-		crate::compression::gzip::decompress_bytes(bytes, &mut decompressed)
+		crate::compression::gzip::decompress_end(bytes, &mut decompressed)
 			.with_context(|| "unable to decompress gzip data")?;
 
 		let packed: Self = decompressed

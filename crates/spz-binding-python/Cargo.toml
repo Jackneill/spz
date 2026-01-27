@@ -1,5 +1,5 @@
 [package]
-name = "spz-pywrapper"
+name = "spz-binding-python"
 version = "0.0.1"
 edition = "2024"
 authors = ["See AUTHORS.md"]
@@ -34,6 +34,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 spz = { path = "../spz", default-features = false, features = [] }
+
 pyo3 = { version = "0.27", default-features = true, features = [] }
 numpy = { version = "0.27", default-features = true, features = [] }
 
