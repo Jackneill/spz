@@ -39,6 +39,7 @@ allow = [
 	"Apache-2.0 WITH LLVM-exception",
 	"NCSA",
 	"BSD-2-Clause",
+	"CC0-1.0",
 ]
 confidence-threshold = 1.0
 exceptions = []
