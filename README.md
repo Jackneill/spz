@@ -57,8 +57,8 @@
 		<img alt="FOSSA Security" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=security"/>
 	</a>
 	<br>
-	<a href="https://github.com/Jackneill/spz" target="_blank">
-		<img alt="Python Version from PEP 621 TOML" src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FJackneill%2Fspz%2Frefs%2Fheads%2Fmain%2Fcrates%2Fspz-pywrapper%2Fpyproject.toml&style=for-the-badge&link=https%3A%2F%2Fgithub.com%2FJackneill%2Fspz">
+	<a href="https://pypi.org/project/spz/" target="_blank">
+		<img alt="Python Version from PEP 621 TOML" src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fgithub.com%2FJackneill%2Fspz%2Fblob%2Fmain%2Fcrates%2Fspz-binding-python%2Fpyproject.toml&style=for-the-badge&link=https%3A%2F%2Fpypi.org%2Fproject%2Fspz%2F">
 	</a>
 	<a href="https://pypi.org/project/spz/" target="_blank">
 		<img alt="PyPI - Wheel" src="https://img.shields.io/pypi/wheel/spz?style=for-the-badge&link=https%3A%2F%2Fpypi.org%2Fproject%2Fspz%2F">
@@ -71,7 +71,6 @@
 	<a href="https://snapcraft.io/spz" target="_blank">
 		<img width="160" alt="Get it on Snapcraft Store" src="./assets/images/snap_badge.svg"/>
 	</a>
-
 </p>
 
 ## What is SPZ?
