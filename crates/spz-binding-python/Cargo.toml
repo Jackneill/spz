@@ -19,8 +19,9 @@ keywords = [
 categories = [
 	"graphics",
 	"game-development",
-	"rendering",
+	"parsing",
 	"rendering::data-formats",
+	"api-bindings",
 ]
 publish = false
 

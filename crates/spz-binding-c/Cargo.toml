@@ -12,8 +12,9 @@ keywords = ["gaussian-splatting", "point-cloud", "3d", "graphics", "rendering"]
 categories = [
 	"graphics",
 	"game-development",
-	"rendering",
+	"parsing",
 	"rendering::data-formats",
+	"api-bindings",
 ]
 publish = false
 

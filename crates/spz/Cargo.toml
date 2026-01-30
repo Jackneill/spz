@@ -14,6 +14,7 @@ categories = [
 	"game-development",
 	"rendering",
 	"rendering::data-formats",
+	"parsing",
 ]
 publish = true
 

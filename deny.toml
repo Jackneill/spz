@@ -33,6 +33,7 @@ allow = [
 	# [possible values: any SPDX 3.11 short identifier (+ optional exception)].
 	"Apache-2.0",
 	"MIT",
+	"MIT-0",
 	"Unicode-3.0",
 	"MPL-2.0",
 	"Zlib",
