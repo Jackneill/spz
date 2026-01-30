@@ -177,8 +177,6 @@ fn main() -> Result<()> {
 
 // mod gaussian_splat ──────────────────────────────────────────────────────────
 
-pub struct GaussianSplatBuilder { /* ... */ }
-
 impl GaussianSplatBuilder {
 	pub fn packed(self, packed: bool) -> Result<Self>;
 	pub fn load_options(self, opts: LoadOptions) -> Self;
@@ -233,33 +231,9 @@ impl GaussianSplat {
 	pub fn check_sizes(&self) -> bool;
 }
 
-pub struct LoadOptions {
-	pub coord_sys: CoordinateSystem,
-}
-
-impl LoadOptions {
-	pub fn builder() -> LoadOptionsBuilder;
-}
-
-pub struct LoadOptionsBuilder {
-	coord_sys: CoordinateSystem,
-}
-
 impl LoadOptionsBuilder {
 	pub fn coord_sys(mut self, coord_sys: CoordinateSystem) -> Self;
 	pub fn build(self) -> LoadOptions;
-}
-
-pub struct SaveOptions {
-	pub coord_sys: CoordinateSystem,
-}
-
-impl SaveOptions {
-	pub fn builder() -> SaveOptionsBuilder;
-}
-
-pub struct SaveOptionsBuilder {
-	coord_sys: CoordinateSystem,
 }
 
 impl SaveOptionsBuilder {
@@ -293,37 +267,31 @@ pub enum CoordinateSystem {
 	/* RUF */ RightUpFront = 8,	// Unity coordinate system
 }
 
-impl CoordinateSystem {
-	/// Returns a short 3-letter abbreviation for the coordinate system.
-	pub fn as_short_str(&self) -> &'static str;
-	/// Returns an iterator over all coordinate system variants.
-	pub fn iter() -> impl Iterator<Item = CoordinateSystem>;
-}
-
 // mod header ──────────────────────────────────────────────────────────────────
 
 /// 16-bytes header.
 #[repr(C)]
 pub struct Header {
 	pub magic: i32,				// 0x5053474e "NGSP"
-	pub version: i32,			// 2 or 3
+	pub version: Version,			// 2 or 3
 	pub num_points: i32,
 	pub spherical_harmonics_degree: u8,	// 0-3
-	pub fractional_bits: u8,
+	pub fractional_bits: u8,		// 12 by default
 	// Currently there is only 1 flag: 0x1 = antialiased
-	pub flags: u8,
+	pub flags: Flags,
 	pub reserved: u8,			// Must be `0`.
 }
 
 impl Header {
+	pub fn from_compressed_bytes<C: AsRef<[u8]>>(compressed: C) -> Result<Self>;
 	pub fn from_file<P: AsRef<Path>>(filepath: P) -> Result<Self>;
-	/// Reads a header from the given reader.
 	pub fn read_from<R: Read>(reader: &mut R) -> Result<Self>;
-	/// Writes this header to the given writer.
 	pub fn serialize_to<W: Write>(&self, writer: &mut W) -> Result<()>;
-	/// Does some basic validation of this header.
 	pub fn is_valid(&self) -> bool;
 }
+impl From<Header> for [u8; 16];
+impl TryFrom<[u8; 16]> for Header;
+impl TryFrom<&[u8]> for Header;
 ```
 
 ## Tests
