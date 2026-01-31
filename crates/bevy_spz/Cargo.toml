@@ -30,7 +30,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 spz = { path = "../spz", default-features = false, features = [] }
 
-bevy = { version = "0.17", default-features = false, features = [
+bevy = { version = "0.18", default-features = false, features = [
 	"bevy_asset",
 	"bevy_render",
 ] }
