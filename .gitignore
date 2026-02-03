@@ -22,7 +22,7 @@ node_modules
 dist/*
 dist-ssr
 *.local
-
+.jj
 .codacy
 
 /.ruff_cache
