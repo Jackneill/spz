@@ -5,7 +5,7 @@ cargo := "cargo"
 docker := "docker"
 
 app_name := "spz"
-c_crate_name := "spz-capi"
+c_binding_crate_name := "spz-bindings-c"
 container_img_name := "ghcr.io/jackneill/spz"
 
 export RUST_BACKTRACE := "full"
@@ -101,13 +101,13 @@ build-native:
 
 cinstall:
 	{{cargo}} cinstall \
-		--path crates/{{c_crate_name}} \
+		--path crates/{{c_binding_crate_name}} \
 		--destdir=./target/lib{{app_name}} \
 		--prefix=/usr \
 		--libdir=/usr/lib64
 
 cbuild:
-	{{cargo}} build -p {{c_crate_name}}
+	{{cargo}} build -p {{c_binding_crate_name}}
 	{{cargo}} cbuild --destdir=./target/lib{{app_name}} \
 		--prefix=/usr \
 		--libdir=/usr/lib64

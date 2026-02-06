@@ -3,6 +3,7 @@ members = [
 	"crates/spz",
 	"crates/spz-binding-python",
 	"crates/spz-binding-c",
+	"crates/spz-capnproto-rust",
 	"crates/bevy_spz",
 	"fuzz",
 ]
