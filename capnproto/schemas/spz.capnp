@@ -34,7 +34,7 @@ struct Header {
 
 	# Bit flags containing metadata like antialiasing.
 	#
-	# Bit 0 (0x1): Antialiased (1 if trained with antialiasing, 0 otherwise)
+	# - `0x1`: Antialiased (1 if trained with antialiasing, 0 otherwise)
 	flags @4 :UInt8;
 }
 
