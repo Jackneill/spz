@@ -59,8 +59,6 @@ enum Version {
 }
 
 # Bit flags for SPZ metadata.
-#
-# Currently only one flag is defined.
 struct Flags {
 	# Whether the Gaussian Splat was trained with `antialiasing`.
 	antialiased @0 :Bool;
