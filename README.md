@@ -423,7 +423,7 @@ with spz.modified_splat("scene.spz", "scene_converted.spz") as splat:
 
 ## C Bindings
 
-* Documentation for the C bindings can be found in [`./crates/spz-capi/README.md`](./crates/spz-capi/README.md).
+* Documentation for the C bindings can be found in [`./crates/spz-binding-c/README.md`](./crates/spz-capi/README.md).
 
 ## Documentation
 

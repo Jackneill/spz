@@ -59,21 +59,21 @@ python-source = "pypkg"
 # (uses `profile` if this key is not set)
 #editable-profile = "release"
 # Activate all available features
-all-features = false
+#all-features = false
 # Do not activate the `default` feature
-no-default-features = false
+#no-default-features = false
 # Cargo manifest path
-manifest-path = "Cargo.toml"
+#manifest-path = "Cargo.toml"
 # Require Cargo.lock and cache are up to date
-frozen = false
+#frozen = false
 # Require Cargo.lock is up to date
-locked = false
+#locked = false
 # Override a configuration value (unstable)
-config = []
+#config = []
 # Unstable (nightly-only) flags to Cargo, see 'cargo -Z help' for details
-unstable-flags = []
+#unstable-flags = []
 # Extra arguments that will be passed to rustc as `cargo rustc [...] -- [...] [arg1] [arg2]`
-rustc-args = []
+#rustc-args = []
 
 [dependency-groups]
 dev = ["maturin>=1.10.2"]
