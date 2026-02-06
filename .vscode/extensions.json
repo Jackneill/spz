@@ -1,9 +1,10 @@
 {
-	"recommendations": [
-		"rust-lang.rust-analyzer",
-		"ms-python.python",
-		"charliermarsh.ruff",
-		"astral-sh.ty",
-		"timonwong.shellcheck"
-	]
+    "recommendations": [
+        "rust-lang.rust-analyzer",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "astral-sh.ty",
+        "timonwong.shellcheck",
+        "nefrob.vscode-just-syntax"
+    ]
 }

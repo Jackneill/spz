@@ -1,4 +1,4 @@
 {
-	"python.languageServer": "None",
-	"python.defaultInterpreterPath": "../crates/spz-pywrapper/.venv/bin/python"
+    "python.languageServer": "None",
+    "python.defaultInterpreterPath": "../crates/spz-bindings-python/.venv/bin/python"
 }
