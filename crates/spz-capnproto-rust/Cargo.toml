@@ -26,10 +26,14 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 capnp = { version = "0.25", default-features = true, features = [] }
-likely_stable = { version = "0.1", default-features = true, features = [] }
+spz = { path = "../spz", default-features = false, features = [] }
 
 [dev-dependencies]
 
 [build-dependencies]
 anyhow = { version = "1.0", default-features = true, features = [] }
 capnpc = { version = "0.25", default-features = true, features = [] }
+
+[features]
+# Convenience fns and trait impls for converting between spz and capnp types.
+spz = []
