@@ -31,7 +31,9 @@ struct Header {
 	fractionalBits @3 :UInt8;
 
 	# Bit flags containing metadata like antialiasing.
-	flags @4 :Flags;
+	#
+	# Bit 0 (0x1): Antialiased (1 if trained with antialiasing, 0 otherwise)
+	flags @4 :UInt8;
 }
 
 # A complete set of Gaussian Splats representing a 3D scene.
@@ -56,23 +58,6 @@ enum Version {
 	v1 @0; # Deprecated
 	v2 @1; # Supported (first-three quaternions)
 	v3 @2; # Current (smallest-three quaternions)
-}
-
-# Bit flags for SPZ metadata.
-struct Flags {
-	# Whether the Gaussian Splat was trained with `antialiasing`.
-	antialiased @0 :Bool;
-}
-
-struct BoundingBox {
-	minX @0 :Float32;
-	maxX @1 :Float32;
-
-	minY @2 :Float32;
-	maxY @3 :Float32;
-
-	minZ @4 :Float32;
-	maxZ @5 :Float32;
 }
 
 enum CoordinateSystem {
