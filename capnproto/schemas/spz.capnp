@@ -4,7 +4,7 @@
 
 struct GaussianSplat {
 	header @0 :Header;
-	body @1 :GaussianSplatBody;
+	body @1 :Body;
 }
 
 # SPZ file header containing metadata about the Gaussian Splat.
@@ -35,7 +35,7 @@ struct Header {
 }
 
 # A complete set of Gaussian Splats representing a 3D scene.
-struct GaussianSplatBody {
+struct Body {
 	# Size: n × 3 floats.
 	positions @0 :List(Float32);
 	# Size: n × 3 floats.
@@ -86,6 +86,6 @@ enum CoordinateSystem {
 	rightUpBack @4;      # RUB - SPZ Internal, OpenGL, Three.js
 	leftDownFront @5;    # LDF
 	rightDownFront @6;   # RDF - PLY files
-	leftUpFront @7;      # LUF - glTF/GLB
+	leftUpFront @7;      # LUF - glTF/glB
 	rightUpFront @8;     # RUF - Unity
 }
