@@ -16,7 +16,7 @@ struct Header {
 	version @0 :Version;
 
 	# Number of Gaussians in the splat.
-	numPoints @1 :UInt64;
+	n @1 :UInt64;
 
 	# Spherical harmonics degree (0, 1, 2, or 3).
 	#
@@ -28,6 +28,8 @@ struct Header {
 	sphericalHarmonicsDegree @2 :UInt8;
 
 	# Number of bits for the fractional part in fixed-point position encoding.
+	#
+	# `12` bits is the standard.
 	fractionalBits @3 :UInt8;
 
 	# Bit flags containing metadata like antialiasing.
