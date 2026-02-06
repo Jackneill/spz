@@ -7,9 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-crates/spz-pywrapper/.env
+crates/spz-bindings-python/.env
 flatpak/cargo-sources.json
-crates/spz-pywrapper/uv.lock
+crates/spz-bindings-python/uv.lock
 fuzz/crash-*
 
 Cargo.lock

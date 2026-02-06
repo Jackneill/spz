@@ -63,10 +63,10 @@ lint-ci:
 	actionlint
 
 lint-py:
-	uvx ruff check crates/spz-pywrapper
+	uvx ruff check crates/spz-bindings-python
 
 lint-pyf:
-	uvx ruff check --fix crates/spz-pywrapper
+	uvx ruff check --fix crates/spz-bindings-python
 
 bench: assets
 	{{cargo}} bench \
@@ -176,23 +176,23 @@ py:
 	#!/usr/bin/env bash
 	set -euxo pipefail
 
-	pyenv="crates/spz-pywrapper/.venv"
+	pyenv="crates/spz-bindings-python/.venv"
 
-	. crates/spz-pywrapper/.venv/bin/activate
+	. crates/spz-bindings-python/.venv/bin/activate
 	uvx -p "${pyenv}" \
 		maturin develop --uv \
-		--manifest-path crates/spz-pywrapper/Cargo.toml
+		--manifest-path crates/spz-bindings-python/Cargo.toml
 		#--compression-method zstd
-	uvx -p "${pyenv}" python -i crates/spz-pywrapper/dev/shell_prefill.py
+	uvx -p "${pyenv}" python -i crates/spz-bindings-python/dev/shell_prefill.py
 
 py-test:
-	uv run crates/spz-pywrapper/.venv/bin/python -m pytest
+	uv run crates/spz-bindings-python/.venv/bin/python -m pytest
 
 py-build:
-	uvx maturin build --release --manifest-path crates/spz-pywrapper/Cargo.toml
+	uvx maturin build --release --manifest-path crates/spz-bindings-python/Cargo.toml
 
 py-publish:
-	uvx maturin publish --manifest-path crates/spz-pywrapper/Cargo.toml
+	uvx maturin publish --manifest-path crates/spz-bindings-python/Cargo.toml
 
 shellcheck script:
 	{{docker}} run --rm -v "${PWD}:/mnt" koalaman/shellcheck:stable {{script}}

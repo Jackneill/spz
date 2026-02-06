@@ -128,7 +128,7 @@ GaussianSplat:
 
 ```toml
 [dependencies]
-spz = { version = "0.0.7", default-features = false, features = [] }
+spz = { version = "*", default-features = false, features = [] }
 ```
 
 ```rust

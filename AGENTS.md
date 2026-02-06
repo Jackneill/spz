@@ -188,11 +188,6 @@ Examples:
 - Platform modules: `unix.rs`, `windows.rs` with shared interfaces.
 - Document platform differences and trade-offs in code comments.
 
-## Crates
-
-- `spz` - spz file format handling for rust and cli tools.
-- `spz-pywrapper` - python wrapper library for the spz crate.
-
 ## Dependencies
 
 ### Workspace Dependencies
@@ -216,8 +211,8 @@ Examples:
 
 ```bash
 # to interact with python or pip, ALWAYS use uv or uvx
-uvx -p crates/spz-pywrapper/.venv python
-uvx -p crates/spz-pywrapper/.venv pip
+uvx -p crates/spz-bindings-python/.venv python
+uvx -p crates/spz-bindings-python/.venv pip
 
 # Run tests (ALWAYS use nextest for unit/integration tests)
 just test
