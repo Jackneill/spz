@@ -1,12 +1,12 @@
 [book]
-title = "SPZ File Format (v3)"
+title = "SPZ File Format (3D Gaussian Splats)"
 authors = ["Márk Bartos <r2ygm3d9f@mozmail.com>"]
 language = "en"
 
 [output.html]
-theme = "ayu"
-default-theme = "ayu"
-preferred-dark-theme = "ayu"
+theme = "navy"
+default-theme = "navy"
+preferred-dark-theme = "navy"
 smart-punctuation = true
 definition-lists = true
 admonitions = true
