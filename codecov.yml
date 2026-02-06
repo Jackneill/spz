@@ -27,9 +27,9 @@ ignore:
   - "crates/spz/tests"
   - "crates/spz/benches"
 
-  - "crates/spz-bindings-python/src/lib.rs"
-  - "crates/spz-bindings-python/tests"
-  - "crates/spz-bindings-python/benches"
-  - "crates/spz-bindings-python/pypkg/tests"
+  - "crates/spz-binding-python/src/lib.rs"
+  - "crates/spz-binding-python/tests"
+  - "crates/spz-binding-python/benches"
+  - "crates/spz-binding-python/pypkg/tests"
 
   - "crates/spz-capi"

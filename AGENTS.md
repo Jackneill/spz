@@ -211,8 +211,8 @@ Examples:
 
 ```bash
 # to interact with python or pip, ALWAYS use uv or uvx
-uvx -p crates/spz-bindings-python/.venv python
-uvx -p crates/spz-bindings-python/.venv pip
+uvx -p crates/spz-binding-python/.venv python
+uvx -p crates/spz-binding-python/.venv pip
 
 # Run tests (ALWAYS use nextest for unit/integration tests)
 just test

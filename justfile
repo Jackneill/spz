@@ -5,7 +5,7 @@ cargo := "cargo"
 docker := "docker"
 
 app_name := "spz"
-c_binding_crate_name := "spz-bindings-c"
+c_binding_crate_name := "spz-binding-c"
 container_img_name := "ghcr.io/jackneill/spz"
 
 export RUST_BACKTRACE := "full"
@@ -63,10 +63,10 @@ lint-ci:
 	actionlint
 
 lint-py:
-	uvx ruff check crates/spz-bindings-python
+	uvx ruff check crates/spz-binding-python
 
 lint-pyf:
-	uvx ruff check --fix crates/spz-bindings-python
+	uvx ruff check --fix crates/spz-binding-python
 
 bench: assets
 	{{cargo}} bench \
@@ -176,23 +176,23 @@ py:
 	#!/usr/bin/env bash
 	set -euxo pipefail
 
-	pyenv="crates/spz-bindings-python/.venv"
+	pyenv="crates/spz-binding-python/.venv"
 
-	. crates/spz-bindings-python/.venv/bin/activate
+	. crates/spz-binding-python/.venv/bin/activate
 	uvx -p "${pyenv}" \
 		maturin develop --uv \
-		--manifest-path crates/spz-bindings-python/Cargo.toml
+		--manifest-path crates/spz-binding-python/Cargo.toml
 		#--compression-method zstd
-	uvx -p "${pyenv}" python -i crates/spz-bindings-python/dev/shell_prefill.py
+	uvx -p "${pyenv}" python -i crates/spz-binding-python/dev/shell_prefill.py
 
 py-test:
-	uv run crates/spz-bindings-python/.venv/bin/python -m pytest
+	uv run crates/spz-binding-python/.venv/bin/python -m pytest
 
 py-build:
-	uvx maturin build --release --manifest-path crates/spz-bindings-python/Cargo.toml
+	uvx maturin build --release --manifest-path crates/spz-binding-python/Cargo.toml
 
 py-publish:
-	uvx maturin publish --manifest-path crates/spz-bindings-python/Cargo.toml
+	uvx maturin publish --manifest-path crates/spz-binding-python/Cargo.toml
 
 shellcheck script:
 	{{docker}} run --rm -v "${PWD}:/mnt" koalaman/shellcheck:stable {{script}}
