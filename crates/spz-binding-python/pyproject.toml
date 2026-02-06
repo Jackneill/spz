@@ -18,7 +18,6 @@ keywords = [
 ]
 authors = [{ name = "See AUTHORS.md" }]
 classifiers = [
-	#"Development Status :: 4 - Beta",
 	"Intended Audience :: Developers",
 	"Intended Audience :: Science/Research",
 	"License :: OSI Approved :: MIT License",
@@ -53,11 +52,11 @@ features = ["pyo3/extension-module"]
 module-name = "spz"
 python-source = "pypkg"
 # Build artifacts with the specified Cargo profile
-#profile = "release"
+profile = "release"
 # For "editable" builds, use the specified Cargo profile,
 # e.g. to use "dev" builds for local development
 # (uses `profile` if this key is not set)
-#editable-profile = "release"
+editable-profile = "release"
 # Activate all available features
 #all-features = false
 # Do not activate the `default` feature
