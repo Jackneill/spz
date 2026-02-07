@@ -5,8 +5,6 @@
 //! This crate provides Python bindings using PyO3 and numpy for efficient
 //! array handling.
 
-use std::default;
-
 use numpy::{
 	PyArray1, PyArray2, PyArrayMethods, PyReadonlyArray1, PyReadonlyArray2,
 	PyUntypedArrayMethods,
