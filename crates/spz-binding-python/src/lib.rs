@@ -2,8 +2,8 @@
 
 use ::spz::{self as spz_rs};
 
-pub mod wrapper;
+pub mod binding;
 
 pub mod prelude {
-	pub use crate::wrapper::*;
+	pub use crate::binding::*;
 }

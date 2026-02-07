@@ -6,24 +6,30 @@ A fast, efficient library for reading and writing SPZ files,
 which store 3D Gaussian Splat point clouds in a compressed format.
 """
 
-from .context_managers import (
+from ._context_managers import (
     SplatReader,
     SplatWriter,
     modified_splat,
     temp_save,
 )
-from .spz import (
+from ._spz import (
     BoundingBox,
     CoordinateSystem,
     GaussianSplat,
+    Header,
+    Version,
     load,
+    read_header,
 )
 
 __all__ = [
     "GaussianSplat",
     "CoordinateSystem",
     "BoundingBox",
+    "Header",
+    "Version",
     "load",
+    "read_header",
     # Context managers
     "SplatReader",
     "SplatWriter",

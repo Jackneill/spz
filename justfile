@@ -181,8 +181,8 @@ py:
 	. crates/spz-binding-python/.venv/bin/activate
 	uvx -p "${pyenv}" \
 		maturin develop --uv \
-		--manifest-path crates/spz-binding-python/Cargo.toml
-		#--compression-method zstd
+		--manifest-path crates/spz-binding-python/Cargo.toml \
+		--compression-method zstd
 	uvx -p "${pyenv}" python -i crates/spz-binding-python/dev/shell_prefill.py
 
 py-test:

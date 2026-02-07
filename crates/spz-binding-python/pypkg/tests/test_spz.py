@@ -790,3 +790,357 @@ class TestEdgeCases:
         assert center[0] == pytest.approx(5.0, abs=0.1)
         assert center[1] == pytest.approx(10.0, abs=0.1)
         assert center[2] == pytest.approx(15.0, abs=0.1)
+
+
+class TestVersion:
+    """Tests for the Version enum."""
+
+    def test_version_values(self):
+        """Version enum should have the expected variants."""
+        assert spz.Version.V1 is not None
+        assert spz.Version.V2 is not None
+        assert spz.Version.V3 is not None
+
+    def test_version_repr(self):
+        """repr should include the variant name."""
+        assert repr(spz.Version.V1) == "Version.V1"
+        assert repr(spz.Version.V2) == "Version.V2"
+        assert repr(spz.Version.V3) == "Version.V3"
+
+    def test_version_str(self):
+        """str should return a short version string."""
+        assert str(spz.Version.V1) == "v1"
+        assert str(spz.Version.V2) == "v2"
+        assert str(spz.Version.V3) == "v3"
+
+    def test_version_equality(self):
+        """Versions should be comparable."""
+        assert spz.Version.V3 == spz.Version.V3
+        assert spz.Version.V2 != spz.Version.V3
+
+    def test_default_splat_is_v3(self):
+        """A newly created splat should use V3 by default."""
+        splat = util.create_test_splat(10)
+        assert splat.version == spz.Version.V3
+
+
+class TestHeader:
+    """Tests for the Header class."""
+
+    def test_header_from_splat(self):
+        """GaussianSplat.header should return a Header object."""
+        splat = util.create_test_splat(42)
+        header = splat.header
+
+        assert isinstance(header, spz.Header)
+        assert header.num_points == 42
+        assert header.sh_degree == 0
+        assert header.version == spz.Version.V3
+        assert header.fractional_bits == 12
+        assert header.antialiased is False
+
+    def test_header_from_antialiased_splat(self):
+        """Header should reflect the antialiased flag."""
+        positions = np.zeros((5, 3), dtype=np.float32)
+        scales = np.full((5, 3), -5.0, dtype=np.float32)
+        rotations = np.tile([1, 0, 0, 0], (5, 1)).astype(np.float32)
+        alphas = np.zeros(5, dtype=np.float32)
+        colors = np.zeros((5, 3), dtype=np.float32)
+
+        splat = spz.GaussianSplat(
+            positions=positions,
+            scales=scales,
+            rotations=rotations,
+            alphas=alphas,
+            colors=colors,
+            antialiased=True,
+        )
+
+        assert splat.header.antialiased is True
+
+    def test_header_is_valid(self):
+        """Header.is_valid should return True for a valid header."""
+        splat = util.create_test_splat(10)
+        assert splat.header.is_valid()
+
+    def test_header_repr(self):
+        """Header repr should be informative."""
+        splat = util.create_test_splat(100)
+        repr_str = repr(splat.header)
+
+        assert "Header" in repr_str
+        assert "num_points=100" in repr_str
+        assert "version=v3" in repr_str
+
+    def test_header_str(self):
+        """Header str should provide a readable description."""
+        splat = util.create_test_splat(50)
+        str_repr = str(splat.header)
+
+        assert "Header" in str_repr
+
+    def test_header_pretty_fmt(self):
+        """Header.pretty_fmt should return a detailed summary."""
+        splat = util.create_test_splat(100)
+        fmt = splat.header.pretty_fmt()
+
+        assert "Header" in fmt
+        assert "100" in fmt
+
+    def test_header_from_file(self):
+        """Header.from_file should read a header from an SPZ file."""
+        original = util.create_test_splat(25)
+
+        with TemporaryDirectory() as tmpdir:
+            filepath = Path(tmpdir) / "test.spz"
+            original.save(str(filepath))
+
+            header = spz.Header.from_file(str(filepath))
+
+            assert header.num_points == 25
+            assert header.version == spz.Version.V3
+
+    def test_header_from_bytes(self):
+        """Header.from_bytes should read a header from raw bytes."""
+        original = util.create_test_splat(30)
+        data = original.to_bytes()
+
+        header = spz.Header.from_bytes(data)
+
+        assert header.num_points == 30
+
+    def test_header_from_file_nonexistent(self):
+        """Header.from_file should raise ValueError for nonexistent files."""
+        with pytest.raises(ValueError, match="Failed to read"):
+            spz.Header.from_file("/nonexistent/path/to/file.spz")
+
+    def test_header_from_bytes_invalid(self):
+        """Header.from_bytes should raise ValueError for invalid data."""
+        with pytest.raises(ValueError, match="Failed"):
+            spz.Header.from_bytes(b"not valid spz data at all!!")
+
+
+class TestReadHeader:
+    """Tests for the read_header convenience function."""
+
+    def test_read_header(self):
+        """spz.read_header() should read a header from a file."""
+        original = util.create_test_splat(40)
+
+        with TemporaryDirectory() as tmpdir:
+            filepath = Path(tmpdir) / "test.spz"
+            original.save(str(filepath))
+
+            header = spz.read_header(str(filepath))
+
+            assert isinstance(header, spz.Header)
+            assert header.num_points == 40
+
+    def test_read_header_nonexistent(self):
+        """spz.read_header() should raise ValueError for nonexistent files."""
+        with pytest.raises(ValueError, match="Failed to read"):
+            spz.read_header("/nonexistent/path.spz")
+
+
+class TestGaussianSplatNewProperties:
+    """Tests for newly added GaussianSplat properties and methods."""
+
+    def test_version_property(self):
+        """GaussianSplat.version should return a Version."""
+        splat = util.create_test_splat(10)
+        assert splat.version == spz.Version.V3
+
+    def test_fractional_bits_property(self):
+        """GaussianSplat.fractional_bits should return the encoding precision."""
+        splat = util.create_test_splat(10)
+        assert splat.fractional_bits == 12
+
+    def test_check_sizes_valid(self):
+        """check_sizes should return True for valid splats."""
+        splat = util.create_test_splat(50)
+        assert splat.check_sizes() is True
+
+    def test_check_sizes_roundtrip(self):
+        """check_sizes should be True after a roundtrip."""
+        splat = util.create_test_splat(20)
+        data = splat.to_bytes()
+        restored = spz.GaussianSplat.from_bytes(data)
+
+        assert restored.check_sizes() is True
+
+    def test_pretty_fmt(self):
+        """pretty_fmt should return a detailed string."""
+        splat = util.create_test_splat(100)
+        fmt = splat.pretty_fmt()
+
+        assert "GaussianSplat" in fmt
+        assert "100" in fmt
+
+    def test_header_property_matches_individual_properties(self):
+        """Header properties should match individual GaussianSplat properties."""
+        splat = util.create_test_splat(33, sh_degree=0)
+        header = splat.header
+
+        assert header.num_points == splat.num_points
+        assert header.sh_degree == splat.sh_degree
+        assert header.antialiased == splat.antialiased
+        assert header.fractional_bits == splat.fractional_bits
+
+
+class TestCoordinateSystemExtended:
+    """Tests for new CoordinateSystem methods."""
+
+    @pytest.mark.parametrize(
+        "input_str,expected",
+        [
+            ("RDF", spz.CoordinateSystem.RDF),
+            ("rdf", spz.CoordinateSystem.RDF),
+            ("Right-Down-Front", spz.CoordinateSystem.RDF),
+            ("RIGHT_DOWN_FRONT", spz.CoordinateSystem.RDF),
+            ("LUF", spz.CoordinateSystem.LUF),
+            ("RUB", spz.CoordinateSystem.RUB),
+            ("unknown", spz.CoordinateSystem.UNSPECIFIED),
+        ],
+    )
+    def test_from_str(self, input_str: str, expected: spz.CoordinateSystem):
+        """from_str should parse various coordinate system string formats."""
+        result = spz.CoordinateSystem.from_str(input_str)
+        assert result == expected
+
+    @pytest.mark.parametrize(
+        "coord_sys,expected_short",
+        [
+            (spz.CoordinateSystem.LDB, "LDB"),
+            (spz.CoordinateSystem.RDB, "RDB"),
+            (spz.CoordinateSystem.LUB, "LUB"),
+            (spz.CoordinateSystem.RUB, "RUB"),
+            (spz.CoordinateSystem.LDF, "LDF"),
+            (spz.CoordinateSystem.RDF, "RDF"),
+            (spz.CoordinateSystem.LUF, "LUF"),
+            (spz.CoordinateSystem.RUF, "RUF"),
+            (spz.CoordinateSystem.UNSPECIFIED, "UNSPECIFIED"),
+        ],
+    )
+    def test_short_name(
+        self, coord_sys: spz.CoordinateSystem, expected_short: str
+    ):
+        """short_name should return the 3-letter abbreviation."""
+        assert coord_sys.short_name == expected_short
+
+    def test_from_str_roundtrip(self):
+        """Parsing short_name back should give the same coordinate system."""
+        for cs in [
+            spz.CoordinateSystem.RDF,
+            spz.CoordinateSystem.LUF,
+            spz.CoordinateSystem.RUB,
+            spz.CoordinateSystem.RUF,
+        ]:
+            parsed = spz.CoordinateSystem.from_str(cs.short_name)
+            assert parsed == cs
+
+
+class TestBoundingBoxFields:
+    """Tests for BoundingBox individual field access."""
+
+    def test_individual_fields(self):
+        """BoundingBox should expose min/max fields."""
+        positions = np.array(
+            [[-1.0, -2.0, -3.0], [4.0, 5.0, 6.0]], dtype=np.float32
+        )
+        scales = np.full((2, 3), -5.0, dtype=np.float32)
+        rotations = np.tile([1, 0, 0, 0], (2, 1)).astype(np.float32)
+        alphas = np.zeros(2, dtype=np.float32)
+        colors = np.zeros((2, 3), dtype=np.float32)
+
+        splat = spz.GaussianSplat(
+            positions=positions,
+            scales=scales,
+            rotations=rotations,
+            alphas=alphas,
+            colors=colors,
+        )
+
+        bbox = splat.bbox
+
+        assert bbox.min_x == pytest.approx(-1.0)
+        assert bbox.max_x == pytest.approx(4.0)
+        assert bbox.min_y == pytest.approx(-2.0)
+        assert bbox.max_y == pytest.approx(5.0)
+        assert bbox.min_z == pytest.approx(-3.0)
+        assert bbox.max_z == pytest.approx(6.0)
+
+    def test_fields_consistent_with_size_and_center(self):
+        """BoundingBox fields should be consistent with size() and center()."""
+        splat = util.create_test_splat(50)
+        bbox = splat.bbox
+
+        size = bbox.size
+        center = bbox.center
+
+        assert size[0] == pytest.approx(bbox.max_x - bbox.min_x)
+        assert size[1] == pytest.approx(bbox.max_y - bbox.min_y)
+        assert size[2] == pytest.approx(bbox.max_z - bbox.min_z)
+        assert center[0] == pytest.approx((bbox.min_x + bbox.max_x) / 2)
+        assert center[1] == pytest.approx((bbox.min_y + bbox.max_y) / 2)
+        assert center[2] == pytest.approx((bbox.min_z + bbox.max_z) / 2)
+
+
+class TestHeaderRoundtrip:
+    """Tests for Header persistence through save/load cycles."""
+
+    @pytest.mark.parametrize("sh_degree", [0, 1, 2, 3])
+    def test_header_sh_degree_roundtrip(self, sh_degree: int):
+        """SH degree should survive a save/load roundtrip in the header."""
+        sh_dims = {0: 0, 1: 3, 2: 8, 3: 15}
+        sh_dim = sh_dims[sh_degree]
+        num_points = 10
+
+        positions = np.random.randn(num_points, 3).astype(np.float32)
+        scales = np.full((num_points, 3), -5.0, dtype=np.float32)
+        rotations = np.tile([1, 0, 0, 0], (num_points, 1)).astype(np.float32)
+        alphas = np.zeros(num_points, dtype=np.float32)
+        colors = np.zeros((num_points, 3), dtype=np.float32)
+
+        kwargs = dict(
+            positions=positions,
+            scales=scales,
+            rotations=rotations,
+            alphas=alphas,
+            colors=colors,
+            sh_degree=sh_degree,
+        )
+        if sh_dim > 0:
+            kwargs["spherical_harmonics"] = np.zeros(
+                (num_points, sh_dim * 3), dtype=np.float32
+            )
+
+        original = spz.GaussianSplat(**kwargs)
+        data = original.to_bytes()
+        restored = spz.GaussianSplat.from_bytes(data)
+
+        assert restored.header.sh_degree == sh_degree
+        assert restored.header.num_points == num_points
+        assert restored.header.version == spz.Version.V3
+
+    def test_antialiased_flag_roundtrip(self):
+        """Antialiased flag should survive a save/load roundtrip."""
+        positions = np.zeros((5, 3), dtype=np.float32)
+        scales = np.full((5, 3), -5.0, dtype=np.float32)
+        rotations = np.tile([1, 0, 0, 0], (5, 1)).astype(np.float32)
+        alphas = np.zeros(5, dtype=np.float32)
+        colors = np.zeros((5, 3), dtype=np.float32)
+
+        original = spz.GaussianSplat(
+            positions=positions,
+            scales=scales,
+            rotations=rotations,
+            alphas=alphas,
+            colors=colors,
+            antialiased=True,
+        )
+
+        data = original.to_bytes()
+        restored = spz.GaussianSplat.from_bytes(data)
+
+        assert restored.header.antialiased is True
+        assert restored.antialiased is True

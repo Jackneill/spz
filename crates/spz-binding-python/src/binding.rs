@@ -5,6 +5,8 @@
 //! This crate provides Python bindings using PyO3 and numpy for efficient
 //! array handling.
 
+use std::default;
+
 use numpy::{
 	PyArray1, PyArray2, PyArrayMethods, PyReadonlyArray1, PyReadonlyArray2,
 	PyUntypedArrayMethods,
@@ -14,7 +16,204 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 
 use crate::spz_rs;
-use crate::spz_rs::header::Header;
+use crate::spz_rs::header;
+
+/// SPZ file format version.
+///
+/// Currently, only V2 and V3 are supported by this library.
+/// V3 is the default and recommended version.
+#[pyclass(eq, eq_int, frozen)]
+#[derive(Clone, Copy, PartialEq, Default)]
+pub enum Version {
+	/// Version 1 (unsupported).
+	V1 = 1,
+	/// Version 2.
+	V2 = 2,
+	/// Version 3.
+	#[default]
+	V3 = 3,
+}
+
+#[pymethods]
+impl Version {
+	pub fn __repr__(&self) -> &'static str {
+		match self {
+			Version::V1 => "Version.V1",
+			Version::V2 => "Version.V2",
+			Version::V3 => "Version.V3",
+		}
+	}
+
+	pub fn __str__(&self) -> &'static str {
+		match self {
+			Version::V1 => "v1",
+			Version::V2 => "v2",
+			Version::V3 => "v3",
+		}
+	}
+}
+
+impl From<header::Version> for Version {
+	fn from(v: header::Version) -> Self {
+		match v {
+			header::Version::V1 => Version::V1,
+			header::Version::V2 => Version::V2,
+			header::Version::V3 => Version::V3,
+		}
+	}
+}
+
+impl From<Version> for header::Version {
+	fn from(v: Version) -> Self {
+		match v {
+			Version::V1 => header::Version::V1,
+			Version::V2 => header::Version::V2,
+			Version::V3 => header::Version::V3,
+		}
+	}
+}
+
+/// SPZ file header.
+///
+/// Contains metadata about a Gaussian Splat file, such as the number
+/// of points, version, spherical harmonics degree, and flags.
+///
+/// Headers can be read from files or bytes without loading the full
+/// splat data, which is useful for quick inspection.
+///
+/// # Examples
+///
+/// Read header from a file:
+///
+/// ```python
+/// header = spz.Header.from_file("scene.spz")
+/// print(f"Version: {header.version}, Points: {header.num_points}")
+/// ```
+///
+/// Read header from bytes:
+///
+/// ```python
+/// with open("scene.spz", "rb") as f:
+///     data = f.read()
+/// header = spz.Header.from_bytes(data)
+/// ```
+#[pyclass(frozen)]
+#[derive(Clone)]
+pub struct Header {
+	inner: header::Header,
+}
+
+#[pymethods]
+impl Header {
+	/// Reads a header from an SPZ file without loading the full splat data.
+	///
+	/// This is efficient for quickly inspecting SPZ file metadata.
+	///
+	/// # Args
+	///
+	/// * `path` - Path to the SPZ file.
+	///
+	/// # Returns
+	///
+	/// The parsed header.
+	///
+	/// # Errors
+	///
+	/// Returns `ValueError` if the file cannot be read or the header is invalid.
+	#[staticmethod]
+	pub fn from_file(path: &str) -> PyResult<Self> {
+		let inner = header::Header::from_file(path).map_err(|e| {
+			PyValueError::new_err(format!("Failed to read SPZ header: {}", e))
+		})?;
+		Ok(Self { inner })
+	}
+
+	/// Reads a header from compressed SPZ bytes.
+	///
+	/// # Args
+	///
+	/// * `data` - The compressed SPZ file contents as bytes.
+	///
+	/// # Returns
+	///
+	/// The parsed header.
+	///
+	/// # Errors
+	///
+	/// Returns `ValueError` if the data is invalid or the header fails
+	/// validation.
+	#[staticmethod]
+	pub fn from_bytes(data: &[u8]) -> PyResult<Self> {
+		let inner = header::Header::from_compressed_bytes(data).map_err(|e| {
+			PyValueError::new_err(format!("Failed to parse SPZ header: {}", e))
+		})?;
+		Ok(Self { inner })
+	}
+
+	/// The SPZ format version.
+	#[getter]
+	pub fn version(&self) -> Version {
+		self.inner.version.into()
+	}
+
+	/// The number of Gaussian points.
+	#[getter]
+	pub fn num_points(&self) -> i32 {
+		self.inner.num_points
+	}
+
+	/// The spherical harmonics degree (0-3).
+	#[getter]
+	pub fn sh_degree(&self) -> u8 {
+		self.inner.spherical_harmonics_degree
+	}
+
+	/// The number of fractional bits in position encoding.
+	///
+	/// Standard value is 12, giving ~0.25mm resolution.
+	#[getter]
+	pub fn fractional_bits(&self) -> u8 {
+		self.inner.fractional_bits
+	}
+
+	/// Whether the splat was trained with antialiasing.
+	#[getter]
+	pub fn antialiased(&self) -> bool {
+		self.inner.flags.is_antialiased()
+	}
+
+	/// Validates the header.
+	///
+	/// Checks magic number, version, SH degree range, num_points,
+	/// flags, and reserved bytes.
+	///
+	/// # Returns
+	///
+	/// `True` if the header is valid.
+	pub fn is_valid(&self) -> bool {
+		self.inner.is_valid()
+	}
+
+	/// Returns a detailed, human-readable summary of the header.
+	pub fn pretty_fmt(&self) -> String {
+		self.inner.pretty_fmt()
+	}
+
+	pub fn __repr__(&self) -> String {
+		format!(
+			"Header(version={}, num_points={}, sh_degree={}, fractional_bits={}, antialiased={})",
+			self.inner.version,
+			self.inner.num_points,
+			self.inner.spherical_harmonics_degree,
+			self.inner.fractional_bits,
+			self.inner.flags.is_antialiased(),
+		)
+	}
+
+	pub fn __str__(&self) -> String {
+		format!("{}", self.inner)
+	}
+}
 
 #[pyclass(eq, frozen)]
 #[derive(Clone, PartialEq)]
@@ -105,6 +304,34 @@ impl CoordinateSystem {
 		}
 	}
 
+	/// Parse a coordinate system from a string.
+	///
+	/// Accepts 3-letter abbreviations (e.g. `"RDF"`, `"LUF"`) and
+	/// full names (e.g. `"Right-Down-Front"`, `"LEFT_UP_FRONT"`).
+	/// Case-insensitive. Returns `UNSPECIFIED` for unrecognized strings.
+	///
+	/// # Args
+	///
+	/// * `coord` - String representation of the coordinate system.
+	///
+	/// # Returns
+	///
+	/// The parsed coordinate system.
+	#[staticmethod]
+	pub fn from_str(coord: &str) -> Self {
+		Self {
+			inner: spz_rs::coord::CoordinateSystem::from(coord),
+		}
+	}
+
+	/// Returns the short 3-letter abbreviation (e.g. `"RDF"`, `"LUF"`).
+	///
+	/// Returns `"UNSPECIFIED"` for the unspecified coordinate system.
+	#[getter]
+	pub fn short_name(&self) -> &'static str {
+		self.inner.as_short_str()
+	}
+
 	#[inline]
 	pub fn __repr__(&self) -> String {
 		self.__str__()
@@ -127,7 +354,7 @@ pub struct BoundingBox {
 impl BoundingBox {
 	pub fn __repr__(&self) -> String {
 		format!(
-			"BoundingBox(x=[{:.6}, {:.6}], y=[{:.6}, {:.6}], z=[{:.6}, {:.6}])",
+			"BoundingBox(x=[{}, {}], y=[{}, {}], z=[{}, {}])",
 			self.inner.min_x,
 			self.inner.max_x,
 			self.inner.min_y,
@@ -135,6 +362,42 @@ impl BoundingBox {
 			self.inner.min_z,
 			self.inner.max_z
 		)
+	}
+
+	/// Minimum X coordinate.
+	#[getter]
+	pub fn min_x(&self) -> f32 {
+		self.inner.min_x
+	}
+
+	/// Maximum X coordinate.
+	#[getter]
+	pub fn max_x(&self) -> f32 {
+		self.inner.max_x
+	}
+
+	/// Minimum Y coordinate.
+	#[getter]
+	pub fn min_y(&self) -> f32 {
+		self.inner.min_y
+	}
+
+	/// Maximum Y coordinate.
+	#[getter]
+	pub fn max_y(&self) -> f32 {
+		self.inner.max_y
+	}
+
+	/// Minimum Z coordinate.
+	#[getter]
+	pub fn min_z(&self) -> f32 {
+		self.inner.min_z
+	}
+
+	/// Maximum Z coordinate.
+	#[getter]
+	pub fn max_z(&self) -> f32 {
+		self.inner.max_z
 	}
 
 	/// Returns the size (extent) of the bounding box in each dimension.
@@ -246,13 +509,13 @@ impl GaussianSplat {
 		};
 		Ok(Self {
 			inner: spz_rs::gaussian_splat::GaussianSplat {
-				header: Header {
+				header: header::Header {
 					num_points: num_points as i32,
 					spherical_harmonics_degree: sh_degree,
 					flags: if antialiased {
-						spz_rs::header::Flags::ANTIALIASED
+						header::Flags::ANTIALIASED
 					} else {
-						spz_rs::header::Flags::none()
+						header::Flags::none()
 					},
 					..Default::default()
 				},
@@ -496,6 +759,47 @@ impl GaussianSplat {
 		self.inner.median_volume()
 	}
 
+	/// Returns the file header.
+	#[getter]
+	pub fn header(&self) -> Header {
+		Header {
+			inner: self.inner.header,
+		}
+	}
+
+	/// Returns the SPZ format version.
+	#[getter]
+	pub fn version(&self) -> Version {
+		self.inner.header.version.into()
+	}
+
+	/// Returns the number of fractional bits used in position encoding.
+	///
+	/// Standard value is 12, giving ~0.25mm resolution.
+	#[getter]
+	pub fn fractional_bits(&self) -> u8 {
+		self.inner.header.fractional_bits
+	}
+
+	/// Validates that all internal arrays have consistent sizes.
+	///
+	/// Checks that all arrays match the expected dimensions for
+	/// the given `num_points` and `sh_degree`.
+	///
+	/// # Returns
+	///
+	/// `True` if all sizes are valid.
+	pub fn check_sizes(&self) -> bool {
+		self.inner.check_sizes()
+	}
+
+	/// Returns a detailed, human-readable summary of the splat.
+	///
+	/// Includes header information, median volume, and bounding box.
+	pub fn pretty_fmt(&self) -> String {
+		self.inner.pretty_fmt()
+	}
+
 	pub fn __repr__(&self) -> String {
 		format!(
 			"GaussianSplat(num_points={}, sh_degree={}, antialiased={}, ..)",
@@ -525,12 +829,29 @@ impl GaussianSplat {
 ///
 /// # Returns
 ///
-/// The loaded Gaussian splat.
+/// The loaded Gaussian Splat.
 #[inline]
 #[pyfunction]
 #[pyo3(signature = (path, coordinate_system=CoordinateSystem::UNSPECIFIED()))]
 pub fn load(path: &str, coordinate_system: CoordinateSystem) -> PyResult<GaussianSplat> {
 	GaussianSplat::load(path, coordinate_system)
+}
+
+/// Reads only the header from an SPZ file without loading the full data.
+///
+/// This is a convenience function equivalent to [`Header::from_file`].
+///
+/// # Args
+///
+/// * `path` - Path to the SPZ file.
+///
+/// # Returns
+///
+/// The file header.
+#[inline]
+#[pyfunction]
+pub fn read_header(path: &str) -> PyResult<Header> {
+	Header::from_file(path)
 }
 
 /// SPZ - Gaussian Splat file format library.
@@ -563,7 +884,10 @@ pub fn spz(m: &Bound<'_, PyModule>) -> PyResult<()> {
 	m.add_class::<GaussianSplat>()?;
 	m.add_class::<CoordinateSystem>()?;
 	m.add_class::<BoundingBox>()?;
+	m.add_class::<Header>()?;
+	m.add_class::<Version>()?;
 	m.add_function(wrap_pyfunction!(load, m)?)?;
+	m.add_function(wrap_pyfunction!(read_header, m)?)?;
 
 	Ok(())
 }
