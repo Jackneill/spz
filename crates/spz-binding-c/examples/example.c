@@ -25,8 +25,39 @@ int main(int argc, char *argv[]) {
     // Print library version
     printf("SPZ C API version: %s\n\n", spz_version());
 
-    // Load the SPZ file
-    // Use RightUpBack coordinate system (Three.js convention)
+    // -----------------------------------------------------------------------
+    // Quick header inspection (does NOT decompress the full file)
+    // -----------------------------------------------------------------------
+    SpzHeader *header = spz_header_from_file(filepath);
+    if (header == NULL) {
+        const char *error = spz_last_error();
+        fprintf(stderr, "Error reading header: %s\n",
+                error ? error : "unknown error");
+        return 1;
+    }
+
+    printf("Header-only inspection:\n");
+    printf("  Version:         v%d\n", (int)spz_header_version(header));
+    printf("  Num points:      %d\n", spz_header_num_points(header));
+    printf("  SH degree:       %d\n", spz_header_sh_degree(header));
+    printf("  Fractional bits: %d\n", spz_header_fractional_bits(header));
+    printf("  Antialiased:     %s\n",
+           spz_header_antialiased(header) ? "yes" : "no");
+    printf("  Valid:           %s\n",
+           spz_header_is_valid(header) ? "yes" : "no");
+
+    // Pretty-printed header summary (caller must free with spz_free_string)
+    char *header_summary = spz_header_pretty_fmt(header);
+    if (header_summary) {
+        printf("\n%s\n", header_summary);
+        spz_free_string(header_summary);
+    }
+
+    spz_header_free(header);
+
+    // -----------------------------------------------------------------------
+    // Full load
+    // -----------------------------------------------------------------------
     SpzGaussianSplat *splat = spz_gaussian_splat_load(
         filepath,
         SpzCoordinateSystem_RightUpBack
@@ -34,36 +65,50 @@ int main(int argc, char *argv[]) {
 
     if (splat == NULL) {
         const char *error = spz_last_error();
-        fprintf(stderr, "Error loading SPZ file: %s\n", error ? error : "unknown error");
+        fprintf(stderr, "Error loading SPZ file: %s\n",
+                error ? error : "unknown error");
         return 1;
     }
 
-    // Get basic properties
+    // Scalar accessors
     int32_t num_points = spz_gaussian_splat_num_points(splat);
-    int32_t sh_degree = spz_gaussian_splat_sh_degree(splat);
-    bool antialiased = spz_gaussian_splat_antialiased(splat);
+    uint8_t sh_degree  = spz_gaussian_splat_sh_degree(splat);
+    bool antialiased   = spz_gaussian_splat_antialiased(splat);
 
     printf("Loaded: %s\n", filepath);
-    printf("  Number of points: %d\n", num_points);
-    printf("  SH degree: %d\n", sh_degree);
-    printf("  Antialiased: %s\n", antialiased ? "yes" : "no");
+    printf("  Number of points:  %d\n", num_points);
+    printf("  SH degree:         %d\n", sh_degree);
+    printf("  Version:           v%d\n",
+           (int)spz_gaussian_splat_version(splat));
+    printf("  Fractional bits:   %d\n",
+           spz_gaussian_splat_fractional_bits(splat));
+    printf("  Antialiased:       %s\n", antialiased ? "yes" : "no");
+    printf("  Sizes consistent:  %s\n",
+           spz_gaussian_splat_check_sizes(splat) ? "yes" : "no");
 
-    // Get bounding box
+    // Bounding box
     SpzBoundingBox bbox = spz_gaussian_splat_bbox(splat);
     printf("  Bounding box:\n");
     printf("    X: [%.3f, %.3f]\n", bbox.min_x, bbox.max_x);
     printf("    Y: [%.3f, %.3f]\n", bbox.min_y, bbox.max_y);
     printf("    Z: [%.3f, %.3f]\n", bbox.min_z, bbox.max_z);
 
-    // Get median volume
+    // Median volume
     float median_vol = spz_gaussian_splat_median_volume(splat);
     printf("  Median ellipsoid volume: %.6f\n", median_vol);
+
+    // Pretty-printed full summary
+    char *splat_summary = spz_gaussian_splat_pretty_fmt(splat);
+    if (splat_summary) {
+        printf("\n%s\n", splat_summary);
+        spz_free_string(splat_summary);
+    }
 
     // Access position data
     uintptr_t positions_len;
     const float *positions = spz_gaussian_splat_positions(splat, &positions_len);
     if (positions && positions_len > 0) {
-        printf("\n  First 3 positions (x, y, z):\n");
+        printf("  First 3 positions (x, y, z):\n");
         for (int i = 0; i < 3 && i < num_points; i++) {
             printf("    [%d]: (%.4f, %.4f, %.4f)\n",
                    i,
@@ -73,31 +118,20 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Example: Save to a new file with coordinate conversion
-    // (commented out to avoid creating files during example run)
-    /*
-    int result = spz_gaussian_splat_save(
-        splat,
-        "output.spz",
-        SpzCoordinateSystem_RightUpBack
-    );
-    if (result != 0) {
-        fprintf(stderr, "Error saving: %s\n", spz_last_error());
-    }
-    */
-
-    // Example: Serialize to bytes
+    // Example: serialize to bytes and back
     uint8_t *data = NULL;
     uintptr_t data_len = 0;
-    int result = spz_gaussian_splat_to_bytes(
+    SpzResult result = spz_gaussian_splat_to_bytes(
         splat,
         SpzCoordinateSystem_Unspecified,
         &data,
         &data_len
     );
-    if (result == 0) {
+    if (result == SpzResult_Success) {
         printf("\n  Serialized size: %zu bytes\n", (size_t)data_len);
         spz_free_bytes(data, data_len);
+    } else {
+        fprintf(stderr, "  Serialize error: %s\n", spz_last_error());
     }
 
     // Clean up

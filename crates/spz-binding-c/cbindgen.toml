@@ -14,7 +14,10 @@ documentation_style = "doxy"
 [defines]
 
 [export]
-include = ["SpzCoordinateSystem", "SpzBoundingBox", "SpzGaussianSplat"]
+include = [
+	"SpzResult", "SpzCoordinateSystem", "SpzVersion", "SpzBoundingBox",
+	"SpzHeader", "SpzGaussianSplat",
+]
 
 [export.rename]
 

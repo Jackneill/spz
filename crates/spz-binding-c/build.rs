@@ -7,8 +7,10 @@ use anyhow::{Context, Result};
 use cbindgen::Config;
 
 fn main() -> Result<ExitCode> {
-	println!("cargo:rerun-if-changed=src/lib.rs");
-	println!("cargo:rerun-if-changed=cbindgen.toml");
+	// non-existent file to always trigger the build script
+	//println!("cargo::rerun-if-changed=NULL");
+	println!("cargo::rerun-if-changed=src/lib.rs");
+	println!("cargo::rerun-if-changed=cbindgen.toml");
 
 	let crate_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR")?);
 	let header_path = crate_dir.join("include/spz.h");

@@ -21,8 +21,8 @@ publish = false
 [lib]
 crate-type = ["cdylib", "staticlib"]
 
-[features]
-default = []
+#[features]
+#default = []
 
 #[package.metadata.capi.header]
 #name = "spz"
@@ -37,7 +37,7 @@ default = []
 #enabled = true
 # Whether to emit library version constants (e.g. `FOO_MAJOR`, `FOO_MINOR` and
 # `FOO_PATCH`) at the top of the header file. Enabled by default.
-#emit_version_constants = true
+#emit_version_constants =
 
 #[package.metadata.capi.pkg_config]
 # Used as the package name in the pkg-config file and defaults to the crate name.
