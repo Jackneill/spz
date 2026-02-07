@@ -36,7 +36,7 @@ crate-type = ["cdylib"]
 [dependencies]
 spz = { path = "../spz", default-features = false, features = [] }
 
-pyo3 = { version = "0.27", default-features = true, features = [] }
+pyo3 = { version = "0.28", default-features = true, features = [] }
 numpy = { version = "0.27", default-features = true, features = [] }
 
 [dev-dependencies]
