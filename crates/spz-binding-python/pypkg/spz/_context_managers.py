@@ -14,7 +14,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from .spz import CoordinateSystem, GaussianSplat
+from ._spz import CoordinateSystem, GaussianSplat
 
 __all__ = [
     "SplatReader",

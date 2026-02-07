@@ -878,6 +878,7 @@ pub fn read_header(path: &str) -> PyResult<Header> {
 /// splat.save("output.spz")
 /// ```
 #[pymodule]
+#[pyo3(name = "_spz")]
 pub fn spz(m: &Bound<'_, PyModule>) -> PyResult<()> {
 	m.add_class::<GaussianSplat>()?;
 	m.add_class::<CoordinateSystem>()?;

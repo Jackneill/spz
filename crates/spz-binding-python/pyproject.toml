@@ -49,7 +49,7 @@ Issues = "https://github.com/Jackneill/spz/issues"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
-module-name = "spz"
+module-name = "spz._spz"
 python-source = "pypkg"
 # Build artifacts with the specified Cargo profile
 profile = "release"

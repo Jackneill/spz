@@ -178,15 +178,31 @@ py:
 
 	pyenv="crates/spz-binding-python/.venv"
 
-	. crates/spz-binding-python/.venv/bin/activate
-	uvx -p "${pyenv}" \
+	pushd .
+	cd crates/spz-binding-python && uv venv
+	popd
+
+	source "${pyenv}/bin/activate"
+
+	uv pip install pytest numpy maturin
+	#uv tool install maturin
+
+	uv run -p "${pyenv}" \
 		maturin develop --uv \
 		--manifest-path crates/spz-binding-python/Cargo.toml \
 		--compression-method zstd
-	uvx -p "${pyenv}" python -i crates/spz-binding-python/dev/shell_prefill.py
+	uv run -p "${pyenv}" python -i crates/spz-binding-python/dev/shell_prefill.py
+
+	deactivate
 
 py-test:
-	uv run crates/spz-binding-python/.venv/bin/python -m pytest
+	#!/usr/bin/env bash
+	set -euxo pipefail
+
+	pyenv="crates/spz-binding-python/.venv"
+
+	uv pip install -p "${pyenv}" pytest numpy
+	uv run -p "${pyenv}" python -m pytest crates/spz-binding-python/pypkg/tests/
 
 py-build:
 	uvx maturin build --release --manifest-path crates/spz-binding-python/Cargo.toml
