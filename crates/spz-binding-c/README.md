@@ -1,8 +1,8 @@
-# SPZ C API
+# SPZ C Bindings
 
-C bindings for the SPZ Gaussian Splat file format library.
+C bindings/api for the SPZ Gaussian Splat file format library.
 
-## Build
+## Development
 
 ```bash
 ../../just cbuild
@@ -17,6 +17,54 @@ This produces:
 And the header file is generated at `include/spz.h`.
 
 ## Usage
+
+### Linux/macOS
+
+```bash
+gcc -o myapp myapp.c -L/path/to/lib -lspz_capi -lpthread -ldl -lm
+```
+
+### CMake
+
+```cmake
+find_library(SPZ_CAPI spz_capi PATHS /path/to/lib)
+target_link_libraries(myapp ${SPZ_CAPI})
+```
+
+### Meson
+
+```meson
+project('myapp', 'c')
+
+spz_inc = include_directories('/path/to/spz-binding-c/include')
+spz_lib = meson.get_compiler('c').find_library('spz_capi',
+  dirs: '/path/to/lib',
+)
+
+executable('myapp', 'myapp.c',
+  include_directories: spz_inc,
+  dependencies: spz_lib,
+)
+```
+
+If you install `libspz_capi` somewhere on the default library search path
+(e.g. `/usr/local/lib`) and the header to `/usr/local/include`, you can
+simplify this:
+
+```meson
+project('myapp', 'c')
+
+spz_dep = dependency('spz_capi', required: false)
+if not spz_dep.found()
+  spz_dep = meson.get_compiler('c').find_library('spz_capi')
+endif
+
+executable('myapp', 'myapp.c',
+  dependencies: spz_dep,
+)
+```
+
+## Examples
 
 ### Loading an SPZ file
 
@@ -110,24 +158,3 @@ if (splat == NULL) {
     fprintf(stderr, "Failed to load: %s\n", error ? error : "unknown");
 }
 ```
-
-## Linking
-
-### Linux/macOS
-
-```bash
-gcc -o myapp myapp.c -L/path/to/lib -lspz_capi -lpthread -ldl -lm
-```
-
-### CMake
-
-```cmake
-find_library(SPZ_CAPI spz_capi PATHS /path/to/lib)
-target_link_libraries(myapp ${SPZ_CAPI})
-```
-
-## Thread Safety
-
-- Each `SpzGaussianSplat` handle should only be used from one thread at a time.
-- Error messages from `spz_last_error()` are thread-local.
-- Multiple threads can safely use different handles concurrently.
