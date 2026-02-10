@@ -28,7 +28,7 @@ jobs:
 
       - name: Install capnproto Compiler
         run: |
-          export DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov

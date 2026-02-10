@@ -30,7 +30,7 @@ jobs:
 
       - name: Install capnproto Compiler
         run: |
-          export DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
 
       - name: Install cargo deny
         run: |
@@ -54,7 +54,7 @@ jobs:
 
       - name: Install capnproto Compiler
         run: |
-          export DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
 
       - name: Install cargo deny
         run: |
@@ -78,7 +78,7 @@ jobs:
 
       - name: Install capnproto Compiler
         run: |
-          export DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
 
       - name: Install cargo deny
         run: |
@@ -107,7 +107,7 @@ jobs:
 
       - name: Install capnproto Compiler
         run: |
-          export DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
 
       - name: Test
         run: just test
@@ -134,7 +134,7 @@ jobs:
 
       - name: Install Deps
         run: |
-          export DEBIAN_FRONTEND=noninteractive sudo apt install -y calc capnproto
+          env DEBIAN_FRONTEND=noninteractive sudo apt install -y calc capnproto
 
       - name: Install cargo fuzz
         run: |
@@ -165,7 +165,7 @@ jobs:
 
       - name: Install capnproto Compiler
         run: |
-          export DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
 
       - name: Bench
         run: just bench

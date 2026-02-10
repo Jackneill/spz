@@ -27,7 +27,7 @@ jobs:
 
       - name: Install capnproto Compiler
         run: |
-          export DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
 
       - name: Setup rust toolchain, cache and cargo-codspeed binary
         uses: moonrepo/setup-rust@v1
