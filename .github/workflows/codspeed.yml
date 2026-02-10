@@ -25,6 +25,10 @@ jobs:
       - name: Setup mold linker
         uses: rui314/setup-mold@v1
 
+      - name: Install capnproto Compiler
+        run: |
+          export DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+
       - name: Setup rust toolchain, cache and cargo-codspeed binary
         uses: moonrepo/setup-rust@v1
         with:
