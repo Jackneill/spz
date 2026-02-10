@@ -93,23 +93,25 @@ See [docs/SPZ_SPEC_v3.md](docs/SPZ_SPEC_v3.md) for more information.
 ## CLI
 
 ```sh
-$ # install:
-$ cargo install spz
-$ # or
-$ flatpak install io.github.jackneill.spz
-$ # or
-$ snap install spz
-$
-$ # run:
-$ spz info assets/racoonfamily.spz
-$ # or in container:
-$ podman/docker run --rm -it -v "${PWD}:/app" -w /app spz \
-$	info assets/racoonfamily.spz
+# Install:
+cargo install spz
+# or
+flatpak install io.github.jackneill.spz
+# or
+snap install spz
+
+# Run:
+spz info assets/racoonfamily.spz
+# or in container:
+podman/docker run --rm -it -v "${PWD}:/app" -w /app spz \
+	info assets/racoonfamily.spz
+
+# Example output:
 GaussianSplat:
-	Number of points:		932560
-	Spherical harmonics degree:	3
-	Antialiased:			true
-	Median ellipsoid volume:	0.0000000046213082
+	Number of points:				932560
+	Spherical harmonics degree:		3
+	Antialiased:					true
+	Median ellipsoid volume:		0.0000000046213082
 	Bounding box:
 		x: -281.779541 to 258.382568 (size 540.162109, center -11.698486)
 		y: -240.000000 to 240.000000 (size 480.000000, center 0.000000)
