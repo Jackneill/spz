@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+"""
+This module contains common useful imports for pre-filling the dev shell for
+convenience.
+"""
+
 import os
 from pathlib import Path
 import pytest
@@ -13,5 +20,8 @@ from spz import (
     SplatReader,
     SplatWriter,
     Version,
-    load, modified_splat, read_header, temp_save
+    load,
+    modified_splat,
+    read_header,
+    temp_save
 )
