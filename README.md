@@ -108,10 +108,10 @@ podman/docker run --rm -it -v "${PWD}:/app" -w /app spz \
 
 # Example output:
 GaussianSplat:
-	Number of points:				932560
-	Spherical harmonics degree:		3
-	Antialiased:					true
-	Median ellipsoid volume:		0.0000000046213082
+	Number of points:		932560
+	Spherical harmonics degree:	3
+	Antialiased:			true
+	Median ellipsoid volume:	0.0000000046213082
 	Bounding box:
 		x: -281.779541 to 258.382568 (size 540.162109, center -11.698486)
 		y: -240.000000 to 240.000000 (size 480.000000, center 0.000000)
