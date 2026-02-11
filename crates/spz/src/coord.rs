@@ -262,3 +262,201 @@ impl Default for AxisFlips {
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use rstest::rstest;
+	use strum::IntoEnumIterator;
+
+	#[rstest]
+	#[case(CoordinateSystem::Unspecified, "UNSPECIFIED")]
+	#[case(CoordinateSystem::LeftDownBack, "LDB")]
+	#[case(CoordinateSystem::RightDownBack, "RDB")]
+	#[case(CoordinateSystem::LeftUpBack, "LUB")]
+	#[case(CoordinateSystem::RightUpBack, "RUB")]
+	#[case(CoordinateSystem::LeftDownFront, "LDF")]
+	#[case(CoordinateSystem::RightDownFront, "RDF")]
+	#[case(CoordinateSystem::LeftUpFront, "LUF")]
+	#[case(CoordinateSystem::RightUpFront, "RUF")]
+	fn test_as_short_str(#[case] cs: CoordinateSystem, #[case] expected: &str) {
+		assert_eq!(cs.as_short_str(), expected);
+	}
+
+	#[rstest]
+	#[case("RUB", CoordinateSystem::RightUpBack)]
+	#[case("rub", CoordinateSystem::RightUpBack)]
+	#[case("RightUpBack", CoordinateSystem::RightUpBack)]
+	#[case("RIGHT-UP-BACK", CoordinateSystem::RightUpBack)]
+	#[case("RIGHT_UP_BACK", CoordinateSystem::RightUpBack)]
+	#[case("LDF", CoordinateSystem::LeftDownFront)]
+	#[case("RDF", CoordinateSystem::RightDownFront)]
+	#[case("LUF", CoordinateSystem::LeftUpFront)]
+	#[case("RUF", CoordinateSystem::RightUpFront)]
+	#[case("LDB", CoordinateSystem::LeftDownBack)]
+	#[case("RDB", CoordinateSystem::RightDownBack)]
+	#[case("LUB", CoordinateSystem::LeftUpBack)]
+	#[case("nonsense", CoordinateSystem::Unspecified)]
+	#[case("", CoordinateSystem::Unspecified)]
+	fn test_from_str(#[case] input: &str, #[case] expected: CoordinateSystem) {
+		assert_eq!(input.parse::<CoordinateSystem>().unwrap(), expected);
+	}
+
+	#[test]
+	fn test_from_str_ref() {
+		let cs: CoordinateSystem = "RDF".into();
+
+		assert_eq!(cs, CoordinateSystem::RightDownFront);
+	}
+
+	#[test]
+	fn test_display_all_variants() {
+		for cs in CoordinateSystem::iter() {
+			let display = format!("{}", cs);
+
+			assert!(
+				!display.is_empty(),
+				"Display should not be empty for {:?}",
+				cs
+			);
+		}
+	}
+
+	#[rstest]
+	#[case(CoordinateSystem::RightDownFront, "Right-Down-Front")]
+	#[case(CoordinateSystem::LeftUpFront, "Left-Up-Front")]
+	#[case(CoordinateSystem::Unspecified, "Unspecified")]
+	fn test_display_specific(#[case] cs: CoordinateSystem, #[case] expected: &str) {
+		assert_eq!(format!("{}", cs), expected);
+	}
+
+	#[test]
+	fn test_axes_align_same_system() {
+		for cs in CoordinateSystem::iter() {
+			if cs == CoordinateSystem::Unspecified {
+				continue;
+			}
+			let (x, y, z) = cs.axes_align(cs);
+
+			assert!(
+				x && y && z,
+				"same system should have all axes aligned for {:?}",
+				cs
+			);
+		}
+	}
+
+	#[test]
+	fn test_axes_align_unspecified_always_true() {
+		for cs in CoordinateSystem::iter() {
+			assert_eq!(
+				CoordinateSystem::Unspecified.axes_align(cs),
+				(true, true, true),
+				"Unspecified should always match for {:?}",
+				cs
+			);
+			assert_eq!(
+				cs.axes_align(CoordinateSystem::Unspecified),
+				(true, true, true),
+				"Anything vs Unspecified should always match for {:?}",
+				cs
+			);
+		}
+	}
+
+	#[rstest]
+	#[case(
+		CoordinateSystem::RightUpBack,
+		CoordinateSystem::LeftUpFront,
+		(false, true, false)
+	)]
+	#[case(
+		CoordinateSystem::RightUpBack,
+		CoordinateSystem::RightDownFront,
+		(true, false, false)
+	)]
+	#[case(
+		CoordinateSystem::LeftDownBack,
+		CoordinateSystem::RightUpFront,
+		(false, false, false)
+	)]
+	#[case(
+		CoordinateSystem::LeftDownBack,
+		CoordinateSystem::LeftDownBack,
+		(true, true, true)
+	)]
+	fn test_axes_align_known(
+		#[case] a: CoordinateSystem,
+		#[case] b: CoordinateSystem,
+		#[case] expected: (bool, bool, bool),
+	) {
+		assert_eq!(a.axes_align(b), expected);
+	}
+
+	#[test]
+	fn test_axes_align_symmetric() {
+		for a in CoordinateSystem::iter() {
+			for b in CoordinateSystem::iter() {
+				assert_eq!(
+					a.axes_align(b),
+					b.axes_align(a),
+					"axes_align should be symmetric for {:?} vs {:?}",
+					a,
+					b
+				);
+			}
+		}
+	}
+
+	#[test]
+	fn test_axis_flips_same_system_is_identity() {
+		for cs in CoordinateSystem::iter() {
+			if cs == CoordinateSystem::Unspecified {
+				continue;
+			}
+			let flips = cs.axis_flips_to(cs);
+
+			assert_eq!(
+				flips.position,
+				[1.0, 1.0, 1.0],
+				"position flips should be identity for {:?}",
+				cs
+			);
+			assert_eq!(
+				flips.rotation,
+				[1.0, 1.0, 1.0],
+				"rotation flips should be identity for {:?}",
+				cs
+			);
+		}
+	}
+
+	#[test]
+	fn test_axis_flips_position_signs() {
+		let flips = CoordinateSystem::RightUpBack
+			.axis_flips_to(CoordinateSystem::RightDownFront);
+
+		assert_eq!(flips.position[0], 1.0); // R→R
+		assert_eq!(flips.position[1], -1.0); // U→D
+		assert_eq!(flips.position[2], -1.0); // B→F
+	}
+
+	#[test]
+	fn test_axis_flips_rotation_derived_from_position() {
+		let flips = CoordinateSystem::RightUpBack
+			.axis_flips_to(CoordinateSystem::LeftDownFront);
+
+		assert_eq!(flips.rotation[0], flips.position[1] * flips.position[2]);
+		assert_eq!(flips.rotation[1], flips.position[0] * flips.position[2]);
+		assert_eq!(flips.rotation[2], flips.position[0] * flips.position[1]);
+	}
+
+	#[test]
+	fn test_axis_flips_default_is_identity() {
+		let flips = AxisFlips::default();
+
+		assert_eq!(flips.position, [1.0, 1.0, 1.0]);
+		assert_eq!(flips.rotation, [1.0, 1.0, 1.0]);
+		assert_eq!(flips.spherical_harmonics, [1.0; 15]);
+	}
+}

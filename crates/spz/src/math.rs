@@ -190,21 +190,215 @@ pub fn normalize_quaternion(q: &[f32; 4]) -> [f32; 4] {
 pub fn to_u8(x: f32) -> u8 {
 	x.clamp(0.0, 255.0).round() as u8
 }
-/*
-pub fn norm_quat(quat: &ndarray::ArrayView2<f32>) -> [f32; 4] {
-	debug_assert_eq!(quat.len(), 4);
 
-	let norm_sq = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use approx::assert_relative_eq;
+	use rstest::rstest;
 
-	if norm_sq < f32::EPSILON {
-		return [0.0, 0.0, 0.0, 1.0];
+	#[rstest]
+	#[case(0, 0)]
+	#[case(1, 0)]
+	#[case(2, 0)]
+	#[case(3, 1)]
+	#[case(7, 1)]
+	#[case(8, 2)]
+	#[case(14, 2)]
+	#[case(15, 3)]
+	#[case(255, 3)]
+	fn test_degree_for_dim(#[case] dim: u8, #[case] expected: u8) {
+		assert_eq!(degree_for_dim(dim), expected);
 	}
-	let inv_norm = 1.0 / norm_sq.sqrt();
-	[
-		q[0] * inv_norm,
-		q[1] * inv_norm,
-		q[2] * inv_norm,
-		q[3] * inv_norm,
-	]
+
+	#[rstest]
+	#[case(0, 0)]
+	#[case(1, 3)]
+	#[case(2, 8)]
+	#[case(3, 15)]
+	#[case(4, 0)] // out-of-range degree returns 0
+	#[case(255, 0)]
+	fn test_dim_for_degree(#[case] degree: u8, #[case] expected: u8) {
+		assert_eq!(dim_for_degree(degree), expected);
+	}
+
+	/// Verify that degree_for_dim(dim_for_degree(d)) == d for valid degrees.
+	#[rstest]
+	#[case(0)]
+	#[case(1)]
+	#[case(2)]
+	#[case(3)]
+	fn test_degree_dim_roundtrip(#[case] degree: u8) {
+		let dim = dim_for_degree(degree);
+
+		if dim > 0 {
+			assert_eq!(degree_for_dim(dim), degree);
+		}
+	}
+
+	#[rstest]
+	#[case(0.0, 0.5)]
+	#[case(100.0, 1.0)]
+	#[case(-100.0, 0.0)]
+	fn test_sigmoid_known_values(#[case] x: f32, #[case] expected: f32) {
+		assert_relative_eq!(sigmoid(x), expected, epsilon = 1e-5);
+	}
+
+	#[test]
+	fn test_sigmoid_monotonic() {
+		let values: Vec<f32> = (-50..=50).map(|x| sigmoid(x as f32 * 0.1)).collect();
+
+		for w in values.windows(2) {
+			assert!(w[1] >= w[0], "sigmoid must be monotonically increasing");
+		}
+	}
+
+	#[rstest]
+	#[case(0.01)]
+	#[case(0.1)]
+	#[case(0.25)]
+	#[case(0.5)]
+	#[case(0.75)]
+	#[case(0.9)]
+	#[case(0.99)]
+	fn test_sigmoid_inv_sigmoid_roundtrip(#[case] x: f32) {
+		let recovered = sigmoid(inv_sigmoid(x));
+
+		assert_relative_eq!(recovered, x, epsilon = 1e-5);
+	}
+
+	#[test]
+	fn test_inv_sigmoid_clamps_extremes() {
+		let v0 = inv_sigmoid(0.0);
+		let v1 = inv_sigmoid(1.0);
+
+		assert!(v0.is_finite());
+		assert!(v1.is_finite());
+		assert!(v0 < 0.0);
+		assert!(v1 > 0.0);
+	}
+
+	#[rstest]
+	#[case(128, 0.0)]
+	#[case(0, -1.0)]
+	#[case(255, 127.0 / 128.0)]
+	fn test_unquantize_sh(#[case] input: u8, #[case] expected: f32) {
+		assert_relative_eq!(unquantize_sh(input), expected, epsilon = 1e-6);
+	}
+
+	#[rstest]
+	#[case(0.0, 8, 128)]
+	#[case(100.0, 1, 255)]
+	#[case(-100.0, 1, 0)]
+	fn test_quantize_sh(#[case] input: f32, #[case] step: i32, #[case] expected: u8) {
+		assert_eq!(quantize_sh(input, step), expected);
+	}
+
+	#[test]
+	fn test_quantize_unquantize_sh_roundtrip_step1() {
+		for i in 0..=255_u8 {
+			let f = unquantize_sh(i);
+			let back = quantize_sh(f, 1);
+
+			assert_eq!(back, i, "roundtrip failed for {}", i);
+		}
+	}
+
+	#[rstest]
+	#[case([0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0])]
+	#[case([2.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0])]
+	#[case([0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])]
+	fn test_normalize_quaternion_expected(#[case] input: [f32; 4], #[case] expected: [f32; 4]) {
+		let n = normalize_quaternion(&input);
+
+		for i in 0..4 {
+			assert_relative_eq!(n[i], expected[i], epsilon = 1e-6);
+		}
+	}
+
+	#[rstest]
+	#[case([0.0, 0.0, 0.0, 1.0])]
+	#[case([2.0, 0.0, 0.0, 0.0])]
+	#[case([1.0, 2.0, 3.0, 4.0])]
+	#[case([0.5, 0.5, 0.5, 0.5])]
+	fn test_normalize_quaternion_is_unit(#[case] input: [f32; 4]) {
+		let n = normalize_quaternion(&input);
+		let norm_sq = n[0] * n[0] + n[1] * n[1] + n[2] * n[2] + n[3] * n[3];
+
+		assert_relative_eq!(norm_sq, 1.0, epsilon = 1e-6);
+	}
+
+	#[rstest]
+	#[case(0.0, 0)]
+	#[case(127.5, 128)]
+	#[case(255.0, 255)]
+	#[case(-10.0, 0)]
+	#[case(300.0, 255)]
+	#[case(0.4, 0)]
+	#[case(0.6, 1)]
+	fn test_to_u8(#[case] input: f32, #[case] expected: u8) {
+		assert_eq!(to_u8(input), expected);
+	}
+
+	#[rstest]
+	#[case([0.0, 0.0, 0.0, 1.0])]
+	#[case([1.0, 0.0, 0.0, 0.0])]
+	#[case([0.0, 1.0, 0.0, 0.0])]
+	#[case([0.0, 0.0, 1.0, 0.0])]
+	#[case([0.5, 0.5, 0.5, 0.5])]
+	fn test_pack_unpack_quaternion_smallest_three_roundtrip(#[case] input: [f32; 4]) {
+		let no_flip = [1.0_f32, 1.0, 1.0];
+		let normed = normalize_quaternion(&input);
+		let packed = pack_quaternion_smallest_three(&normed, no_flip);
+		let mut unpacked = [0.0_f32; 4];
+
+		unpack_quaternion_smallest_three(&mut unpacked, &packed);
+
+		let dot: f32 = normed.iter().zip(unpacked.iter()).map(|(a, b)| a * b).sum();
+
+		assert_relative_eq!(dot.abs(), 1.0, epsilon = 0.01);
+	}
+
+	#[test]
+	fn test_pack_unpack_quaternion_with_flip() {
+		let q = [0.1_f32, 0.2, 0.3, 0.9];
+		let flip = [-1.0_f32, 1.0, -1.0];
+		let packed = pack_quaternion_smallest_three(&q, flip);
+		let mut unpacked = [0.0_f32; 4];
+
+		unpack_quaternion_smallest_three_with_flip(&mut unpacked, &packed, flip);
+
+		let norm = normalize_quaternion(&q);
+		let dot: f32 = norm.iter().zip(unpacked.iter()).map(|(a, b)| a * b).sum();
+
+		assert_relative_eq!(dot.abs(), 1.0, epsilon = 0.02);
+	}
+
+	#[rstest]
+	#[case([128_u8, 128, 128], [0.0, 0.0, 0.0, 1.0])]
+	fn test_unpack_quaternion_first_three_identity(
+		#[case] r: [u8; 3],
+		#[case] mut expected: [f32; 4],
+	) {
+		unpack_quaternion_first_three(&mut expected, &r);
+
+		assert_relative_eq!(expected[0], 0.0, epsilon = 0.01);
+		assert_relative_eq!(expected[1], 0.0, epsilon = 0.01);
+		assert_relative_eq!(expected[2], 0.0, epsilon = 0.01);
+		assert_relative_eq!(expected[3], 1.0, epsilon = 0.01);
+	}
+
+	#[test]
+	fn test_unpack_quaternion_first_three_w_derived() {
+		let r = [200_u8, 150, 140];
+		let mut rot = [0.0_f32; 4];
+
+		unpack_quaternion_first_three(&mut rot, &r);
+
+		let norm = (rot[0] * rot[0] + rot[1] * rot[1] + rot[2] * rot[2] + rot[3] * rot[3])
+			.sqrt();
+
+		assert_relative_eq!(norm, 1.0, epsilon = 0.01);
+		assert!(rot[3] >= 0.0, "w component must be non-negative");
+	}
 }
-*/

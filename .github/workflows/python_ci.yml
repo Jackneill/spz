@@ -57,6 +57,8 @@ jobs:
             sudo apt install -y clang lldb lld
 
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
       - uses: rui314/setup-mold@v1
       - uses: actions/setup-python@v6
         with:
@@ -89,6 +91,8 @@ jobs:
             target: armv7
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
       - uses: rui314/setup-mold@v1
 
       - name: Install deps (apt)
@@ -123,6 +127,8 @@ jobs:
             target: x86
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -151,6 +157,8 @@ jobs:
             target: aarch64
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -171,11 +179,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist -m crates/spz-binding-python/Cargo.toml
+
       - name: Upload sdist
         uses: actions/upload-artifact@v6
         with:

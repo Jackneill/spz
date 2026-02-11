@@ -545,4 +545,134 @@ mod tests {
 		};
 		assert_eq!(header.is_valid(), expected_valid);
 	}
+
+	#[rstest]
+	#[case(Flags::none(), false, true)]
+	#[case(Flags::ANTIALIASED, true, true)]
+	#[case(Flags(0x02), false, false)] // undefined bit
+	#[case(Flags(0xFF), true, false)] // all bits set — antialiased bit is on but invalid overall
+	fn test_flags(
+		#[case] flags: Flags,
+		#[case] expected_antialiased: bool,
+		#[case] expected_valid: bool,
+	) {
+		assert_eq!(flags.is_antialiased(), expected_antialiased);
+		assert_eq!(flags.is_valid(), expected_valid);
+	}
+
+	#[test]
+	fn test_header_default() {
+		let h = Header::default();
+
+		assert_eq!(h.magic, MAGIC_VALUE);
+		assert_eq!(h.version, Version::V3);
+		assert_eq!(h.num_points, 0);
+		assert_eq!(h.spherical_harmonics_degree, 0);
+		assert_eq!(h.fractional_bits, 12);
+		assert!(!h.flags.is_antialiased());
+		assert_eq!(h.reserved, 0);
+		assert!(h.is_valid());
+	}
+
+	#[test]
+	fn test_header_display() {
+		let h = Header::default();
+		let display = format!("{}", h);
+
+		assert!(display.contains("Header="));
+		assert!(display.contains("n_pts=0"));
+		assert!(display.contains("v3"));
+	}
+
+	#[test]
+	fn test_header_pretty_fmt() {
+		let h = Header {
+			num_points: 42,
+			spherical_harmonics_degree: 2,
+			flags: Flags::ANTIALIASED,
+			..Default::default()
+		};
+		let pretty = h.pretty_fmt();
+
+		assert!(pretty.contains("42"));
+		assert!(pretty.contains("true")); // antialiased
+		assert!(pretty.contains("2")); // sh degree
+	}
+
+	#[rstest]
+	#[case(Version::V1, "v1")]
+	#[case(Version::V2, "v2")]
+	#[case(Version::V3, "v3")]
+	fn test_version_display(#[case] version: Version, #[case] expected: &str) {
+		assert_eq!(format!("{}", version), expected);
+	}
+
+	#[test]
+	fn test_header_negative_num_points_invalid() {
+		let h = Header {
+			num_points: -1,
+			..Default::default()
+		};
+
+		assert!(!h.is_valid());
+	}
+
+	#[test]
+	fn test_serialize_read_roundtrip() {
+		let original = Header {
+			magic: MAGIC_VALUE,
+			version: Version::V3,
+			num_points: 1234,
+			spherical_harmonics_degree: 3,
+			fractional_bits: 16,
+			flags: Flags::ANTIALIASED,
+			reserved: 0,
+		};
+		let mut buf = Vec::new();
+
+		original.serialize_to(&mut buf).expect("serialize failed");
+
+		assert_eq!(buf.len(), HEADER_SIZE);
+
+		let mut cursor = std::io::Cursor::new(&buf);
+		let recovered = Header::read_from(&mut cursor).expect("read failed");
+
+		assert_eq!(recovered, original);
+	}
+
+	#[test]
+	fn test_read_from_unchecked_valid_header() {
+		let original = Header {
+			magic: MAGIC_VALUE,
+			version: Version::V2,
+			num_points: 500,
+			spherical_harmonics_degree: 1,
+			fractional_bits: 8,
+			flags: Flags::none(),
+			reserved: 0,
+		};
+		let mut buf = Vec::new();
+
+		original.serialize_to(&mut buf).expect("serialize failed");
+
+		let mut cursor = std::io::Cursor::new(&buf);
+		let header = Header::read_from_unchecked(&mut cursor)
+			.expect("read_from_unchecked failed");
+
+		assert_eq!(header.num_points, 500);
+		assert_eq!(header.version, Version::V2);
+	}
+
+	#[test]
+	fn test_read_from_rejects_invalid_header() {
+		let mut bytes = [0_u8; 16];
+
+		bytes[0..4].copy_from_slice(&(0xDEADBEEF_u32 as i32).to_le_bytes());
+		bytes[4..8].copy_from_slice(&3_i32.to_le_bytes());
+
+		let mut cursor = std::io::Cursor::new(&bytes);
+		let result = Header::read_from(&mut cursor);
+
+		assert!(result.is_err());
+	}
 }

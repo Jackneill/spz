@@ -67,3 +67,100 @@ pub mod gzip {
 		Ok(())
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::gzip;
+
+	#[test]
+	fn test_compress_decompress_roundtrip() {
+		let original = b"Hello, Gaussian Splatting! This is a test of gzip roundtrip.";
+		let mut compressed = Vec::new();
+
+		gzip::compress_bytes(original.as_slice(), &mut compressed)
+			.expect("compression failed");
+
+		// Compressed data should differ from original
+		assert_ne!(compressed.as_slice(), original.as_slice());
+		assert!(!compressed.is_empty());
+
+		let mut decompressed = Vec::new();
+
+		gzip::decompress_end(&compressed, &mut decompressed).expect("decompression failed");
+
+		assert_eq!(decompressed.as_slice(), original.as_slice());
+	}
+
+	#[test]
+	fn test_compress_decompress_large_data() {
+		let original: Vec<u8> = (0..100_000).map(|i| (i % 256) as u8).collect();
+		let mut compressed = Vec::new();
+
+		gzip::compress_bytes(&original, &mut compressed).expect("compression failed");
+
+		assert!(compressed.len() < original.len());
+
+		let mut decompressed = Vec::new();
+
+		gzip::decompress_end(&compressed, &mut decompressed).expect("decompression failed");
+
+		assert_eq!(decompressed, original);
+	}
+
+	#[test]
+	fn test_compress_empty_data() {
+		let original: &[u8] = &[];
+		let mut compressed = Vec::new();
+
+		gzip::compress_bytes(original, &mut compressed)
+			.expect("compression of empty data failed");
+
+		// Even empty data produces gzip header/footer
+		assert!(!compressed.is_empty());
+
+		let mut decompressed = Vec::new();
+
+		gzip::decompress_end(&compressed, &mut decompressed)
+			.expect("decompression of empty data failed");
+
+		assert!(decompressed.is_empty());
+	}
+
+	#[test]
+	fn test_decompress_invalid_data() {
+		let bad_data = vec![0xDE, 0xAD, 0xBE, 0xEF];
+		let mut decompressed = Vec::new();
+
+		let result = gzip::decompress_end(&bad_data, &mut decompressed);
+
+		assert!(result.is_err());
+	}
+
+	#[test]
+	fn test_decompress_into_fixed_buffer() {
+		let original = b"Short text for fixed buffer decompress.";
+		let mut compressed = Vec::new();
+
+		gzip::compress_bytes(original.as_slice(), &mut compressed)
+			.expect("compression failed");
+
+		let mut buf = vec![0_u8; original.len() + 64];
+
+		gzip::decompress(&compressed, buf.as_mut_slice())
+			.expect("decompression into fixed buffer failed");
+
+		assert_eq!(&buf[..original.len()], original.as_slice());
+	}
+
+	#[test]
+	fn test_compress_bytes_clears_output() {
+		let mut compressed = vec![0xFF; 100];
+
+		gzip::compress_bytes(b"data", &mut compressed).expect("compression failed");
+
+		// Output should not start with the pre-filled 0xFF bytes
+		// (gzip magic is 0x1F 0x8B)
+		assert_eq!(compressed[0], 0x1F);
+		assert_eq!(compressed[1], 0x8B);
+	}
+}

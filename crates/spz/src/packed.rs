@@ -419,3 +419,262 @@ pub fn is_quaternion_smallest_three_used(version: crate::header::Version) -> boo
 		crate::header::Version::V3 => true,
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::header::{Flags, Header, MAGIC_VALUE, Version};
+	use rstest::rstest;
+
+	#[rstest]
+	#[case(Version::V1, false)]
+	#[case(Version::V2, false)]
+	#[case(Version::V3, true)]
+	fn test_is_quaternion_smallest_three_used(
+		#[case] version: Version,
+		#[case] expected: bool,
+	) {
+		assert_eq!(is_quaternion_smallest_three_used(version), expected);
+	}
+
+	#[test]
+	fn test_check_sizes_valid() {
+		let packed = PackedGaussianSplat {
+			num_points: 2,
+			sh_degree: 1,
+			fractional_bits: 12,
+			antialiased: false,
+			uses_quaternion_smallest_three: true,
+			positions: vec![0; 2 * 9],
+			scales: vec![0; 2 * 3],
+			rotations: vec![0; 2 * 4],
+			alphas: vec![0; 2],
+			colors: vec![0; 2 * 3],
+			spherical_harmonics: vec![0; 2 * 3 * 3], // sh_dim=3, *3 for rgb
+		};
+		assert!(packed.check_sizes(2, 3));
+	}
+
+	#[test]
+	fn test_check_sizes_wrong_positions() {
+		let packed = PackedGaussianSplat {
+			num_points: 2,
+			sh_degree: 0,
+			fractional_bits: 12,
+			antialiased: false,
+			uses_quaternion_smallest_three: true,
+			positions: vec![0; 5], // wrong
+			scales: vec![0; 6],
+			rotations: vec![0; 8],
+			alphas: vec![0; 2],
+			colors: vec![0; 6],
+			spherical_harmonics: vec![],
+		};
+		assert!(!packed.check_sizes(2, 0));
+	}
+
+	#[test]
+	fn test_check_sizes_first_three_rotations() {
+		let packed = PackedGaussianSplat {
+			num_points: 1,
+			sh_degree: 0,
+			fractional_bits: 12,
+			antialiased: false,
+			uses_quaternion_smallest_three: false,
+			positions: vec![0; 9],
+			scales: vec![0; 3],
+			rotations: vec![0; 3],
+			alphas: vec![0; 1],
+			colors: vec![0; 3],
+			spherical_harmonics: vec![],
+		};
+		assert!(packed.check_sizes(1, 0));
+	}
+
+	#[test]
+	fn test_check_sizes_empty() {
+		let packed = PackedGaussianSplat::default();
+
+		assert!(packed.check_sizes(0, 0));
+	}
+
+	#[test]
+	fn test_to_header_fields() {
+		let packed = PackedGaussianSplat {
+			num_points: 42,
+			sh_degree: 2,
+			fractional_bits: 16,
+			antialiased: true,
+			..Default::default()
+		};
+		let header = packed.to_header();
+
+		assert_eq!(header.num_points, 42);
+		assert_eq!(header.spherical_harmonics_degree, 2);
+		assert_eq!(header.fractional_bits, 16);
+		assert!(header.flags.is_antialiased());
+	}
+
+	#[test]
+	fn test_to_header_not_antialiased() {
+		let packed = PackedGaussianSplat {
+			antialiased: false,
+			..Default::default()
+		};
+		let header = packed.to_header();
+
+		assert!(!header.flags.is_antialiased());
+	}
+
+	#[test]
+	fn test_to_bytes_vec_empty() {
+		let packed = PackedGaussianSplat::default();
+		let bytes = packed.to_bytes_vec().expect("serialization failed");
+
+		assert_eq!(bytes.len(), 16);
+	}
+
+	#[test]
+	fn test_to_bytes_vec_write_self_to_match() {
+		let packed = PackedGaussianSplat {
+			num_points: 1,
+			sh_degree: 0,
+			fractional_bits: 12,
+			antialiased: false,
+			uses_quaternion_smallest_three: true,
+			positions: vec![1; 9],
+			scales: vec![2; 3],
+			rotations: vec![3; 4],
+			alphas: vec![4; 1],
+			colors: vec![5; 3],
+			spherical_harmonics: vec![],
+		};
+		let bytes = packed.to_bytes_vec().expect("to_bytes_vec failed");
+
+		let mut stream = Vec::new();
+
+		packed.write_self_to(&mut stream)
+			.expect("write_self_to failed");
+
+		assert_eq!(bytes, stream);
+	}
+
+	#[rstest]
+	#[case(1)]
+	#[case(100)]
+	fn test_at_out_of_bounds(#[case] index: usize) {
+		let packed = PackedGaussianSplat {
+			num_points: 1,
+			..Default::default()
+		};
+		assert!(packed.at(index).is_err());
+	}
+
+	#[test]
+	fn test_at_valid_index() {
+		let packed = PackedGaussianSplat {
+			num_points: 1,
+			sh_degree: 0,
+			fractional_bits: 12,
+			antialiased: false,
+			uses_quaternion_smallest_three: true,
+			positions: vec![10; 9],
+			scales: vec![20; 3],
+			rotations: vec![30; 4],
+			alphas: vec![40],
+			colors: vec![50; 3],
+			spherical_harmonics: vec![],
+		};
+		let pg = packed.at(0).expect("at(0) failed");
+
+		assert_eq!(pg.position, [10; 9]);
+		assert_eq!(pg.scale, [20; 3]);
+		assert_eq!(pg.rotation, [30; 4]);
+		assert_eq!(pg.alpha, 40);
+		assert_eq!(pg.color, [50; 3]);
+	}
+
+	#[test]
+	fn test_at_second_splat() {
+		let packed = PackedGaussianSplat {
+			num_points: 2,
+			sh_degree: 0,
+			fractional_bits: 12,
+			antialiased: false,
+			uses_quaternion_smallest_three: true,
+			positions: vec![0; 9].into_iter().chain(vec![1; 9]).collect(),
+			scales: vec![0; 3].into_iter().chain(vec![2; 3]).collect(),
+			rotations: vec![0; 4].into_iter().chain(vec![3; 4]).collect(),
+			alphas: vec![0, 99],
+			colors: vec![0; 3].into_iter().chain(vec![4; 3]).collect(),
+			spherical_harmonics: vec![],
+		};
+		let pg = packed.at(1).expect("at(1) failed");
+
+		assert_eq!(pg.position, [1; 9]);
+		assert_eq!(pg.scale, [2; 3]);
+		assert_eq!(pg.rotation, [3; 4]);
+		assert_eq!(pg.alpha, 99);
+		assert_eq!(pg.color, [4; 3]);
+	}
+
+	#[rstest]
+	#[case(vec![])]
+	#[case(vec![0_u8; 8])]
+	fn test_try_from_too_short(#[case] bytes: Vec<u8>) {
+		assert!(PackedGaussianSplat::try_from(bytes).is_err());
+	}
+
+	#[test]
+	fn test_try_from_invalid_header_magic() {
+		let mut bytes = [0_u8; 16];
+		bytes[0..4].copy_from_slice(&(0xDEADBEEF_u32 as i32).to_le_bytes());
+
+		assert!(PackedGaussianSplat::try_from(bytes.to_vec()).is_err());
+	}
+
+	#[test]
+	fn test_try_from_valid_zero_points() {
+		let header = Header {
+			magic: MAGIC_VALUE,
+			version: Version::V3,
+			num_points: 0,
+			spherical_harmonics_degree: 0,
+			fractional_bits: 12,
+			flags: Flags::none(),
+			reserved: 0,
+		};
+		let bytes: [u8; 16] = header.into();
+		let packed = PackedGaussianSplat::try_from(bytes.as_slice())
+			.expect("valid zero-point header");
+
+		assert_eq!(packed.num_points, 0);
+		assert!(packed.positions.is_empty());
+	}
+
+	#[rstest]
+	#[case(vec![])]
+	#[case(vec![1_u8, 2, 3, 4])]
+	fn test_from_bytes_errors(#[case] bytes: Vec<u8>) {
+		assert!(PackedGaussianSplat::from_bytes(&bytes).is_err());
+	}
+
+	#[test]
+	fn test_packed_gaussian_default() {
+		let pg = PackedGaussian::default();
+
+		assert_eq!(pg.position, [0; 9]);
+		assert_eq!(pg.rotation, [0; 4]);
+		assert_eq!(pg.scale, [0; 3]);
+		assert_eq!(pg.color, [0; 3]);
+		assert_eq!(pg.alpha, 0);
+		assert_eq!(pg.sh_r, [0; 15]);
+		assert_eq!(pg.sh_g, [0; 15]);
+		assert_eq!(pg.sh_b, [0; 15]);
+	}
+
+	#[test]
+	fn test_packed_gaussian_size() {
+		assert_eq!(std::mem::size_of::<PackedGaussian>(), 65);
+	}
+}

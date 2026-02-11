@@ -966,12 +966,6 @@ mod tests {
 		(4.0 / 3.0) * std::f32::consts::PI * 0.0_f32.exp(),
 		1e-5_f32,
 	)]
-	// Set up scales for volume calculation (log scale)
-	// volume = 4/3 * pi * exp(scale_sum)
-	// use known values: scales [-1,-1,-1], [0,0,0], [1,1,1]
-	// scale sums: -3, 0, 3
-	// median scale sum: 0
-	// expected median volume: 4/3 * pi * exp(0) = 4/3 * pi
 	fn test_median_volume(
 		#[case] mut gs: GaussianSplat,
 		#[case] scales: Vec<f32>,
@@ -981,5 +975,185 @@ mod tests {
 		gs.scales = scales;
 
 		assert_relative_eq!(gs.median_volume(), expected_vol, epsilon = epsilon);
+	}
+
+	#[rstest]
+	#[case(vec![])]
+	#[case(vec![f32::NAN, f32::NAN, f32::NAN])]
+	#[case(vec![f32::INFINITY, f32::INFINITY, f32::INFINITY])]
+	fn test_median_volume_fallback(#[case] scales: Vec<f32>) {
+		let mut gs = GaussianSplat::default();
+		gs.scales = scales;
+
+		assert_relative_eq!(gs.median_volume(), 0.01, epsilon = 1e-6);
+	}
+
+	#[test]
+	fn test_check_sizes_default_is_valid() {
+		let gs = GaussianSplat::default();
+
+		assert!(gs.check_sizes());
+	}
+
+	#[test]
+	fn test_check_sizes_negative_num_points() {
+		let mut gs = GaussianSplat::default();
+
+		gs.header.num_points = -1;
+
+		assert!(!gs.check_sizes());
+	}
+
+	#[test]
+	fn test_check_sizes_invalid_sh_degree() {
+		let mut gs = GaussianSplat::default();
+
+		gs.header.spherical_harmonics_degree = 4;
+
+		assert!(!gs.check_sizes());
+	}
+
+	#[test]
+	fn test_check_sizes_wrong_positions_len() {
+		let gs = GaussianSplat {
+			header: Header {
+				num_points: 1,
+				..Default::default()
+			},
+			positions: vec![0.0; 2],
+			scales: vec![0.0; 3],
+			rotations: vec![0.0; 4],
+			alphas: vec![0.0; 1],
+			colors: vec![0.0; 3],
+			spherical_harmonics: vec![],
+		};
+		assert!(!gs.check_sizes());
+	}
+
+	#[test]
+	fn test_check_sizes_correct_for_one_point_sh1() {
+		let gs = GaussianSplat {
+			header: Header {
+				num_points: 1,
+				spherical_harmonics_degree: 1,
+				..Default::default()
+			},
+			positions: vec![0.0; 3],
+			scales: vec![0.0; 3],
+			rotations: vec![0.0; 4],
+			alphas: vec![0.0; 1],
+			colors: vec![0.0; 3],
+			spherical_harmonics: vec![0.0; 9],
+		};
+		assert!(gs.check_sizes());
+	}
+
+	#[rstest]
+	#[case((-1.0, 1.0, 0.0, 5.0, -3.0, 3.0), (2.0, 5.0, 6.0), (0.0, 2.5, 0.0))]
+	#[case((-2.0, 2.0, -1.0, 3.0, 0.0, 10.0), (4.0, 4.0, 10.0), (0.0, 1.0, 5.0))]
+	#[case((5.0, 5.0, 5.0, 5.0, 5.0, 5.0), (0.0, 0.0, 0.0), (5.0, 5.0, 5.0))]
+	fn test_bounding_box(
+		#[case] bounds: (f32, f32, f32, f32, f32, f32),
+		#[case] expected_size: (f32, f32, f32),
+		#[case] expected_center: (f32, f32, f32),
+	) {
+		let bbox = BoundingBox {
+			min_x: bounds.0,
+			max_x: bounds.1,
+			min_y: bounds.2,
+			max_y: bounds.3,
+			min_z: bounds.4,
+			max_z: bounds.5,
+		};
+		assert_eq!(bbox.size(), expected_size);
+		assert_eq!(bbox.center(), expected_center);
+	}
+
+	#[test]
+	fn test_builder_default() {
+		let builder = GaussianSplatBuilder::default();
+
+		assert_eq!(builder.coord_sys, CoordinateSystem::Unspecified);
+	}
+
+	#[rstest]
+	#[case(false, true)]
+	#[case(true, false)]
+	fn test_builder_packed(#[case] packed: bool, #[case] expect_err: bool) {
+		let builder = GaussianSplatBuilder::default();
+
+		assert_eq!(builder.packed(packed).is_err(), expect_err);
+	}
+
+	#[test]
+	fn test_builder_coord_sys() {
+		let builder = GaussianSplat::builder().coord_sys(CoordinateSystem::RightDownFront);
+
+		assert_eq!(builder.coord_sys, CoordinateSystem::RightDownFront);
+	}
+
+	#[test]
+	fn test_load_options_builder() {
+		let opts = LoadOptions::builder()
+			.coord_sys(CoordinateSystem::LeftUpFront)
+			.build();
+
+		assert_eq!(opts.coord_sys, CoordinateSystem::LeftUpFront);
+	}
+
+	#[test]
+	fn test_save_options_builder() {
+		let opts = SaveOptions::builder()
+			.coord_sys(CoordinateSystem::RightUpFront)
+			.build();
+
+		assert_eq!(opts.coord_sys, CoordinateSystem::RightUpFront);
+	}
+
+	#[test]
+	fn test_convert_coordinates_zero_points_noop() {
+		let mut gs = GaussianSplat::default();
+
+		gs.convert_coordinates(
+			CoordinateSystem::RightUpBack,
+			CoordinateSystem::RightDownFront,
+		);
+		assert!(gs.positions.is_empty());
+	}
+
+	#[test]
+	fn test_convert_coordinates_unspecified_noop() {
+		let mut gs = GaussianSplat {
+			header: Header {
+				num_points: 1,
+				..Default::default()
+			},
+			positions: vec![1.0, 2.0, 3.0],
+			scales: vec![0.0; 3],
+			rotations: vec![0.0, 0.0, 0.0, 1.0],
+			alphas: vec![0.5],
+			colors: vec![0.0; 3],
+			spherical_harmonics: vec![],
+		};
+		let original_pos = gs.positions.clone();
+
+		gs.convert_coordinates(
+			CoordinateSystem::Unspecified,
+			CoordinateSystem::RightDownFront,
+		);
+		assert_eq!(gs.positions, original_pos);
+	}
+
+	#[test]
+	fn test_to_packed_gaussians_inconsistent_sizes_fails() {
+		let gs = GaussianSplat {
+			header: Header {
+				num_points: 1,
+				..Default::default()
+			},
+			positions: vec![1.0],
+			..Default::default()
+		};
+		assert!(gs.to_packed_gaussians(&SaveOptions::default()).is_err());
 	}
 }
