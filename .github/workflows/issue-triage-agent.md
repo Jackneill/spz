@@ -2,7 +2,7 @@
 timeout-minutes: 5
 strict: true
 on:
-  schedule: "0 14 * * 1-5"
+  schedule: "0 6 * * 1-5"
   workflow_dispatch:
 permissions:
   issues: read
