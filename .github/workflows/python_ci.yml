@@ -54,7 +54,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y clang-20 lldb-20 lld-20
+            sudo apt install -y clang lldb lld
 
       - uses: actions/checkout@v6
       - uses: rui314/setup-mold@v1
@@ -94,7 +94,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y clang-20 lldb-20 lld-20
+            sudo apt install -y clang lldb lld
 
       - uses: actions/setup-python@v6
         with:

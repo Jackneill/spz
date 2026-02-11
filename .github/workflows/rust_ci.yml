@@ -31,7 +31,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y capnproto clang-20 lldb-20 lld-20
+            sudo apt install -y capnproto clang lldb lld
 
       - name: Install cargo deny
         run: |
@@ -56,7 +56,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y capnproto clang-20 lldb-20 lld-20
+            sudo apt install -y capnproto clang lldb lld
 
       - name: Install cargo deny
         run: |
@@ -81,7 +81,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y capnproto clang-20 lldb-20 lld-20
+            sudo apt install -y capnproto clang lldb lld
 
       - name: Install cargo deny
         run: |
@@ -111,7 +111,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y capnproto clang-20 lldb-20 lld-20
+            sudo apt install -y capnproto clang lldb lld
 
       - name: Test
         run: just test
@@ -139,7 +139,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y calc capnproto clang-20 lldb-20 lld-20
+            sudo apt install -y calc capnproto clang lldb lld
 
       - name: Install cargo fuzz
         run: |
@@ -171,7 +171,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y capnproto clang-20 lldb-20 lld-20
+            sudo apt install -y capnproto clang lldb lld
 
       - name: Bench
         run: just bench

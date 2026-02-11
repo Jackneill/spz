@@ -29,7 +29,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y capnproto clang-20 lldb-20 lld-20
+            sudo apt install -y capnproto clang lldb lld
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
