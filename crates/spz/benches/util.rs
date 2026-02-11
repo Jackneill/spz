@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use rand::{Rng, SeedableRng, rngs::StdRng};
+use rand::{RngExt, SeedableRng, rngs::StdRng};
 use spz::{coord::CoordinateSystem, gaussian_splat::GaussianSplat, header::Header, math};
 
 pub fn create_splat(num_points: i32) -> GaussianSplat {
