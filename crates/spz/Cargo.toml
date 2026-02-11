@@ -61,7 +61,7 @@ codspeed-criterion-compat = { version = "4.2.1", default-features = true, featur
 ] }
 rstest = { version = "0.26", default-features = true, features = [] }
 approx = { version = "0.5", default-features = true, features = [] }
-rand = { version = "0.9", default-features = true, features = [] }
+rand = { version = "0.10", default-features = true, features = [] }
 bitflags = { version = "2.10", default-features = true, features = [
 	"std",
 	"serde",
