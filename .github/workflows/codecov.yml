@@ -26,9 +26,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
 
-      - name: Install capnproto Compiler
+      - name: Install deps (apt)
         run: |
-          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y capnproto clang-20 lldb-20 lld-20
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov

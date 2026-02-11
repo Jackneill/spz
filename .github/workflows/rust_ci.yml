@@ -28,9 +28,10 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
-      - name: Install capnproto Compiler
+      - name: Install deps (apt)
         run: |
-          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y capnproto clang-20 lldb-20 lld-20
 
       - name: Install cargo deny
         run: |
@@ -52,9 +53,10 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install capnproto Compiler
+      - name: Install deps (apt)
         run: |
-          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y capnproto clang-20 lldb-20 lld-20
 
       - name: Install cargo deny
         run: |
@@ -76,9 +78,10 @@ jobs:
       - uses: rui314/setup-mold@v1
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install capnproto Compiler
+      - name: Install deps (apt)
         run: |
-          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y capnproto clang-20 lldb-20 lld-20
 
       - name: Install cargo deny
         run: |
@@ -105,9 +108,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
 
-      - name: Install capnproto Compiler
+      - name: Install deps (apt)
         run: |
-          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y capnproto clang-20 lldb-20 lld-20
 
       - name: Test
         run: just test
@@ -132,9 +136,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
 
-      - name: Install Deps
+      - name: Install deps (apt)
         run: |
-          env DEBIAN_FRONTEND=noninteractive sudo apt install -y calc capnproto
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y calc capnproto clang-20 lldb-20 lld-20
 
       - name: Install cargo fuzz
         run: |
@@ -163,9 +168,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
 
-      - name: Install capnproto Compiler
+      - name: Install deps (apt)
         run: |
-          env DEBIAN_FRONTEND=noninteractive sudo apt install -y capnproto
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y capnproto clang-20 lldb-20 lld-20
 
       - name: Bench
         run: just bench
