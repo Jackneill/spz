@@ -51,7 +51,13 @@ jobs:
           - runner: ubuntu-22.04
             target: ppc64le
     steps:
+      - name: Install deps (apt)
+        run: |
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y clang-20 lldb-20 lld-20
+
       - uses: actions/checkout@v6
+      - uses: rui314/setup-mold@v1
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -83,6 +89,13 @@ jobs:
             target: armv7
     steps:
       - uses: actions/checkout@v6
+      - uses: rui314/setup-mold@v1
+
+      - name: Install deps (apt)
+        run: |
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt install -y clang-20 lldb-20 lld-20
+
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -114,6 +127,7 @@ jobs:
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
+      - uses: rui314/setup-mold@v1
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -140,6 +154,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
+      - uses: rui314/setup-mold@v1
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
