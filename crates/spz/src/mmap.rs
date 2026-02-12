@@ -7,6 +7,7 @@ use anyhow::Result;
 use memmap2::Mmap;
 
 /// Memory-maps a file for efficient read-only access.
+#[inline]
 pub fn mmap<F>(filepath: F) -> Result<Mmap>
 where
 	F: AsRef<Path>,
@@ -17,6 +18,7 @@ where
 }
 
 /// Memory-maps a file for efficient read-only access with a specified range.
+#[inline]
 pub fn mmap_range<F>(filepath: F, offset: usize, len: usize) -> Result<Mmap>
 where
 	F: AsRef<Path>,
