@@ -10,8 +10,5 @@ use libfuzzer_sys::fuzz_target;
 use spz::header::Header;
 
 fuzz_target!(|data: &[u8]| {
-	let Ok(header_bytes) = <[u8; 16]>::try_from(data) else {
-		return;
-	};
-	let _ = Header::try_from(header_bytes);
+	let _ = Header::try_from(data);
 });
