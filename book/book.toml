@@ -4,9 +4,9 @@ authors = ["Márk Bartos <r2ygm3d9f@mozmail.com>"]
 language = "en"
 
 [output.html]
-theme = "navy"
-default-theme = "navy"
-preferred-dark-theme = "navy"
+#theme = "navy"
+#default-theme = "navy"
+#preferred-dark-theme = "navy"
 smart-punctuation = true
 definition-lists = true
 admonitions = true
