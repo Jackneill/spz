@@ -94,7 +94,7 @@ See [docs/SPZ_SPEC_v3.md](docs/SPZ_SPEC_v3.md) for more information.
 
 ```sh
 # Install:
-cargo install spz
+cargo install spz-cli
 # or
 flatpak install io.github.jackneill.spz
 # or
