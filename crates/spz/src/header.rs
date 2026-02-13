@@ -3,12 +3,13 @@
 use std::io::Write;
 use std::{fmt::Display, io::Read, path::Path};
 
-use anyhow::{Context, Error, Result, bail};
+use anyhow::{Context, Error, Result, anyhow, bail};
 use arbitrary::Arbitrary;
 use bitflags::bitflags;
 use likely_stable::{likely, unlikely};
 use serde::{Deserialize, Serialize};
-use zerocopy::{FromBytes, IntoBytes, KnownLayout, TryFromBytes};
+use strum::EnumIter;
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout, TryFromBytes};
 
 use crate::compression;
 use crate::mmap::mmap_range;
@@ -30,6 +31,7 @@ pub const MAGIC_VALUE: i32 = 0x5053474e;
 	Deserialize,
 	Arbitrary,
 	FromBytes,
+	Immutable,
 	IntoBytes,
 	KnownLayout,
 )]
@@ -77,9 +79,11 @@ impl Flags {
 	Serialize,
 	Deserialize,
 	Arbitrary,
+	Immutable,
 	TryFromBytes,
 	IntoBytes,
 	KnownLayout,
+	EnumIter,
 )]
 #[repr(i32)]
 pub enum Version {
@@ -131,6 +135,7 @@ pub const HEADER_SIZE: usize = std::mem::size_of::<Header>();
 	Serialize,
 	Deserialize,
 	Arbitrary,
+	Immutable,
 	TryFromBytes,
 	IntoBytes,
 	KnownLayout,
@@ -289,7 +294,7 @@ impl Header {
 	where
 		W: Write,
 	{
-		let b = unsafe { &*(self as *const Self as *const [u8; HEADER_SIZE]) };
+		let b = zerocopy::IntoBytes::as_bytes(self);
 
 		let n = stream.write(b)?;
 
@@ -362,7 +367,11 @@ impl Default for Header {
 impl From<Header> for [u8; 16] {
 	#[inline]
 	fn from(from: Header) -> Self {
-		unsafe { std::mem::transmute::<Header, Self>(from) }
+		let bytes = zerocopy::IntoBytes::as_bytes(&from);
+		let mut out = [0_u8; HEADER_SIZE];
+
+		out.copy_from_slice(bytes);
+		out
 	}
 }
 
@@ -371,7 +380,8 @@ impl TryFrom<[u8; 16]> for Header {
 
 	#[inline]
 	fn try_from(from: [u8; 16]) -> Result<Self> {
-		let header = unsafe { std::mem::transmute::<[u8; 16], Self>(from) };
+		let header: Header = zerocopy::TryFromBytes::try_read_from_bytes(&from)
+			.map_err(|_| anyhow!("invalid header bytes"))?;
 
 		if unlikely(!header.is_valid()) {
 			bail!("header fails validation");
@@ -393,9 +403,10 @@ impl TryFrom<&[u8]> for Header {
 				from.len()
 			);
 		}
-		let header = unsafe {
-			std::mem::transmute::<[u8; 16], Self>(from[..HEADER_SIZE].try_into()?)
-		};
+		let header: Header =
+			zerocopy::TryFromBytes::try_read_from_bytes(&from[..HEADER_SIZE])
+				.map_err(|_| anyhow::anyhow!("invalid header bytes"))?;
+
 		if unlikely(!header.is_valid()) {
 			bail!("header fails validation");
 		}

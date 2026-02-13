@@ -43,7 +43,7 @@ serde_json = { version = "1.0", default-features = true, features = [
 serde = { version = "1.0", default-features = true, features = ["derive"] }
 static_assertions = { version = "1.1", default-features = true, features = [] }
 tokio = { version = "1.49", default-features = true, features = ["full"] }
-likely_stable = { version = "0.1", default-features = true, features = [] }
+likely_stable = { version = "0.1", default-features = false, features = [] }
 arbitrary = { version = "1.4", default-features = true, features = ["derive"] }
 bitflags = { version = "2.10", default-features = true, features = [] }
 strum = { version = "0.27", default-features = true, features = ["derive"] }

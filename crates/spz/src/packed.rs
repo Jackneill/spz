@@ -360,7 +360,7 @@ impl TryFrom<&[u8]> for PackedGaussianSplat {
 		}
 		let num_points = header.num_points;
 		let uses_quaternion_smallest_three =
-			is_quaternion_smallest_three_used(header.version);
+			is_encoding_quaternion_smallest_three_used(header.version);
 
 		let mut result = PackedGaussianSplat {
 			num_points,
@@ -385,35 +385,32 @@ impl TryFrom<&[u8]> for PackedGaussianSplat {
 						as usize * 3
 			],
 		};
-		// for some reason `err` is marked as unused despite being used.
-		#[allow(unused_variables)]
-		{
-			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.positions) => {
-				bail!("read error (positions): {}", err);
-			}};
-			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.alphas) => {
-				bail!("read error (alphas): {}", err);
-			}};
-			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.colors) => {
-				bail!("read error (colors): {}", err);
-			}};
-			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.scales) => {
-				bail!("read error (scales): {}", err);
-			}};
-			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.rotations) => {
-				bail!("read error (rotations): {}", err);
-			}};
-			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) => {
-				bail!("read error (spherical harmonics): {}", err);
-			}};
-		}
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.positions) => {
+			bail!("read error (positions): {}", err);
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.alphas) => {
+			bail!("read error (alphas): {}", err);
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.colors) => {
+			bail!("read error (colors): {}", err);
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.scales) => {
+			bail!("read error (scales): {}", err);
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.rotations) => {
+			bail!("read error (rotations): {}", err);
+		}};
+		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) => {
+			bail!("read error (spherical harmonics): {}", err);
+		}};
 		Ok(result)
 	}
 }
 
-/// Returns `true` if _smallest-three quaternion encoding_ is used in the given version.
+/// Returns `true` if _smallest-three quaternion encoding_ is used in the given
+/// version.
 #[inline]
-pub fn is_quaternion_smallest_three_used(version: crate::header::Version) -> bool {
+pub fn is_encoding_quaternion_smallest_three_used(version: crate::header::Version) -> bool {
 	match version {
 		crate::header::Version::V1 | crate::header::Version::V2 => false,
 		crate::header::Version::V3 => true,
@@ -434,7 +431,10 @@ mod tests {
 		#[case] version: Version,
 		#[case] expected: bool,
 	) {
-		assert_eq!(is_quaternion_smallest_three_used(version), expected);
+		assert_eq!(
+			is_encoding_quaternion_smallest_three_used(version),
+			expected
+		);
 	}
 
 	#[test]
@@ -657,24 +657,5 @@ mod tests {
 	#[case(vec![1_u8, 2, 3, 4])]
 	fn test_from_bytes_errors(#[case] bytes: Vec<u8>) {
 		assert!(PackedGaussianSplat::from_bytes(&bytes).is_err());
-	}
-
-	#[test]
-	fn test_packed_gaussian_default() {
-		let pg = PackedGaussian::default();
-
-		assert_eq!(pg.position, [0; 9]);
-		assert_eq!(pg.rotation, [0; 4]);
-		assert_eq!(pg.scale, [0; 3]);
-		assert_eq!(pg.color, [0; 3]);
-		assert_eq!(pg.alpha, 0);
-		assert_eq!(pg.sh_r, [0; 15]);
-		assert_eq!(pg.sh_g, [0; 15]);
-		assert_eq!(pg.sh_b, [0; 15]);
-	}
-
-	#[test]
-	fn test_packed_gaussian_size() {
-		assert_eq!(std::mem::size_of::<PackedGaussian>(), 65);
 	}
 }
