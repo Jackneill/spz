@@ -54,7 +54,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y clang lldb lld
+            sudo apt update && sudo apt install -y clang lldb lld
 
       - uses: actions/checkout@v6
         with:
@@ -98,7 +98,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y clang lldb lld
+            sudo apt update && sudo apt install -y clang lldb lld
 
       - uses: actions/setup-python@v6
         with:

@@ -28,7 +28,7 @@ jobs:
       - name: Install deps (apt)
         run: |
           env DEBIAN_FRONTEND=noninteractive \
-            sudo apt install -y capnproto clang lldb lld
+            sudo apt update && sudo apt install -y capnproto clang lldb lld
 
       - name: Setup rust toolchain, cache and cargo-codspeed binary
         uses: moonrepo/setup-rust@v1
