@@ -5,12 +5,8 @@ use std::process::ExitCode;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use mimalloc::MiMalloc;
 
 use spz::prelude::*;
-
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
 
 /// CLI for SPZ (Gaussian Splat) files.
 #[derive(Parser, Debug)]

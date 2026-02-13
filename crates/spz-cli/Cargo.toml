@@ -34,15 +34,11 @@ clap = { version = "4.5", default-features = true, features = [
 	"error-context",
 	"suggestions",
 ] }
-mimalloc = { version = "0.1", default-features = true, features = ["v3"] }
 
 [dev-dependencies]
 criterion = { version = "0.8", default-features = true, features = [
 	"html_reports",
 ] }
-
-[features]
-mimalloc_secure = ["mimalloc/secure"]
 
 [[bin]]
 name = "spz"
