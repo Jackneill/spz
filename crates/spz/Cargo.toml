@@ -1,9 +1,9 @@
 [package]
 name = "spz"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2024"
 authors = ["See AUTHORS.md"]
-description = """SPZ file format handling for Rust, and CLI tooling."""
+description = """SPZ file format handling for Rust."""
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/Jackneill/spz"
 repository = "https://github.com/Jackneill/spz"
@@ -23,17 +23,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-rustversion = { version = "1.0", default-features = true, features = [] }
 anyhow = { version = "1.0", default-features = true, features = [] }
-thiserror = { version = "2.0", default-features = true, features = [] }
-clap = { version = "4.5", default-features = true, features = [
-	"env",
-	"unicode",
-	"derive",
-	"color",
-	"error-context",
-	"suggestions",
-] }
 memmap2 = { version = "0.9", default-features = true, features = [] }
 libc = { version = "0.2", default-features = true, features = [] }
 flate2 = { version = "1.1", default-features = true, features = [] }

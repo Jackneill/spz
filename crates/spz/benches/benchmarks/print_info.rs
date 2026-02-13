@@ -2,7 +2,7 @@
 
 use codspeed_criterion_compat::Criterion;
 
-use crate::util;
+use crate::benchmarks::util;
 
 fn print_info() {
 	let gs = util::load_packed_from_file().unwrap();

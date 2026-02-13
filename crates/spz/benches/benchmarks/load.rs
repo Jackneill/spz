@@ -6,7 +6,7 @@ use spz::{
 };
 use tokio::runtime::Runtime;
 
-use crate::util;
+use crate::benchmarks::util;
 
 pub fn bench_cloud_load_n(c: &mut Criterion) {
 	let gs = util::create_splat(50_000);

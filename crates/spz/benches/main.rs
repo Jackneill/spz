@@ -3,7 +3,6 @@
 use codspeed_criterion_compat::{criterion_group, criterion_main};
 
 mod benchmarks;
-mod util;
 
 criterion_group! {
 	benches,

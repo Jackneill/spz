@@ -3,7 +3,7 @@
 use codspeed_criterion_compat::Criterion;
 use spz::gaussian_splat::SaveOptions;
 
-use crate::util;
+use crate::benchmarks::util;
 
 pub fn bench_cloud_save_n(c: &mut Criterion) {
 	let gs = util::create_splat(50_000);

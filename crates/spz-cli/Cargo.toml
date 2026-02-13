@@ -1,0 +1,62 @@
+[package]
+name = "spz-cli"
+version = "0.0.1"
+edition = "2024"
+authors = ["See AUTHORS.md"]
+description = """SPZ file format handling for Rust: CLI tooling."""
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/Jackneill/spz"
+repository = "https://github.com/Jackneill/spz"
+readme = "../../README.md"
+keywords = ["gaussian-splatting", "point-cloud", "3d", "graphics", "rendering"]
+categories = [
+	"graphics",
+	"game-development",
+	"command-line-utilities",
+	"rendering::data-formats",
+	"parsing",
+]
+publish = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+spz = { path = "../spz", default-features = false, features = [] }
+
+anyhow = { version = "1.0", default-features = true, features = [] }
+clap = { version = "4.5", default-features = true, features = [
+	"env",
+	"unicode",
+	"derive",
+	"color",
+	"error-context",
+	"suggestions",
+] }
+mimalloc = { version = "0.1", default-features = true, features = ["v3"] }
+
+[dev-dependencies]
+criterion = { version = "0.8", default-features = true, features = [
+	"html_reports",
+] }
+
+[features]
+mimalloc_secure = ["mimalloc/secure"]
+
+[[bin]]
+name = "spz"
+path = "src/main.rs"
+
+# Since #[global_allocator] is process-wide, two separate binaries are the
+# correct way to compare — each process uses exactly one allocator for all its
+# benchmark iterations, giving clean measurements.
+[[bench]]
+name = "allocator_mimalloc"
+harness = false
+path = "benches/allocator_mimalloc.rs"
+
+[[bench]]
+name = "allocator_default"
+harness = false
+path = "benches/allocator_default.rs"

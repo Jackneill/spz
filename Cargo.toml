@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"crates/spz",
+	"crates/spz-cli",
 	"crates/spz-binding-python",
 	"crates/spz-binding-c",
 	"crates/spz-capnproto-rust",
@@ -17,6 +18,7 @@ overflow-checks = false
 lto = "fat"
 panic = "unwind"
 incremental = false
+strip = true
 
 [profile.dev]
 incremental = true
@@ -25,3 +27,4 @@ lto = "thin"
 [profile.bench]
 lto = true
 codegen-units = 1
+strip = true
