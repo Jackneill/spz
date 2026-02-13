@@ -43,16 +43,3 @@ criterion = { version = "0.8", default-features = true, features = [
 [[bin]]
 name = "spz"
 path = "src/main.rs"
-
-# Since #[global_allocator] is process-wide, two separate binaries are the
-# correct way to compare — each process uses exactly one allocator for all its
-# benchmark iterations, giving clean measurements.
-[[bench]]
-name = "allocator_mimalloc"
-harness = false
-path = "benches/allocator_mimalloc.rs"
-
-[[bench]]
-name = "allocator_default"
-harness = false
-path = "benches/allocator_default.rs"
