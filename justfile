@@ -87,7 +87,6 @@ security:
 	{{cargo}} audit
 
 build-release: lint test
-	#RUSTFLAGS='-C target-cpu=native' {{cargo}} build --release
 	{{cargo}} build --release
 
 build-release-native: lint test
