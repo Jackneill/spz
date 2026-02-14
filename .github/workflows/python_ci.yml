@@ -51,11 +51,6 @@ jobs:
           - runner: ubuntu-22.04
             target: ppc64le
     steps:
-      - name: Install deps (apt)
-        run: |
-          env DEBIAN_FRONTEND=noninteractive \
-            sudo apt update && sudo apt install -y clang lldb lld
-
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
@@ -63,6 +58,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
+      - name: Install deps (apt)
+        run: |
+          env DEBIAN_FRONTEND=noninteractive \
+            sudo apt update && sudo apt install -y clang lldb lld
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
