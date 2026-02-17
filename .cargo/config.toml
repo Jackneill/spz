@@ -1,3 +1,21 @@
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# Statically link the C runtime so the executable does not depend on that
+# shared/dynamic library.
+#
+# See: https://github.com/astral-sh/ruff/issues/11503
+# See: https://github.com/BurntSushi/ripgrep/pull/1613
+[target.'cfg(all(target_env="msvc", target_os = "windows"))']
+rustflags = ["-C", "target-feature=+crt-static"]
+
+# See: https://github.com/rust-lang/compiler-team/issues/422
+# See: https://github.com/rust-lang/compiler-team/issues/422#issuecomment-812135847
+[target.x86_64-unknown-linux-musl]
+rustflags = [
+	"-C",
+	"target-feature=+crt-static",
+	"-C",
+	"link-self-contained=yes",
+]

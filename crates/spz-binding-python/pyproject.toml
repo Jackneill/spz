@@ -57,8 +57,10 @@ profile = "release"
 # e.g. to use "dev" builds for local development
 # (uses `profile` if this key is not set)
 editable-profile = "release"
+# Strip the library for minimum file size
+strip = true
 # Activate all available features
-#all-features = false
+all-features = true
 # Do not activate the `default` feature
 #no-default-features = false
 # Cargo manifest path

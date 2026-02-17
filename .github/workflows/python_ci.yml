@@ -68,7 +68,9 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter -m crates/spz-binding-python/Cargo.toml
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: auto
+          #manylinux: auto
+          # build on the host: custom linker (mold via clang) is used.
+          container: off
       - name: Upload wheels
         uses: actions/upload-artifact@v6
         with:
