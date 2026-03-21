@@ -2,10 +2,6 @@
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
 
-[target.i686-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=mold"]
-
 # Statically link the C runtime so the executable does not depend on that
 # shared/dynamic library.
 #
