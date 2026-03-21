@@ -19,10 +19,10 @@ jobs:
       attestations: write
     steps:
       - uses: ./python_ci.yml
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
 
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: "wheels-*/*"
 

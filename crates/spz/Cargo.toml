@@ -36,7 +36,7 @@ tokio = { version = "1.49", default-features = true, features = ["full"] }
 likely_stable = { version = "0.1", default-features = false, features = [] }
 arbitrary = { version = "1.4", default-features = true, features = ["derive"] }
 bitflags = { version = "2.10", default-features = true, features = [] }
-strum = { version = "0.27", default-features = true, features = ["derive"] }
+strum = { version = "0.28", default-features = true, features = ["derive"] }
 ndarray = { version = "0.17", default-features = false, features = [] }
 zerocopy = { version = "0.8", default-features = false, features = ["derive"] }
 
