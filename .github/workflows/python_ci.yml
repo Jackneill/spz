@@ -62,6 +62,8 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter -m crates/spz-binding-python/Cargo.toml
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          manylinux: 2014
+          container: quay.io/pypa/manylinux2014_i686:latest
       - name: Build wheels (host, x86_64)
         if: ${{ matrix.platform.target == 'x86_64' }}
         uses: PyO3/maturin-action@v1
