@@ -385,24 +385,31 @@ impl TryFrom<&[u8]> for PackedGaussianSplat {
 						as usize * 3
 			],
 		};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.positions) => {
-			bail!("read error (positions): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.alphas) => {
-			bail!("read error (alphas): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.colors) => {
-			bail!("read error (colors): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.scales) => {
-			bail!("read error (scales): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.rotations) => {
-			bail!("read error (rotations): {}", err);
-		}};
-		if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) => {
-			bail!("read error (spherical harmonics): {}", err);
-		}};
+		// despite the `err` from `let Err(err) = ...` is used in the if
+		// block, it produces an `unused_variables` warning because of a
+		// bug in the `likely` crate.
+		// https://gitlab.com/okannen/likely/-/merge_requests/1
+		#[allow(unused_variables)]
+		{
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.positions) => {
+				bail!("read error (positions): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.alphas) => {
+				bail!("read error (alphas): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.colors) => {
+				bail!("read error (colors): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.scales) => {
+				bail!("read error (scales): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.rotations) => {
+				bail!("read error (rotations): {}", err);
+			}};
+			if_unlikely! { let Err(err) = from_reader.read_exact(&mut result.spherical_harmonics) => {
+				bail!("read error (spherical harmonics): {}", err);
+			}};
+		}
 		Ok(result)
 	}
 }
