@@ -1,0 +1,53 @@
+---
+exclude_paths:
+  - ".claude/**"
+  - ".config/**"
+  - ".cargo/**"
+  - ".github/**"
+  - ".vscode/**"
+
+  - "assets/**"
+  - "book/**"
+  - "capnproto/**"
+  - "docs/**"
+  - "flatpak/**"
+  - "fuzz/**"
+  - "snap/**"
+  - "target/**"
+
+  - "**/*.md"
+  - "**/*.toml"
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "**/*.txt"
+
+  - "LICENSE-APACHE"
+  - "LICENSE-MIT"
+  - "Dockerfile"
+
+  - "crates/**/examples/**"
+  - "crates/**/benches/**"
+  - "crates/**/tests/**"
+
+  - "crates/spz-binding-python/pypkg/tests/**"
+
+engines:
+  duplication:
+    exclude_paths:
+      - "book/**"
+      - "docs/**"
+      - "fuzz/**"
+
+      - "crates/**/examples/**"
+      - "crates/**/benches/**"
+      - "crates/**/tests/**"
+
+      - "crates/spz-binding-python/pypkg/tests/**"
+
+  metric:
+    exclude_paths:
+      - "crates/**/examples/**"
+      - "crates/**/benches/**"
+      - "crates/**/tests/**"
+
+      - "crates/spz-binding-python/pypkg/tests/**"
