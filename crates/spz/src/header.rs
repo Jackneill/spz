@@ -215,7 +215,7 @@ impl Header {
 
 			input.read_exact(&mut buf)?;
 
-			Self::from_compressed_bytes_unchecked(&buf)
+			Self::from_compressed_bytes_unchecked(buf)
 				.with_context(|| "unable to decompress and parse SPZ header")
 		} else {
 			let mmap = mmap_range(&spz_path, 0, COMPRESSED_BLOCK_READ_SIZE as usize)
@@ -320,14 +320,14 @@ impl Header {
 
 		let mut ret = String::new();
 
-		let _ = write!(ret, "GaussianSplat Header:\n");
-		let _ = write!(ret, "\tNumber of points:\t\t{}\n", self.num_points);
-		let _ = write!(
+		let _ = writeln!(ret, "GaussianSplat Header:");
+		let _ = writeln!(ret, "\tNumber of points:\t\t{}", self.num_points);
+		let _ = writeln!(
 			ret,
-			"\tSpherical harmonics degree:\t{}\n",
+			"\tSpherical harmonics degree:\t{}",
 			self.spherical_harmonics_degree
 		);
-		let _ = write!(ret, "\tAntialiased:\t\t\t{}\n", self.flags.is_antialiased());
+		let _ = writeln!(ret, "\tAntialiased:\t\t\t{}", self.flags.is_antialiased());
 
 		ret
 	}
@@ -624,7 +624,6 @@ mod tests {
 			num_points: -1,
 			..Default::default()
 		};
-
 		assert!(!h.is_valid());
 	}
 
