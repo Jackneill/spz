@@ -482,6 +482,7 @@ impl GaussianSplat {
 		spherical_harmonics=None,
 		antialiased=false
 	))]
+	#[allow(clippy::too_many_arguments)]
 	pub fn new(
 		positions: PyReadonlyArray2<f32>,
 		scales: PyReadonlyArray2<f32>,

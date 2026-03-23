@@ -10,8 +10,7 @@
 //! - quantized quaternions for rotations
 //! - byte-quantized values for colors
 //! - byte-quantized values for spherical harmonics,
-//! achieving significant size reduction compared to raw floats.
-//! ```
+//!   achieving significant size reduction compared to raw floats.
 
 use std::io::BufReader;
 use std::io::Read;
@@ -80,7 +79,7 @@ impl PackedGaussian {
 		let scale = 1.0_f32 / s as f32;
 
 		for i in 0..3 {
-			let b0 = self.position[i * 3 + 0] as i32;
+			let b0 = self.position[i * 3] as i32;
 			let b1 = (self.position[i * 3 + 1] as i32) << 8;
 			let b2 = (self.position[i * 3 + 2] as i32) << 16;
 
@@ -240,7 +239,7 @@ impl PackedGaussianSplat {
 		}
 		const POSITION_BYTES: usize = 9;
 
-		let idx = i as usize;
+		let idx = i;
 		let mut result = PackedGaussian::default();
 		let p_start = idx.saturating_mul(POSITION_BYTES);
 

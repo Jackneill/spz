@@ -215,7 +215,7 @@ impl CoordinateSystem {
 		if self_num < 0 || other_num < 0 {
 			return (true, true, true);
 		}
-		let xm = ((self_num >> 0) & 1) == ((other_num >> 0) & 1);
+		let xm = (self_num & 1) == (other_num & 1);
 		let ym = ((self_num >> 1) & 1) == ((other_num >> 1) & 1);
 		let zm = ((self_num >> 2) & 1) == ((other_num >> 2) & 1);
 

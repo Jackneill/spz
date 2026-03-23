@@ -31,5 +31,6 @@ ignore:
   - "crates/spz-binding-python/examples/**"
   - "crates/spz-binding-python/benches/**"
   - "crates/spz-binding-python/pypkg/tests/**"
+  - "crates/spz-binding-python/dev/**"
 
   - "crates/spz-binding-c/examples/**"

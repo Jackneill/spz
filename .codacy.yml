@@ -30,6 +30,7 @@ exclude_paths:
   - "crates/**/tests/**"
 
   - "crates/spz-binding-python/pypkg/tests/**"
+  - "crates/spz-binding-python/dev/**"
 
 engines:
   duplication:
@@ -43,6 +44,7 @@ engines:
       - "crates/**/tests/**"
 
       - "crates/spz-binding-python/pypkg/tests/**"
+      - "crates/spz-binding-python/dev/**"
 
   metric:
     exclude_paths:
@@ -51,3 +53,4 @@ engines:
       - "crates/**/tests/**"
 
       - "crates/spz-binding-python/pypkg/tests/**"
+      - "crates/spz-binding-python/dev/**"
