@@ -18,7 +18,8 @@
 //! Strings returned by `spz_*_pretty_fmt` must be freed with
 //! [`spz_free_string`].
 
-#![allow(clippy::missing_safety_doc)]
+#![deny(clippy::undocumented_unsafe_blocks)]
+#![deny(unsafe_op_in_unsafe_fn)]
 
 use std::ffi::{CStr, c_char};
 use std::ptr;
@@ -46,6 +47,97 @@ fn set_last_error(msg: String) {
 
 fn clear_last_error() {
 	LAST_ERROR.with(|e| *e.borrow_mut() = None);
+}
+
+fn cstr_arg<'a>(ptr: *const c_char, name: &str) -> std::result::Result<&'a str, String> {
+	if ptr.is_null() {
+		return Err(format!("{name} is null"));
+	}
+
+	// SAFETY: `ptr` is checked for null above, and the FFI contract for callers
+	// requires a valid, NUL-terminated C string for the duration of the call.
+	unsafe { CStr::from_ptr(ptr) }
+		.to_str()
+		.map_err(|e| format!("invalid UTF-8 in {name}: {e}"))
+}
+
+fn byte_slice_arg<'a>(data: *const u8, len: usize) -> std::result::Result<&'a [u8], String> {
+	if data.is_null() {
+		return Err("data pointer is null".to_string());
+	}
+
+	// SAFETY: `data` is checked for null above, and the FFI contract for callers
+	// requires that it points to `len` readable bytes for the duration of the call.
+	Ok(unsafe { slice::from_raw_parts(data, len) })
+}
+
+fn header_ref(header: *const SpzHeader) -> Option<&'static SpzHeader> {
+	if header.is_null() {
+		return None;
+	}
+
+	// SAFETY: The public FFI API documents that non-null header handles must be
+	// live pointers previously returned by this library.
+	Some(unsafe { &*header })
+}
+
+fn splat_ref(splat: *const SpzGaussianSplat) -> Option<&'static SpzGaussianSplat> {
+	if splat.is_null() {
+		return None;
+	}
+
+	// SAFETY: The public FFI API documents that non-null splat handles must be
+	// live pointers previously returned by this library.
+	Some(unsafe { &*splat })
+}
+
+fn splat_mut(splat: *mut SpzGaussianSplat) -> Option<&'static mut SpzGaussianSplat> {
+	if splat.is_null() {
+		return None;
+	}
+
+	// SAFETY: The public FFI API documents that non-null mutable splat handles
+	// must be unique, live pointers previously returned by this library.
+	Some(unsafe { &mut *splat })
+}
+
+fn write_out_len(out_len: *mut usize, len: usize) {
+	if out_len.is_null() {
+		return;
+	}
+
+	// SAFETY: When provided, `out_len` must be a valid writable pointer for this call.
+	unsafe { *out_len = len };
+}
+
+fn free_box_handle<T>(ptr: *mut T) {
+	if ptr.is_null() {
+		return;
+	}
+
+	// SAFETY: The matching free functions are only valid for heap pointers
+	// allocated and returned by this library.
+	let _ = unsafe { Box::from_raw(ptr) };
+}
+
+fn free_byte_buffer(data: *mut u8, len: usize) {
+	if data.is_null() {
+		return;
+	}
+
+	// SAFETY: `data` and `len` must come from `spz_gaussian_splat_to_bytes`,
+	// which allocates this exact boxed slice layout.
+	let _ = unsafe { Box::from_raw(std::ptr::slice_from_raw_parts_mut(data, len)) };
+}
+
+fn free_c_string(s: *mut c_char) {
+	if s.is_null() {
+		return;
+	}
+
+	// SAFETY: `s` must come from one of this library's string-returning APIs,
+	// all of which allocate with `CString::into_raw`.
+	let _ = unsafe { std::ffi::CString::from_raw(s) };
 }
 
 // ---------------------------------------------------------------------------
@@ -211,19 +303,19 @@ pub struct SpzHeader {
 ///
 /// Returns NULL on failure. Call `spz_last_error()` for error details.
 /// The caller must free the returned handle with `spz_header_free`.
+///
+/// # Safety
+///
+/// `filepath` must be a valid, non-null pointer to a NUL-terminated string
+/// for the duration of this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_from_file(filepath: *const c_char) -> *mut SpzHeader {
 	clear_last_error();
 
-	if filepath.is_null() {
-		set_last_error("filepath is null".to_string());
-		return ptr::null_mut();
-	}
-
-	let path = match unsafe { CStr::from_ptr(filepath) }.to_str() {
-		Ok(s) => s,
-		Err(e) => {
-			set_last_error(format!("invalid UTF-8 in filepath: {e}"));
+	let path = match cstr_arg(filepath, "filepath") {
+		Ok(path) => path,
+		Err(message) => {
+			set_last_error(message);
 			return ptr::null_mut();
 		},
 	};
@@ -241,16 +333,22 @@ pub unsafe extern "C" fn spz_header_from_file(filepath: *const c_char) -> *mut S
 ///
 /// Returns NULL on failure. Call `spz_last_error()` for error details.
 /// The caller must free the returned handle with `spz_header_free`.
+///
+/// # Safety
+///
+/// `data` must be a valid, non-null pointer to `len` readable bytes for the
+/// duration of this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_from_bytes(data: *const u8, len: usize) -> *mut SpzHeader {
 	clear_last_error();
 
-	if data.is_null() {
-		set_last_error("data pointer is null".to_string());
-		return ptr::null_mut();
-	}
-
-	let bytes = unsafe { slice::from_raw_parts(data, len) };
+	let bytes = match byte_slice_arg(data, len) {
+		Ok(bytes) => bytes,
+		Err(message) => {
+			set_last_error(message);
+			return ptr::null_mut();
+		},
+	};
 
 	match RustHeader::from_compressed_bytes(bytes) {
 		Ok(h) => Box::into_raw(Box::new(SpzHeader { inner: h })),
@@ -262,81 +360,105 @@ pub unsafe extern "C" fn spz_header_from_bytes(data: *const u8, len: usize) -> *
 }
 
 /// Frees a header handle.
+///
+/// # Safety
+///
+/// `header` must be null or a pointer previously returned by this library and
+/// not already freed.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_free(header: *mut SpzHeader) {
-	if !header.is_null() {
-		let _ = unsafe { Box::from_raw(header) };
-	}
+	free_box_handle(header);
 }
 
 /// Returns the SPZ format version stored in the header.
+///
+/// # Safety
+///
+/// `header` must be null or a valid live header handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_version(header: *const SpzHeader) -> SpzVersion {
-	if header.is_null() {
-		return SpzVersion::V3;
-	}
-	unsafe { &*header }.inner.version.into()
+	header_ref(header)
+		.map(|header| header.inner.version.into())
+		.unwrap_or(SpzVersion::V3)
 }
 
 /// Returns the number of Gaussian points recorded in the header.
+///
+/// # Safety
+///
+/// `header` must be null or a valid live header handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_num_points(header: *const SpzHeader) -> i32 {
-	if header.is_null() {
-		return 0;
-	}
-	unsafe { &*header }.inner.num_points
+	header_ref(header)
+		.map(|header| header.inner.num_points)
+		.unwrap_or(0)
 }
 
 /// Returns the spherical harmonics degree (0-3).
+///
+/// # Safety
+///
+/// `header` must be null or a valid live header handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_sh_degree(header: *const SpzHeader) -> u8 {
-	if header.is_null() {
-		return 0;
-	}
-	unsafe { &*header }.inner.spherical_harmonics_degree
+	header_ref(header)
+		.map(|header| header.inner.spherical_harmonics_degree)
+		.unwrap_or(0)
 }
 
 /// Returns the number of fractional bits used in position encoding.
 ///
 /// Standard value is 12, giving ~0.25 mm resolution.
+///
+/// # Safety
+///
+/// `header` must be null or a valid live header handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_fractional_bits(header: *const SpzHeader) -> u8 {
-	if header.is_null() {
-		return 0;
-	}
-	unsafe { &*header }.inner.fractional_bits
+	header_ref(header)
+		.map(|header| header.inner.fractional_bits)
+		.unwrap_or(0)
 }
 
 /// Returns whether the splat was trained with antialiasing.
+///
+/// # Safety
+///
+/// `header` must be null or a valid live header handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_antialiased(header: *const SpzHeader) -> bool {
-	if header.is_null() {
-		return false;
-	}
-	unsafe { &*header }.inner.flags.is_antialiased()
+	header_ref(header)
+		.map(|header| header.inner.flags.is_antialiased())
+		.unwrap_or(false)
 }
 
 /// Validates the header (magic number, version, ranges, reserved bytes).
 ///
 /// Returns `true` if the header passes all validation checks.
+///
+/// # Safety
+///
+/// `header` must be null or a valid live header handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_is_valid(header: *const SpzHeader) -> bool {
-	if header.is_null() {
-		return false;
-	}
-	unsafe { &*header }.inner.is_valid()
+	header_ref(header)
+		.map(|header| header.inner.is_valid())
+		.unwrap_or(false)
 }
 
 /// Returns a heap-allocated, human-readable summary of the header.
 ///
 /// The caller must free the returned string with `spz_free_string`.
 /// Returns NULL if the handle is null.
+///
+/// # Safety
+///
+/// `header` must be null or a valid live header handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_header_pretty_fmt(header: *const SpzHeader) -> *mut c_char {
-	if header.is_null() {
+	let Some(header) = header_ref(header) else {
 		return ptr::null_mut();
-	}
-	let header = unsafe { &*header };
+	};
 	let s = header.inner.pretty_fmt();
 
 	match std::ffi::CString::new(s) {
@@ -372,6 +494,11 @@ pub extern "C" fn spz_gaussian_splat_new() -> *mut SpzGaussianSplat {
 ///
 /// Returns NULL on failure. Call `spz_last_error()` for error details.
 /// The caller must free the returned handle with `spz_gaussian_splat_free`.
+///
+/// # Safety
+///
+/// `filepath` must be a valid, non-null pointer to a NUL-terminated string
+/// for the duration of this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_load(
 	filepath: *const c_char,
@@ -379,15 +506,10 @@ pub unsafe extern "C" fn spz_gaussian_splat_load(
 ) -> *mut SpzGaussianSplat {
 	clear_last_error();
 
-	if filepath.is_null() {
-		set_last_error("filepath is null".to_string());
-		return ptr::null_mut();
-	}
-
-	let path = match unsafe { CStr::from_ptr(filepath) }.to_str() {
-		Ok(s) => s,
-		Err(e) => {
-			set_last_error(format!("invalid UTF-8 in filepath: {e}"));
+	let path = match cstr_arg(filepath, "filepath") {
+		Ok(path) => path,
+		Err(message) => {
+			set_last_error(message);
 			return ptr::null_mut();
 		},
 	};
@@ -409,6 +531,11 @@ pub unsafe extern "C" fn spz_gaussian_splat_load(
 ///
 /// Returns NULL on failure. Call `spz_last_error()` for error details.
 /// The caller must free the returned handle with `spz_gaussian_splat_free`.
+///
+/// # Safety
+///
+/// `data` must be a valid, non-null pointer to `len` readable bytes for the
+/// duration of this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_load_from_bytes(
 	data: *const u8,
@@ -417,12 +544,13 @@ pub unsafe extern "C" fn spz_gaussian_splat_load_from_bytes(
 ) -> *mut SpzGaussianSplat {
 	clear_last_error();
 
-	if data.is_null() {
-		set_last_error("data pointer is null".to_string());
-		return ptr::null_mut();
-	}
-
-	let bytes = unsafe { slice::from_raw_parts(data, len) };
+	let bytes = match byte_slice_arg(data, len) {
+		Ok(bytes) => bytes,
+		Err(message) => {
+			set_last_error(message);
+			return ptr::null_mut();
+		},
+	};
 
 	let opts = LoadOptions {
 		coord_sys: coord_sys.into(),
@@ -446,6 +574,11 @@ pub unsafe extern "C" fn spz_gaussian_splat_load_from_bytes(
 /// Saves a GaussianSplat to an SPZ file.
 ///
 /// Returns `SpzResult_Success` on success. Call `spz_last_error()` on failure.
+///
+/// # Safety
+///
+/// `splat` must be a valid live handle returned by this library, and `filepath`
+/// must be a valid, non-null pointer to a NUL-terminated string for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_save(
 	splat: *const SpzGaussianSplat,
@@ -454,21 +587,14 @@ pub unsafe extern "C" fn spz_gaussian_splat_save(
 ) -> SpzResult {
 	clear_last_error();
 
-	if splat.is_null() {
+	let Some(splat) = splat_ref(splat) else {
 		set_last_error("splat handle is null".to_string());
 		return SpzResult::NullPointer;
-	}
-
-	if filepath.is_null() {
-		set_last_error("filepath is null".to_string());
-		return SpzResult::NullPointer;
-	}
-
-	let splat = unsafe { &*splat };
-	let path = match unsafe { CStr::from_ptr(filepath) }.to_str() {
-		Ok(s) => s,
-		Err(e) => {
-			set_last_error(format!("invalid UTF-8 in filepath: {e}"));
+	};
+	let path = match cstr_arg(filepath, "filepath") {
+		Ok(path) => path,
+		Err(message) => {
+			set_last_error(message);
 			return SpzResult::InvalidArgument;
 		},
 	};
@@ -490,6 +616,11 @@ pub unsafe extern "C" fn spz_gaussian_splat_save(
 ///
 /// Returns `SpzResult_Success` on success. Call `spz_last_error()` on failure.
 /// The caller must free the returned buffer with `spz_free_bytes`.
+///
+/// # Safety
+///
+/// `splat` must be a valid live handle returned by this library. `out_data`
+/// and `out_len` must be valid writable pointers for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_to_bytes(
 	splat: *const SpzGaussianSplat,
@@ -499,12 +630,14 @@ pub unsafe extern "C" fn spz_gaussian_splat_to_bytes(
 ) -> SpzResult {
 	clear_last_error();
 
-	if splat.is_null() || out_data.is_null() || out_len.is_null() {
+	let Some(splat) = splat_ref(splat) else {
+		set_last_error("null pointer argument".to_string());
+		return SpzResult::NullPointer;
+	};
+	if out_data.is_null() || out_len.is_null() {
 		set_last_error("null pointer argument".to_string());
 		return SpzResult::NullPointer;
 	}
-
-	let splat = unsafe { &*splat };
 	let opts = SaveOptions {
 		coord_sys: coord_sys.into(),
 	};
@@ -515,6 +648,8 @@ pub unsafe extern "C" fn spz_gaussian_splat_to_bytes(
 			let boxed = bytes.into_boxed_slice();
 			let ptr = Box::into_raw(boxed) as *mut u8;
 
+			// SAFETY: `out_data` and `out_len` were checked for null above and the
+			// FFI contract requires them to be valid writable pointers for this call.
 			unsafe {
 				*out_data = ptr;
 				*out_len = len;
@@ -529,18 +664,23 @@ pub unsafe extern "C" fn spz_gaussian_splat_to_bytes(
 }
 
 /// Frees a byte buffer previously returned by `spz_gaussian_splat_to_bytes`.
+///
+/// # Safety
+///
+/// `data` and `len` must match a buffer previously returned by
+/// `spz_gaussian_splat_to_bytes` and not yet freed.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_free_bytes(data: *mut u8, len: usize) {
-	if !data.is_null() {
-		let _ = unsafe { Box::from_raw(std::ptr::slice_from_raw_parts_mut(data, len)) };
-	}
+	free_byte_buffer(data, len);
 }
 
+/// # Safety
+///
+/// `splat` must be null or a pointer previously returned by this library and
+/// not already freed.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_free(splat: *mut SpzGaussianSplat) {
-	if !splat.is_null() {
-		let _ = unsafe { Box::from_raw(splat) };
-	}
+	free_box_handle(splat);
 }
 
 // ---------------------------------------------------------------------------
@@ -548,58 +688,77 @@ pub unsafe extern "C" fn spz_gaussian_splat_free(splat: *mut SpzGaussianSplat) {
 // ---------------------------------------------------------------------------
 
 /// Returns the number of points (gaussians) in the splat.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_num_points(splat: *const SpzGaussianSplat) -> i32 {
-	if splat.is_null() {
-		return 0;
-	}
-	unsafe { &*splat }.inner.header.num_points
+	splat_ref(splat)
+		.map(|splat| splat.inner.header.num_points)
+		.unwrap_or(0)
 }
 
 /// Returns the spherical harmonics degree (0-3).
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_sh_degree(splat: *const SpzGaussianSplat) -> u8 {
-	if splat.is_null() {
-		return 0;
-	}
-	unsafe { &*splat }.inner.header.spherical_harmonics_degree
+	splat_ref(splat)
+		.map(|splat| splat.inner.header.spherical_harmonics_degree)
+		.unwrap_or(0)
 }
 
 /// Returns the SPZ format version of the splat.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_version(splat: *const SpzGaussianSplat) -> SpzVersion {
-	if splat.is_null() {
-		return SpzVersion::V3;
-	}
-	unsafe { &*splat }.inner.header.version.into()
+	splat_ref(splat)
+		.map(|splat| splat.inner.header.version.into())
+		.unwrap_or(SpzVersion::V3)
 }
 
 /// Returns the number of fractional bits used in position encoding.
 ///
 /// Standard value is 12, giving ~0.25 mm resolution.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_fractional_bits(splat: *const SpzGaussianSplat) -> u8 {
-	if splat.is_null() {
-		return 0;
-	}
-	unsafe { &*splat }.inner.header.fractional_bits
+	splat_ref(splat)
+		.map(|splat| splat.inner.header.fractional_bits)
+		.unwrap_or(0)
 }
 
 /// Returns whether the splat was trained with antialiasing.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_antialiased(splat: *const SpzGaussianSplat) -> bool {
-	if splat.is_null() {
-		return false;
-	}
-	unsafe { &*splat }.inner.header.flags.is_antialiased()
+	splat_ref(splat)
+		.map(|splat| splat.inner.header.flags.is_antialiased())
+		.unwrap_or(false)
 }
 
 /// Returns the bounding box of the splat.
 ///
 /// Returns a zeroed bounding box if the handle is null.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_bbox(splat: *const SpzGaussianSplat) -> SpzBoundingBox {
-	if splat.is_null() {
+	let Some(splat) = splat_ref(splat) else {
 		return SpzBoundingBox {
 			min_x: 0.0,
 			max_x: 0.0,
@@ -608,28 +767,34 @@ pub unsafe extern "C" fn spz_gaussian_splat_bbox(splat: *const SpzGaussianSplat)
 			min_z: 0.0,
 			max_z: 0.0,
 		};
-	}
-	unsafe { &*splat }.inner.bbox().into()
+	};
+	splat.inner.bbox().into()
 }
 
 /// Returns the median ellipsoid volume of the gaussians.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_median_volume(splat: *const SpzGaussianSplat) -> f32 {
-	if splat.is_null() {
-		return 0.0;
-	}
-	unsafe { &*splat }.inner.median_volume()
+	splat_ref(splat)
+		.map(|splat| splat.inner.median_volume())
+		.unwrap_or(0.0)
 }
 
 /// Validates that all internal arrays have consistent sizes.
 ///
 /// Returns `true` if the splat passes all size checks.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_check_sizes(splat: *const SpzGaussianSplat) -> bool {
-	if splat.is_null() {
-		return false;
-	}
-	unsafe { &*splat }.inner.check_sizes()
+	splat_ref(splat)
+		.map(|splat| splat.inner.check_sizes())
+		.unwrap_or(false)
 }
 
 // ---------------------------------------------------------------------------
@@ -642,22 +807,21 @@ pub unsafe extern "C" fn spz_gaussian_splat_check_sizes(splat: *const SpzGaussia
 /// The pointer is valid until the splat is modified or freed.
 ///
 /// If `out_len` is non-null it receives the total number of floats.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
+/// If `out_len` is non-null it must be a valid writable pointer for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_positions(
 	splat: *const SpzGaussianSplat,
 	out_len: *mut usize,
 ) -> *const f32 {
-	if splat.is_null() {
-		if !out_len.is_null() {
-			unsafe { *out_len = 0 };
-		}
+	let Some(splat) = splat_ref(splat) else {
+		write_out_len(out_len, 0);
 		return ptr::null();
-	}
-	let splat = unsafe { &*splat };
-
-	if !out_len.is_null() {
-		unsafe { *out_len = splat.inner.positions.len() };
-	}
+	};
+	write_out_len(out_len, splat.inner.positions.len());
 	splat.inner.positions.as_ptr()
 }
 
@@ -665,22 +829,21 @@ pub unsafe extern "C" fn spz_gaussian_splat_positions(
 ///
 /// The array contains `num_points * 3` floats (log-encoded) in `[x0, y0, z0, ...]` order.
 /// The pointer is valid until the splat is modified or freed.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
+/// If `out_len` is non-null it must be a valid writable pointer for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_scales(
 	splat: *const SpzGaussianSplat,
 	out_len: *mut usize,
 ) -> *const f32 {
-	if splat.is_null() {
-		if !out_len.is_null() {
-			unsafe { *out_len = 0 };
-		}
+	let Some(splat) = splat_ref(splat) else {
+		write_out_len(out_len, 0);
 		return ptr::null();
-	}
-	let splat = unsafe { &*splat };
-
-	if !out_len.is_null() {
-		unsafe { *out_len = splat.inner.scales.len() };
-	}
+	};
+	write_out_len(out_len, splat.inner.scales.len());
 	splat.inner.scales.as_ptr()
 }
 
@@ -689,22 +852,21 @@ pub unsafe extern "C" fn spz_gaussian_splat_scales(
 /// The array contains `num_points * 4` floats (quaternions) in
 /// `[x0, y0, z0, w0, ...]` order.
 /// The pointer is valid until the splat is modified or freed.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
+/// If `out_len` is non-null it must be a valid writable pointer for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_rotations(
 	splat: *const SpzGaussianSplat,
 	out_len: *mut usize,
 ) -> *const f32 {
-	if splat.is_null() {
-		if !out_len.is_null() {
-			unsafe { *out_len = 0 };
-		}
+	let Some(splat) = splat_ref(splat) else {
+		write_out_len(out_len, 0);
 		return ptr::null();
-	}
-	let splat = unsafe { &*splat };
-
-	if !out_len.is_null() {
-		unsafe { *out_len = splat.inner.rotations.len() };
-	}
+	};
+	write_out_len(out_len, splat.inner.rotations.len());
 	splat.inner.rotations.as_ptr()
 }
 
@@ -712,22 +874,21 @@ pub unsafe extern "C" fn spz_gaussian_splat_rotations(
 ///
 /// The array contains `num_points` floats (sigmoid-encoded opacity values).
 /// The pointer is valid until the splat is modified or freed.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
+/// If `out_len` is non-null it must be a valid writable pointer for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_alphas(
 	splat: *const SpzGaussianSplat,
 	out_len: *mut usize,
 ) -> *const f32 {
-	if splat.is_null() {
-		if !out_len.is_null() {
-			unsafe { *out_len = 0 };
-		}
+	let Some(splat) = splat_ref(splat) else {
+		write_out_len(out_len, 0);
 		return ptr::null();
-	}
-	let splat = unsafe { &*splat };
-
-	if !out_len.is_null() {
-		unsafe { *out_len = splat.inner.alphas.len() };
-	}
+	};
+	write_out_len(out_len, splat.inner.alphas.len());
 	splat.inner.alphas.as_ptr()
 }
 
@@ -735,22 +896,21 @@ pub unsafe extern "C" fn spz_gaussian_splat_alphas(
 ///
 /// The array contains `num_points * 3` floats (DC colour) in `[r0, g0, b0, ...]` order.
 /// The pointer is valid until the splat is modified or freed.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
+/// If `out_len` is non-null it must be a valid writable pointer for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_colors(
 	splat: *const SpzGaussianSplat,
 	out_len: *mut usize,
 ) -> *const f32 {
-	if splat.is_null() {
-		if !out_len.is_null() {
-			unsafe { *out_len = 0 };
-		}
+	let Some(splat) = splat_ref(splat) else {
+		write_out_len(out_len, 0);
 		return ptr::null();
-	}
-	let splat = unsafe { &*splat };
-
-	if !out_len.is_null() {
-		unsafe { *out_len = splat.inner.colors.len() };
-	}
+	};
+	write_out_len(out_len, splat.inner.colors.len());
 	splat.inner.colors.as_ptr()
 }
 
@@ -763,22 +923,21 @@ pub unsafe extern "C" fn spz_gaussian_splat_colors(
 /// - Degree 3: 45 coefficients
 ///
 /// The pointer is valid until the splat is modified or freed.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
+/// If `out_len` is non-null it must be a valid writable pointer for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_spherical_harmonics(
 	splat: *const SpzGaussianSplat,
 	out_len: *mut usize,
 ) -> *const f32 {
-	if splat.is_null() {
-		if !out_len.is_null() {
-			unsafe { *out_len = 0 };
-		}
+	let Some(splat) = splat_ref(splat) else {
+		write_out_len(out_len, 0);
 		return ptr::null();
-	}
-	let splat = unsafe { &*splat };
-
-	if !out_len.is_null() {
-		unsafe { *out_len = splat.inner.spherical_harmonics.len() };
-	}
+	};
+	write_out_len(out_len, splat.inner.spherical_harmonics.len());
 	splat.inner.spherical_harmonics.as_ptr()
 }
 
@@ -787,16 +946,19 @@ pub unsafe extern "C" fn spz_gaussian_splat_spherical_harmonics(
 // ---------------------------------------------------------------------------
 
 /// Converts the splat's coordinate system in-place.
+///
+/// # Safety
+///
+/// `splat` must be null or a unique live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_convert_coordinates(
 	splat: *mut SpzGaussianSplat,
 	from: SpzCoordinateSystem,
 	to: SpzCoordinateSystem,
 ) {
-	if splat.is_null() {
+	let Some(splat) = splat_mut(splat) else {
 		return;
-	}
-	let splat = unsafe { &mut *splat };
+	};
 
 	splat.inner.convert_coordinates(from.into(), to.into());
 }
@@ -810,14 +972,17 @@ pub unsafe extern "C" fn spz_gaussian_splat_convert_coordinates(
 /// Includes header information, median volume, and bounding box.
 /// The caller must free the returned string with `spz_free_string`.
 /// Returns NULL if the handle is null.
+///
+/// # Safety
+///
+/// `splat` must be null or a valid live splat handle returned by this library.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_gaussian_splat_pretty_fmt(
 	splat: *const SpzGaussianSplat,
 ) -> *mut c_char {
-	if splat.is_null() {
+	let Some(splat) = splat_ref(splat) else {
 		return ptr::null_mut();
-	}
-	let splat = unsafe { &*splat };
+	};
 	let s = splat.inner.pretty_fmt();
 
 	match std::ffi::CString::new(s) {
@@ -832,11 +997,14 @@ pub unsafe extern "C" fn spz_gaussian_splat_pretty_fmt(
 
 /// Frees a string previously returned by `spz_gaussian_splat_pretty_fmt`
 /// or `spz_header_pretty_fmt`.
+///
+/// # Safety
+///
+/// `s` must be null or a pointer previously returned by this library and not
+/// already freed.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn spz_free_string(s: *mut c_char) {
-	if !s.is_null() {
-		let _ = unsafe { std::ffi::CString::from_raw(s) };
-	}
+	free_c_string(s);
 }
 
 // ---------------------------------------------------------------------------

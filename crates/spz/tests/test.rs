@@ -46,7 +46,7 @@ fn test_empty_gaussian_splat() {
 	assert!(packed_gs.colors.is_empty());
 	assert!(packed_gs.spherical_harmonics.is_empty());
 
-	assert!(PackedGaussianSplat::from_bytes(&[]).is_err());
+	assert!(PackedGaussianSplat::from_bytes([]).is_err());
 }
 
 #[rstest]
@@ -483,7 +483,7 @@ fn test_convert_coordinates(
 	#[case] expected_rot1: [f32; 4],
 ) {
 	// Convert to
-	gs.convert_coordinates(from.clone(), to.clone());
+	gs.convert_coordinates(from, to);
 
 	for (actual, expected) in gs.positions.iter().zip(expected_pos0.iter()) {
 		assert_relative_eq!(actual, expected, epsilon = 1e-6);

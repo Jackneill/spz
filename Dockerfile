@@ -1,4 +1,4 @@
-FROM rust:1.92-alpine3.23 AS builder
+FROM rust:1.94-alpine AS builder
 LABEL stage="builder"
 
 ARG tag
@@ -7,7 +7,7 @@ LABEL org.opencontainers.image.source=https://github.com/Jackneill/spz
 LABEL org.opencontainers.image.description="CLI tooling for .SPZ Gaussian Splatting files."
 LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 
-RUN apk add --no-cache \
+RUN apk upgrade --no-cache && apk add --no-cache \
 	tzdata \
 	ca-certificates \
 	just \
@@ -38,7 +38,7 @@ LABEL org.opencontainers.image.source=https://github.com/Jackneill/spz
 LABEL org.opencontainers.image.description="CLI tooling for .SPZ Gaussian Splatting files."
 LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 
-RUN apk add --no-cache \
+RUN apk upgrade --no-cache && apk add --no-cache \
 	tzdata \
 	ca-certificates
 

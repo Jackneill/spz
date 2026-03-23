@@ -11,5 +11,5 @@ fn print_info() {
 }
 
 pub fn bench_print_info(c: &mut Criterion) {
-	c.bench_function("print_info", |b| b.iter(|| print_info()));
+	c.bench_function("print_info", |b| b.iter(print_info));
 }

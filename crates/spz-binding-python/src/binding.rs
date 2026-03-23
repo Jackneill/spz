@@ -34,6 +34,7 @@ pub enum Version {
 
 #[pymethods]
 impl Version {
+	#[inline]
 	pub fn __repr__(&self) -> &'static str {
 		match self {
 			Version::V1 => "Version.V1",
@@ -42,6 +43,7 @@ impl Version {
 		}
 	}
 
+	#[inline]
 	pub fn __str__(&self) -> &'static str {
 		match self {
 			Version::V1 => "v1",
@@ -52,6 +54,7 @@ impl Version {
 }
 
 impl From<header::Version> for Version {
+	#[inline]
 	fn from(v: header::Version) -> Self {
 		match v {
 			header::Version::V1 => Version::V1,
@@ -62,6 +65,7 @@ impl From<header::Version> for Version {
 }
 
 impl From<Version> for header::Version {
+	#[inline]
 	fn from(v: Version) -> Self {
 		match v {
 			Version::V1 => header::Version::V1,
@@ -150,18 +154,21 @@ impl Header {
 
 	/// The SPZ format version.
 	#[getter]
+	#[inline]
 	pub fn version(&self) -> Version {
 		self.inner.version.into()
 	}
 
 	/// The number of Gaussian points.
 	#[getter]
+	#[inline]
 	pub fn num_points(&self) -> i32 {
 		self.inner.num_points
 	}
 
 	/// The spherical harmonics degree (0-3).
 	#[getter]
+	#[inline]
 	pub fn sh_degree(&self) -> u8 {
 		self.inner.spherical_harmonics_degree
 	}
@@ -170,12 +177,14 @@ impl Header {
 	///
 	/// Standard value is 12, giving ~0.25mm resolution.
 	#[getter]
+	#[inline]
 	pub fn fractional_bits(&self) -> u8 {
 		self.inner.fractional_bits
 	}
 
 	/// Whether the splat was trained with antialiasing.
 	#[getter]
+	#[inline]
 	pub fn antialiased(&self) -> bool {
 		self.inner.flags.is_antialiased()
 	}
@@ -188,15 +197,18 @@ impl Header {
 	/// # Returns
 	///
 	/// `True` if the header is valid.
+	#[inline]
 	pub fn is_valid(&self) -> bool {
 		self.inner.is_valid()
 	}
 
 	/// Returns a detailed, human-readable summary of the header.
+	#[inline]
 	pub fn pretty_fmt(&self) -> String {
 		self.inner.pretty_fmt()
 	}
 
+	#[inline]
 	pub fn __repr__(&self) -> String {
 		format!(
 			"Header(version={}, num_points={}, sh_degree={}, fractional_bits={}, antialiased={})",
@@ -208,6 +220,7 @@ impl Header {
 		)
 	}
 
+	#[inline]
 	pub fn __str__(&self) -> String {
 		format!("{}", self.inner)
 	}
@@ -316,7 +329,9 @@ impl CoordinateSystem {
 	///
 	/// The parsed coordinate system.
 	#[staticmethod]
-	pub fn from_str(coord: &str) -> Self {
+	#[pyo3(name = "from_str")]
+	#[inline]
+	pub fn parse(coord: &str) -> Self {
 		Self {
 			inner: spz_rs::coord::CoordinateSystem::from(coord),
 		}
@@ -326,6 +341,7 @@ impl CoordinateSystem {
 	///
 	/// Returns `"UNSPECIFIED"` for the unspecified coordinate system.
 	#[getter]
+	#[inline]
 	pub fn short_name(&self) -> &'static str {
 		self.inner.as_short_str()
 	}
@@ -350,6 +366,7 @@ pub struct BoundingBox {
 
 #[pymethods]
 impl BoundingBox {
+	#[inline]
 	pub fn __repr__(&self) -> String {
 		format!(
 			"BoundingBox(x=[{}, {}], y=[{}, {}], z=[{}, {}])",
@@ -364,36 +381,42 @@ impl BoundingBox {
 
 	/// Minimum X coordinate.
 	#[getter]
+	#[inline]
 	pub fn min_x(&self) -> f32 {
 		self.inner.min_x
 	}
 
 	/// Maximum X coordinate.
 	#[getter]
+	#[inline]
 	pub fn max_x(&self) -> f32 {
 		self.inner.max_x
 	}
 
 	/// Minimum Y coordinate.
 	#[getter]
+	#[inline]
 	pub fn min_y(&self) -> f32 {
 		self.inner.min_y
 	}
 
 	/// Maximum Y coordinate.
 	#[getter]
+	#[inline]
 	pub fn max_y(&self) -> f32 {
 		self.inner.max_y
 	}
 
 	/// Minimum Z coordinate.
 	#[getter]
+	#[inline]
 	pub fn min_z(&self) -> f32 {
 		self.inner.min_z
 	}
 
 	/// Maximum Z coordinate.
 	#[getter]
+	#[inline]
 	pub fn max_z(&self) -> f32 {
 		self.inner.max_z
 	}
@@ -402,6 +425,7 @@ impl BoundingBox {
 	///
 	/// Returns a tuple of `(width, height, depth)`.
 	#[getter]
+	#[inline]
 	pub fn size(&self) -> (f32, f32, f32) {
 		self.inner.size()
 	}
@@ -410,6 +434,7 @@ impl BoundingBox {
 	///
 	/// Returns a tuple of `(x, y, z)` center coordinates.
 	#[getter]
+	#[inline]
 	pub fn center(&self) -> (f32, f32, f32) {
 		self.inner.center()
 	}
@@ -483,6 +508,7 @@ impl GaussianSplat {
 		antialiased=false
 	))]
 	#[allow(clippy::too_many_arguments)]
+	#[inline]
 	pub fn new(
 		positions: PyReadonlyArray2<f32>,
 		scales: PyReadonlyArray2<f32>,
@@ -546,6 +572,7 @@ impl GaussianSplat {
 	/// Returns `ValueError` if the file cannot be read or is invalid.
 	#[staticmethod]
 	#[pyo3(signature = (path, coordinate_system=CoordinateSystem::UNSPECIFIED()))]
+	#[inline]
 	pub fn load(path: &str, coordinate_system: CoordinateSystem) -> PyResult<Self> {
 		let opts = spz_rs::gaussian_splat::LoadOptions {
 			coord_sys: coordinate_system.inner,
@@ -553,7 +580,6 @@ impl GaussianSplat {
 		let inner = spz_rs::gaussian_splat::GaussianSplat::load_with(path, &opts).map_err(
 			|e| PyValueError::new_err(format!("Failed to load SPZ file: {}", e)),
 		)?;
-
 		Ok(Self { inner })
 	}
 
@@ -571,6 +597,7 @@ impl GaussianSplat {
 	/// The loaded Gaussian splat.
 	#[staticmethod]
 	#[pyo3(signature = (data, coordinate_system=CoordinateSystem::UNSPECIFIED()))]
+	#[inline]
 	pub fn from_bytes(data: &[u8], coordinate_system: CoordinateSystem) -> PyResult<Self> {
 		let opts = spz_rs::gaussian_splat::LoadOptions {
 			coord_sys: coordinate_system.inner,
@@ -593,8 +620,9 @@ impl GaussianSplat {
 	///
 	/// * `path` - Path to save the SPZ file.
 	/// * `coordinate_system` - The coordinate system to save the data in.
-	/// 	Defaults to `UNSPECIFIED` (no conversion).
+	///   Defaults to `UNSPECIFIED` (no conversion).
 	#[pyo3(signature = (path, coordinate_system=CoordinateSystem::UNSPECIFIED()))]
+	#[inline]
 	pub fn save(&self, path: &str, coordinate_system: CoordinateSystem) -> PyResult<()> {
 		let pack_opts = spz_rs::gaussian_splat::SaveOptions {
 			coord_sys: coordinate_system.inner,
@@ -609,12 +637,13 @@ impl GaussianSplat {
 	/// # Args
 	///
 	/// * `coordinate_system` - The coordinate system to serialize the data in.
-	/// 	Defaults to `UNSPECIFIED` (no conversion).
+	///   Defaults to `UNSPECIFIED` (no conversion).
 	///
 	/// # Returns
 	///
 	/// The SPZ file contents as bytes.
 	#[pyo3(signature = (coordinate_system=CoordinateSystem::UNSPECIFIED()))]
+	#[inline]
 	pub fn to_bytes<'py>(
 		&self,
 		py: Python<'py>,
@@ -677,6 +706,7 @@ impl GaussianSplat {
 	}
 
 	/// Returns an `(N, 3)` array of `(x, y, z)` log-scale values.
+	#[inline]
 	#[getter]
 	pub fn scales<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<f32>>> {
 		let n = self.inner.header.num_points as usize;
@@ -687,6 +717,7 @@ impl GaussianSplat {
 	}
 
 	/// Returns an `(N, 4)` array of `(w, x, y, z)` quaternion rotations.
+	#[inline]
 	#[getter]
 	pub fn rotations<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<f32>>> {
 		let n = self.inner.header.num_points as usize;
@@ -697,12 +728,14 @@ impl GaussianSplat {
 	}
 
 	/// Returns an `(N,)` array of inverse-sigmoid opacity values.
+	#[inline]
 	#[getter]
 	pub fn alphas<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f32>> {
 		PyArray1::from_slice(py, &self.inner.alphas)
 	}
 
 	/// Returns an `(N, 3)` array of `(r, g, b)` SH0 color values.
+	#[inline]
 	#[getter]
 	pub fn colors<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyArray2<f32>>> {
 		let n = self.inner.header.num_points as usize;
@@ -717,15 +750,16 @@ impl GaussianSplat {
 	/// The `sh_dim` depends on `sh_degree`: 0→0, 1→3, 2→8, 3→15.
 	///
 	/// Returns an empty `(N, 0)` array if `sh_degree` is 0.
+	#[inline]
 	#[getter]
 	pub fn spherical_harmonics<'py>(
 		&self,
 		py: Python<'py>,
 	) -> PyResult<Bound<'py, PyArray2<f32>>> {
 		let n = self.inner.header.num_points as usize;
-
 		let sh_dim =
 			spz_rs::math::dim_for_degree(self.inner.header.spherical_harmonics_degree);
+
 		if sh_dim == 0 {
 			// Return empty (N, 0) array
 			let arr = PyArray1::<f32>::from_slice(py, &[]);
@@ -743,6 +777,7 @@ impl GaussianSplat {
 
 	/// Returns the bounding box of the splat.
 	#[getter]
+	#[inline]
 	pub fn bbox(&self) -> BoundingBox {
 		let inner = self.inner.bbox();
 
@@ -754,12 +789,14 @@ impl GaussianSplat {
 	/// This is useful for understanding the typical size of the
 	/// Gaussians in the point cloud.
 	#[getter]
+	#[inline]
 	pub fn median_volume(&self) -> f32 {
 		self.inner.median_volume()
 	}
 
 	/// Returns the file header.
 	#[getter]
+	#[inline]
 	pub fn header(&self) -> Header {
 		Header {
 			inner: self.inner.header,
@@ -768,6 +805,7 @@ impl GaussianSplat {
 
 	/// Returns the SPZ format version.
 	#[getter]
+	#[inline]
 	pub fn version(&self) -> Version {
 		self.inner.header.version.into()
 	}
@@ -776,6 +814,7 @@ impl GaussianSplat {
 	///
 	/// Standard value is 12, giving ~0.25mm resolution.
 	#[getter]
+	#[inline]
 	pub fn fractional_bits(&self) -> u8 {
 		self.inner.header.fractional_bits
 	}
@@ -788,6 +827,7 @@ impl GaussianSplat {
 	/// # Returns
 	///
 	/// `True` if all sizes are valid.
+	#[inline]
 	pub fn check_sizes(&self) -> bool {
 		self.inner.check_sizes()
 	}
@@ -795,10 +835,12 @@ impl GaussianSplat {
 	/// Returns a detailed, human-readable summary of the splat.
 	///
 	/// Includes header information, median volume, and bounding box.
+	#[inline]
 	pub fn pretty_fmt(&self) -> String {
 		self.inner.pretty_fmt()
 	}
 
+	#[inline]
 	pub fn __repr__(&self) -> String {
 		format!(
 			"GaussianSplat(num_points={}, sh_degree={}, antialiased={}, ..)",
@@ -808,10 +850,12 @@ impl GaussianSplat {
 		)
 	}
 
+	#[inline]
 	pub fn __str__(&self) -> String {
 		self.inner.to_string()
 	}
 
+	#[inline]
 	pub fn __len__(&self) -> usize {
 		self.inner.header.num_points as usize
 	}
@@ -880,6 +924,7 @@ pub fn read_header(path: &str) -> PyResult<Header> {
 /// ```
 #[pymodule]
 #[pyo3(name = "_spz")]
+#[inline]
 pub fn spz(m: &Bound<'_, PyModule>) -> PyResult<()> {
 	m.add_class::<GaussianSplat>()?;
 	m.add_class::<CoordinateSystem>()?;

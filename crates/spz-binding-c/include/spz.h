@@ -117,6 +117,11 @@ extern "C"
  *
  * Returns NULL on failure. Call `spz_last_error()` for error details.
  * The caller must free the returned handle with `spz_header_free`.
+ *
+ * # Safety
+ *
+ * `filepath` must be a valid, non-null pointer to a NUL-terminated string
+ * for the duration of this call.
  */
 	struct SpzHeader *spz_header_from_file(const char *filepath);
 
@@ -125,26 +130,48 @@ extern "C"
  *
  * Returns NULL on failure. Call `spz_last_error()` for error details.
  * The caller must free the returned handle with `spz_header_free`.
+ *
+ * # Safety
+ *
+ * `data` must be a valid, non-null pointer to `len` readable bytes for the
+ * duration of this call.
  */
 	struct SpzHeader *spz_header_from_bytes(const uint8_t *data, uintptr_t len);
 
 	/**
  * Frees a header handle.
+ *
+ * # Safety
+ *
+ * `header` must be null or a pointer previously returned by this library and
+ * not already freed.
  */
 	void spz_header_free(struct SpzHeader *header);
 
 	/**
  * Returns the SPZ format version stored in the header.
+ *
+ * # Safety
+ *
+ * `header` must be null or a valid live header handle returned by this library.
  */
 	enum SpzVersion spz_header_version(const struct SpzHeader *header);
 
 	/**
  * Returns the number of Gaussian points recorded in the header.
+ *
+ * # Safety
+ *
+ * `header` must be null or a valid live header handle returned by this library.
  */
 	int32_t spz_header_num_points(const struct SpzHeader *header);
 
 	/**
  * Returns the spherical harmonics degree (0-3).
+ *
+ * # Safety
+ *
+ * `header` must be null or a valid live header handle returned by this library.
  */
 	uint8_t spz_header_sh_degree(const struct SpzHeader *header);
 
@@ -152,11 +179,19 @@ extern "C"
  * Returns the number of fractional bits used in position encoding.
  *
  * Standard value is 12, giving ~0.25 mm resolution.
+ *
+ * # Safety
+ *
+ * `header` must be null or a valid live header handle returned by this library.
  */
 	uint8_t spz_header_fractional_bits(const struct SpzHeader *header);
 
 	/**
  * Returns whether the splat was trained with antialiasing.
+ *
+ * # Safety
+ *
+ * `header` must be null or a valid live header handle returned by this library.
  */
 	bool spz_header_antialiased(const struct SpzHeader *header);
 
@@ -164,6 +199,10 @@ extern "C"
  * Validates the header (magic number, version, ranges, reserved bytes).
  *
  * Returns `true` if the header passes all validation checks.
+ *
+ * # Safety
+ *
+ * `header` must be null or a valid live header handle returned by this library.
  */
 	bool spz_header_is_valid(const struct SpzHeader *header);
 
@@ -172,6 +211,10 @@ extern "C"
  *
  * The caller must free the returned string with `spz_free_string`.
  * Returns NULL if the handle is null.
+ *
+ * # Safety
+ *
+ * `header` must be null or a valid live header handle returned by this library.
  */
 	char *spz_header_pretty_fmt(const struct SpzHeader *header);
 
@@ -188,6 +231,11 @@ extern "C"
  *
  * Returns NULL on failure. Call `spz_last_error()` for error details.
  * The caller must free the returned handle with `spz_gaussian_splat_free`.
+ *
+ * # Safety
+ *
+ * `filepath` must be a valid, non-null pointer to a NUL-terminated string
+ * for the duration of this call.
  */
 
 	struct SpzGaussianSplat *spz_gaussian_splat_load(const char *filepath, enum SpzCoordinateSystem coord_sys);
@@ -197,6 +245,11 @@ extern "C"
  *
  * Returns NULL on failure. Call `spz_last_error()` for error details.
  * The caller must free the returned handle with `spz_gaussian_splat_free`.
+ *
+ * # Safety
+ *
+ * `data` must be a valid, non-null pointer to `len` readable bytes for the
+ * duration of this call.
  */
 
 	struct SpzGaussianSplat *
@@ -206,6 +259,11 @@ extern "C"
  * Saves a GaussianSplat to an SPZ file.
  *
  * Returns `SpzResult_Success` on success. Call `spz_last_error()` on failure.
+ *
+ * # Safety
+ *
+ * `splat` must be a valid live handle returned by this library, and `filepath`
+ * must be a valid, non-null pointer to a NUL-terminated string for this call.
  */
 
 	enum SpzResult spz_gaussian_splat_save(
@@ -216,6 +274,11 @@ extern "C"
  *
  * Returns `SpzResult_Success` on success. Call `spz_last_error()` on failure.
  * The caller must free the returned buffer with `spz_free_bytes`.
+ *
+ * # Safety
+ *
+ * `splat` must be a valid live handle returned by this library. `out_data`
+ * and `out_len` must be valid writable pointers for this call.
  */
 
 	enum SpzResult spz_gaussian_splat_to_bytes(
@@ -226,23 +289,46 @@ extern "C"
 
 	/**
  * Frees a byte buffer previously returned by `spz_gaussian_splat_to_bytes`.
+ *
+ * # Safety
+ *
+ * `data` and `len` must match a buffer previously returned by
+ * `spz_gaussian_splat_to_bytes` and not yet freed.
  */
 	void spz_free_bytes(uint8_t *data, uintptr_t len);
 
+	/**
+ * # Safety
+ *
+ * `splat` must be null or a pointer previously returned by this library and
+ * not already freed.
+ */
 	void spz_gaussian_splat_free(struct SpzGaussianSplat *splat);
 
 	/**
  * Returns the number of points (gaussians) in the splat.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	int32_t spz_gaussian_splat_num_points(const struct SpzGaussianSplat *splat);
 
 	/**
  * Returns the spherical harmonics degree (0-3).
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	uint8_t spz_gaussian_splat_sh_degree(const struct SpzGaussianSplat *splat);
 
 	/**
  * Returns the SPZ format version of the splat.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	enum SpzVersion spz_gaussian_splat_version(const struct SpzGaussianSplat *splat);
 
@@ -250,11 +336,19 @@ extern "C"
  * Returns the number of fractional bits used in position encoding.
  *
  * Standard value is 12, giving ~0.25 mm resolution.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	uint8_t spz_gaussian_splat_fractional_bits(const struct SpzGaussianSplat *splat);
 
 	/**
  * Returns whether the splat was trained with antialiasing.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	bool spz_gaussian_splat_antialiased(const struct SpzGaussianSplat *splat);
 
@@ -262,11 +356,19 @@ extern "C"
  * Returns the bounding box of the splat.
  *
  * Returns a zeroed bounding box if the handle is null.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	struct SpzBoundingBox spz_gaussian_splat_bbox(const struct SpzGaussianSplat *splat);
 
 	/**
  * Returns the median ellipsoid volume of the gaussians.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	float spz_gaussian_splat_median_volume(const struct SpzGaussianSplat *splat);
 
@@ -274,6 +376,10 @@ extern "C"
  * Validates that all internal arrays have consistent sizes.
  *
  * Returns `true` if the splat passes all size checks.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	bool spz_gaussian_splat_check_sizes(const struct SpzGaussianSplat *splat);
 
@@ -284,6 +390,11 @@ extern "C"
  * The pointer is valid until the splat is modified or freed.
  *
  * If `out_len` is non-null it receives the total number of floats.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
+ * If `out_len` is non-null it must be a valid writable pointer for this call.
  */
 
 	const float *spz_gaussian_splat_positions(const struct SpzGaussianSplat *splat, uintptr_t *out_len);
@@ -293,6 +404,11 @@ extern "C"
  *
  * The array contains `num_points * 3` floats (log-encoded) in `[x0, y0, z0, ...]` order.
  * The pointer is valid until the splat is modified or freed.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
+ * If `out_len` is non-null it must be a valid writable pointer for this call.
  */
 	const float *spz_gaussian_splat_scales(const struct SpzGaussianSplat *splat, uintptr_t *out_len);
 
@@ -302,6 +418,11 @@ extern "C"
  * The array contains `num_points * 4` floats (quaternions) in
  * `[x0, y0, z0, w0, ...]` order.
  * The pointer is valid until the splat is modified or freed.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
+ * If `out_len` is non-null it must be a valid writable pointer for this call.
  */
 
 	const float *spz_gaussian_splat_rotations(const struct SpzGaussianSplat *splat, uintptr_t *out_len);
@@ -311,6 +432,11 @@ extern "C"
  *
  * The array contains `num_points` floats (sigmoid-encoded opacity values).
  * The pointer is valid until the splat is modified or freed.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
+ * If `out_len` is non-null it must be a valid writable pointer for this call.
  */
 	const float *spz_gaussian_splat_alphas(const struct SpzGaussianSplat *splat, uintptr_t *out_len);
 
@@ -319,6 +445,11 @@ extern "C"
  *
  * The array contains `num_points * 3` floats (DC colour) in `[r0, g0, b0, ...]` order.
  * The pointer is valid until the splat is modified or freed.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
+ * If `out_len` is non-null it must be a valid writable pointer for this call.
  */
 	const float *spz_gaussian_splat_colors(const struct SpzGaussianSplat *splat, uintptr_t *out_len);
 
@@ -332,12 +463,21 @@ extern "C"
  * - Degree 3: 45 coefficients
  *
  * The pointer is valid until the splat is modified or freed.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
+ * If `out_len` is non-null it must be a valid writable pointer for this call.
  */
 
 	const float *spz_gaussian_splat_spherical_harmonics(const struct SpzGaussianSplat *splat, uintptr_t *out_len);
 
 	/**
  * Converts the splat's coordinate system in-place.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a unique live splat handle returned by this library.
  */
 
 	void spz_gaussian_splat_convert_coordinates(
@@ -349,12 +489,21 @@ extern "C"
  * Includes header information, median volume, and bounding box.
  * The caller must free the returned string with `spz_free_string`.
  * Returns NULL if the handle is null.
+ *
+ * # Safety
+ *
+ * `splat` must be null or a valid live splat handle returned by this library.
  */
 	char *spz_gaussian_splat_pretty_fmt(const struct SpzGaussianSplat *splat);
 
 	/**
  * Frees a string previously returned by `spz_gaussian_splat_pretty_fmt`
  * or `spz_header_pretty_fmt`.
+ *
+ * # Safety
+ *
+ * `s` must be null or a pointer previously returned by this library and not
+ * already freed.
  */
 	void spz_free_string(char *s);
 

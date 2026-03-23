@@ -441,7 +441,7 @@ mod tests {
 			flags,
 			..Default::default()
 		};
-		let bytes: [u8; 16] = header.try_into().expect("should convert");
+		let bytes: [u8; 16] = header.into();
 		let recovered: Header = bytes.try_into().expect("should convert");
 
 		assert_eq!(recovered.magic, MAGIC_VALUE);
@@ -475,7 +475,7 @@ mod tests {
 			flags: Flags::none(),
 			..Default::default()
 		};
-		let bytes: [u8; 16] = header.try_into().expect("should convert");
+		let bytes: [u8; 16] = header.into();
 		let recovered = Header::try_from(bytes.as_slice()).expect("should parse");
 
 		assert_eq!(recovered.magic, MAGIC_VALUE);
@@ -500,7 +500,7 @@ mod tests {
 			flags: Flags::none(),
 			..Default::default()
 		};
-		let bytes: [u8; 16] = header.try_into().expect("should convert");
+		let bytes: [u8; 16] = header.into();
 		let mut extended = bytes.to_vec();
 
 		extended.extend_from_slice(&vec![0xAB; extra_bytes]);

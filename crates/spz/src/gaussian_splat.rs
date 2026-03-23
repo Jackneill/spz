@@ -50,18 +50,17 @@ pub struct GaussianSplat {
 	pub colors: Vec<f32>,
 
 	/// Depending on the degree of spherical harmonics for the splat,
-	/// this can contain
-	/// 	0 (for degree 0),
-	/// 	9 (for degree 1),
-	/// 	24 (for degree 2),
-	/// 	45 (for degree 3)
-	/// 	coefficients per gaussian.
+	/// this can contain:
+	/// - 0 coefficients for degree 0,
+	/// - 9 coefficients for degree 1,
+	/// - 24 coefficients for degree 2,
+	/// - 45 coefficients for degree 3.
 	///
 	/// The coefficients for a gaussian are organized such that the color
 	/// channel is the inner (faster varying) axis, and the coefficient is
 	/// the outer (slower varying) axis, i.e. for degree 1, the order of
-	/// the 9 values is:
-	/// 	`sh1n1_r, sh1n1_g, sh1n1_b, sh10_r, sh10_g, sh10_b, sh1p1_r, sh1p1_g, sh1p1_b`
+	/// the 9 values is
+	/// `sh1n1_r, sh1n1_g, sh1n1_b, sh10_r, sh10_g, sh10_b, sh1p1_r, sh1p1_g, sh1p1_b`.
 	///
 	/// Each coefficient is represented as an 8-bit signed integer.
 	/// Additional quantization can be performed to attain a higher
@@ -339,7 +338,7 @@ impl GaussianSplat {
 		}
 		// scales
 		for (dst, src) in result.scales.iter_mut().zip(packed.scales.iter()) {
-			*dst = (*src as f32 / 16.0 - 10.0) as f32;
+			*dst = *src as f32 / 16.0 - 10.0;
 		}
 		// rotations
 		if packed.uses_quaternion_smallest_three {
@@ -994,8 +993,10 @@ mod tests {
 	#[case(vec![f32::NAN, f32::NAN, f32::NAN])]
 	#[case(vec![f32::INFINITY, f32::INFINITY, f32::INFINITY])]
 	fn test_median_volume_fallback(#[case] scales: Vec<f32>) {
-		let mut gs = GaussianSplat::default();
-		gs.scales = scales;
+		let gs = GaussianSplat {
+			scales,
+			..GaussianSplat::default()
+		};
 
 		assert_relative_eq!(gs.median_volume(), 0.01, epsilon = 1e-6);
 	}

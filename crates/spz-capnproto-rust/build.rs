@@ -22,7 +22,7 @@ fn main() -> Result<()> {
 	is_capnpc_bin_exists()?;
 
 	::capnpc::CompilerCommand::new()
-		.src_prefix(&schemas_dir)
+		.src_prefix(schemas_dir)
 		.file(&spz_schema_path)
 		.run()
 		.with_context(|| {

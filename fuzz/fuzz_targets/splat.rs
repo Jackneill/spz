@@ -22,12 +22,9 @@ struct Input {
 }
 
 fuzz_target!(|input: Input| {
-	if let Ok(bytes) = input.gs.serialize_to_packed_bytes(&input.save_opts) {
-		if let Ok(packed_bytes) = PackedGaussianSplat::from_bytes(&bytes) {
-			let _ = GaussianSplat::new_from_packed_gaussians(
-				&packed_bytes,
-				&input.load_opts,
-			);
-		}
+	if let Ok(bytes) = input.gs.serialize_to_packed_bytes(&input.save_opts)
+		&& let Ok(packed_bytes) = PackedGaussianSplat::from_bytes(&bytes)
+	{
+		let _ = GaussianSplat::new_from_packed_gaussians(&packed_bytes, &input.load_opts);
 	}
 });

@@ -28,9 +28,9 @@ pub fn bench_load_packed_from_file(c: &mut Criterion) {
 	let rt = Runtime::new().unwrap();
 
 	c.bench_function("load_packed_from_file", |b| {
-		b.iter(|| util::load_packed_from_file());
+		b.iter(util::load_packed_from_file);
 	});
 	c.bench_function("load_packed_from_file_async", |b| {
-		b.to_async(&rt).iter(|| util::load_packed_from_file_async());
+		b.to_async(&rt).iter(util::load_packed_from_file_async);
 	});
 }

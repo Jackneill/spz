@@ -2,6 +2,9 @@
 
 //! SPZ file format crate for Gaussian Splat data.
 
+#![deny(clippy::undocumented_unsafe_blocks)]
+#![deny(unsafe_op_in_unsafe_fn)]
+
 pub mod compression;
 pub mod consts;
 pub mod coord;
