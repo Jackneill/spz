@@ -56,6 +56,9 @@
 	<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJackneill%2Fspz?ref=badge_shield&issueType=security" alt="FOSSA Status" target="_blank">
 		<img alt="FOSSA Security" src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJackneill%2Fspz.svg?type=shield&issueType=security"/>
 	</a>
+	<a href="https://www.bestpractices.dev/projects/12337">
+		<img alt="FLOSSA Best Practices" src="https://www.bestpractices.dev/projects/12337/badge">
+	</a>
 	<br>
 	<a href="https://pypi.org/project/spz/" target="_blank">
 		<img alt="Python Version from PEP 621 TOML" src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FJackneill%2Fspz%2Frefs%2Fheads%2Fmain%2Fcrates%2Fspz-binding-python%2Fpyproject.toml&style=for-the-badge&link=https%3A%2F%2Fpypi.org%2Fproject%2Fspz%2F">
