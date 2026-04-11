@@ -38,7 +38,7 @@ jobs:
           bins: cargo-codspeed
 
       - name: Setup just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Download benchmark assets
         run: just assets
